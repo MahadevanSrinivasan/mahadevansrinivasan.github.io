@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>The Shy Bulb</title>
+    <description>Stream to XBMC Sudoku Sudokids Pickpocket Raspberry Pi
+</description>
+    <link>/</link>
+    <atom:link href="/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Wed, 30 Sep 2015 00:19:43 -0700</pubDate>
+    <lastBuildDate>Wed, 30 Sep 2015 00:19:43 -0700</lastBuildDate>
+    <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Sudokids</title>
+        <description>&lt;p&gt;&lt;a href=&quot;http://mahadevansrinivasan.github.io/sudokids/&quot;&gt;Sudokids&lt;/a&gt; as the name so obviously states is Sudoku for kids. Motivation behind Sudokids is to teach kids set theory with the help of Sudoku.&lt;/p&gt;
+
+&lt;p&gt;Let me know what you think!!&lt;/p&gt;
+</description>
+        <pubDate>Tue, 29 Sep 2015 16:43:00 -0700</pubDate>
+        <link>/2015/09/29/sudokids.html</link>
+        <guid isPermaLink="true">/2015/09/29/sudokids.html</guid>
+        
+        <category>sudoku</category>
+        
+        <category>for</category>
+        
+        <category>kids</category>
+        
+        <category>sudokids</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>Stream to XBMC FAQ</title>
+        <description>&lt;p&gt;As a follow up to my previous post about my plugin Stream to XBMC, here are some
+frequently asked questions about how to setup the plugin. Just two for now, more to follow.&lt;/p&gt;
+
+&lt;h3 id=&quot;how-do-i-setup-the-plugin-to-work-with-my-xbmc-setup&quot;&gt;How do I setup the plugin to work with my XBMC setup?&lt;/h3&gt;
+
+&lt;p&gt;After installing the plugin, it should automatically bring up the options page to
+configure the plugin. Here you setup the IP address and an optional port number
+to send videos to your XBMC setup. To access the options page after the first install,
+go to: &lt;a href=&quot;chrome://extensions&quot;&gt;chrome://extensions&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Customize and control Google Chrome  More Tools -&amp;gt; Extensions -&amp;gt; Options (for Stream to XBMC).&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/strmtoxbmc_options.png&quot; alt=&quot;Stream to XBMC options page&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;i-pushed-a-video-to-my-xbmc-setup-how-do-i-playpause-the-video&quot;&gt;I pushed a video to my XBMC setup, how do I play/pause the video?&lt;/h3&gt;
+
+&lt;p&gt;I configure my remote control to work with my XBMC setup. You could also use one of the iOS or Android remotes to control XBMC. This &lt;a href=&quot;http://www.raspbmc.com/wiki/user/configuring-remotes/&quot;&gt;link&lt;/a&gt; gives more information.&lt;/p&gt;
+</description>
+        <pubDate>Tue, 29 Sep 2015 16:36:00 -0700</pubDate>
+        <link>/2015/09/29/stream-to-xbmc-faq.html</link>
+        <guid isPermaLink="true">/2015/09/29/stream-to-xbmc-faq.html</guid>
+        
+        <category>raspberrypi</category>
+        
+        <category>stream</category>
+        
+        <category>xbmc</category>
+        
+        <category>faq</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>Stream to XBMC</title>
+        <description>&lt;p&gt;This is a chrome-plugin to push videos to an XBMC setup. It can be used it with Raspberry Pi or any other XBMC setup to watch videos from CBS, Youtube and so many other sites on your TV. Big bang theory anyone?&lt;/p&gt;
+
+&lt;p&gt;Are you one of those people who watch the latest TV shows from random video streaming sites on your laptop? Do you want to watch it on your big screen TV instead? You have come to the right place.&lt;/p&gt;
+
+&lt;p&gt;Stream to XBMC is a chrome plugin which can push videos from your chrome browser to your XBMC setup. It currently supports pushing videos from the following sites:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;einthusan.com&lt;/li&gt;
+  &lt;li&gt;gorillavid.in&lt;/li&gt;
+  &lt;li&gt;youtube.com&lt;/li&gt;
+  &lt;li&gt;cbs.com&lt;/li&gt;
+  &lt;li&gt;allmyvideos.net&lt;/li&gt;
+  &lt;li&gt;vidto.me&lt;/li&gt;
+  &lt;li&gt;vidzi.tv&lt;/li&gt;
+  &lt;li&gt;played.to&lt;/li&gt;
+  &lt;li&gt;megafiles.se&lt;/li&gt;
+  &lt;li&gt;bestreams.net&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;If you haven’t installed it yet, go ahead and do it from the &lt;a href=&quot;https://chrome.google.com/webstore/detail/stream-to-xbmc/acjnpiepgaicjaeiphocgkekciflonfi&quot;&gt;Chrome Webstore&lt;/a&gt;. Don’t forget to leave your comments below!&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;P.S: Looking for a cheap XBMC setup to connect to your TV. Try &lt;a href=&quot;http://www.raspberrypi.org/&quot;&gt;RaspberryPi&lt;/a&gt;.&lt;/em&gt;
+&lt;strong&gt;Credits&lt;/strong&gt;: Icon made by &lt;a href=&quot;http://www.google.com/&quot;&gt;Google&lt;/a&gt; from &lt;a href=&quot;http://www.flaticon.com/&quot;&gt;www.flaticon.com&lt;/a&gt; is licensed under &lt;a href=&quot;http://creativecommons.org/licenses/by/3.0/&quot;&gt;CC BY 3.0&lt;/a&gt;&lt;/p&gt;
+</description>
+        <pubDate>Tue, 29 Sep 2015 16:31:00 -0700</pubDate>
+        <link>/2015/09/29/stream-to-xbmc.html</link>
+        <guid isPermaLink="true">/2015/09/29/stream-to-xbmc.html</guid>
+        
+        <category>raspberrypi</category>
+        
+        <category>stream</category>
+        
+        <category>xbmc</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>Upstream linux kernel on a Raspberry Pi</title>
+        <description>&lt;p&gt;Recently, I signed up for the &lt;a href=&quot;http://eudyptula-challenge.org/&quot;&gt;Eudyptula Challenge&lt;/a&gt;. If you have not heard of it, it is a series of programming exercises designed to train you with Linux Kernel Development process.
+One of the tasks is to install the latest linux kernel on your machine. You have an option of doing it in a Virtual box setting. Hey, but where is the fun in doing that? I had a Raspberry Pi handy and found a couple of good Wiki pages on how to compile your own kernel for Raspberry Pi (&lt;a href=&quot;http://elinux.org/RPi_Upstream_Kernel_Compilation&quot;&gt;here&lt;/a&gt; and &lt;a href=&quot;http://elinux.org/RPi_Kernel_Compilation&quot;&gt;here&lt;/a&gt;). These two pages have the all the info needed but it is kind of scattered.
+Fastest way to compile the kernel is to do in in Ubuntu (You could technically do it on a MAC, but it is slightly more involved). I tried on my MAC first but ended up installing Ubuntu through Virtualbox to do the compilation. Here are the steps:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Install Virtualbox on your MAC (skip if you already have a Ubuntu setup)
+    &lt;ul&gt;
+      &lt;li&gt;Make sure you allocate atleast 16 GB for your Ubuntu partition.&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;Create a new directory in your home directory and call it whatever you want (I called it linux).&lt;/li&gt;
+  &lt;li&gt;Install git using the following command:&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo apt-get install git&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Change your current directory to the new  one you just created.&lt;/li&gt;
+  &lt;li&gt;Run this command to get the compiler:&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo apt-get install gcc-arm-linux-gnueabi make ncurses-dev&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Run this command to get the u-boot (default raspberry pi bootloader won’t work for the upstream kernel)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;git clone https://github.com/swarren/u-boot&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Get the kernel source from Linus Torvalds&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git --depth&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;1&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Create the following exports:&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;KERNEL_SRC&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/path/to/your/linux
+&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;CCPREFIX&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/path/to/your/compiler/binary/prefix-of-binary-
+mkdir /path/to/your/modules
+&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;MODULES_TEMP&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/path/to/your/modules&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Time to create a config file which tells what to compile and what not to.  (&lt;code&gt;ARCH=arm &amp;amp; CROSS_COMPILE=${CCPREFIX}&lt;/code&gt; very important).&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;linux
+&lt;span class=&quot;nv&quot;&gt;$ ARCH&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;arm &lt;span class=&quot;nv&quot;&gt;CROSS_COMPILE&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;CCPREFIX&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; make bcm2835_defconfig
+&lt;span class=&quot;nv&quot;&gt;$ ARCH&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;arm &lt;span class=&quot;nv&quot;&gt;CROSS_COMPILE&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;CCPREFIX&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; make menuconfig&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Second command creates a .config file in your current directory and the menuconfig command opens up a new window for selecting different modules to compile. Just enabled the option which says “Modules” and save the configuration.&lt;/li&gt;
+  &lt;li&gt;Finally to do the actual the compilation and install all the needed modules (in a temporary location):&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ ARCH&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;arm &lt;span class=&quot;nv&quot;&gt;CROSS_COMPILE&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;CCPREFIX&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; chrt -i &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; make -j 2
+&lt;span class=&quot;nv&quot;&gt;$ ARCH&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;arm &lt;span class=&quot;nv&quot;&gt;CROSS_COMPILE&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;CCPREFIX&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;INSTALL_MOD_PATH&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;MODULES_TEMP&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; make modules_install&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Once kernel compiles successfully (which it should if you have followed the steps), time to compile the bootloader. Run the following commands:&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; ../u-boot
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;git checkout -b rpi_dev origin/rpi_dev
+&lt;span class=&quot;nv&quot;&gt;$ ARCH&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;arm &lt;span class=&quot;nv&quot;&gt;CROSS_COMPILE&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;CCPREFIX&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; chrt -i &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; make rpi_config
+&lt;span class=&quot;nv&quot;&gt;$ ARCH&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;arm &lt;span class=&quot;nv&quot;&gt;CROSS_COMPILE&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;CCPREFIX&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; chrt -i &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; make -j 8&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Once this is done, go inside the tools directory under u-boot directory:&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;tools&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Create a file by name boot.scr with the following contents (for Raspberry Pi Model B):&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;mmc dev 0
+setenv fdtfile bcm2835-rpi-b.dtb
+setenv bootargs earlyprintk &lt;span class=&quot;nv&quot;&gt;console&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;tty0 &lt;span class=&quot;nv&quot;&gt;console&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;ttyAMA0 &lt;span class=&quot;nv&quot;&gt;root&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/dev/mmcblk0p2 rootwait
+fatload mmc 0:1 &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;kernel_addr_r&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; zImage
+fatload mmc 0:1 &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;fdt_addr_r&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;fdtfile&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt;
+bootz &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;kernel_addr_r&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; - &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;fdt_addr_r&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Or for Model B+:&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;mmc dev 0
+setenv fdtfile bcm2835-rpi-b-plus.dtb
+setenv bootargs earlyprintk &lt;span class=&quot;nv&quot;&gt;console&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;tty0 &lt;span class=&quot;nv&quot;&gt;console&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;ttyAMA0 &lt;span class=&quot;nv&quot;&gt;root&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/dev/mmcblk0p2 rootwait
+fatload mmc 0:1 &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;kernel_addr_r&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; zImage
+fatload mmc 0:1 &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;fdt_addr_r&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;fdtfile&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt;
+bootz &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;kernel_addr_r&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt; - &lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;fdt_addr_r&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;And then run the following command (this should generate a boot.scr.img)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;./mkimage -A arm -O linux -T script -C none -n boot.scr -d boot.scr boot.scr.uimg&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Now, go to your /boot directory on your Raspberry Pi and create a new directory called backup and move everything inside the backup directory. You might have to sudo the last command.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;SD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/boot
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;mkdir &lt;span class=&quot;nv&quot;&gt;$SD&lt;/span&gt;/backup
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;mv &lt;span class=&quot;nv&quot;&gt;$SD&lt;/span&gt;/* &lt;span class=&quot;nv&quot;&gt;$SD&lt;/span&gt;/backup&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Fetch &lt;code&gt;start.elf&lt;/code&gt; and &lt;code&gt;bootcode.bin&lt;/code&gt; from https://github.com/raspberrypi/firmware/tree/master/boot and save it to your &lt;code&gt;$SD&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;Finally, move all the required files from your Ubuntu machine to your Raspberry Pi using scp. You might have to move it to a temporary location first (in this case I am moving it to the home directory).&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;scp u-boot/u-boot.bin pi@192.168.1.101:~/kernel.img
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;scp linux/arch/arm/boot/zImage linux/arch/arm/boot/dts/bcm2835-rpi-b.dtb u-boot/tools/boot.scr.uimg pi@192.168.1.101:~/&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Go to your Raspberry Pi and use sudo mv to move the files from your home directory to the /boot directory as follows:&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;sudo mv ~/kernel.img ~/zImage ~/bcm2835-rpi-b.dtb ~/boot.scr.uimg /boot/&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Now your boot directory should have the following files:&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;u-boot.bin
+kernel.img
+zImage
+bcm2835-rpi-b.dtb
+boot.scr.uimg
+start.elf
+bootcode.bin&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;For Model B+, you will have &lt;code&gt;bcm2835-rpi-b-plus.dtb&lt;/code&gt; instead of &lt;code&gt;bcm2835-rpi-b.dtb&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;Copy your source code from the Ubuntu machine to your Raspberry Pi:&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;scp -r /path/to/your/linux/ pi@192.168.1.101:/home/pi/&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Change the permissions just in case&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; /home/pi
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;sudo chown -R pi:pi linux/&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Copy the modules next (Move to a temporary folder if you can’t write to /lib/modules directly and then sudo mv it).&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;sudo scp -r /path/to/your/modules/&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;uname -r&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;/ pi@192.168.1.101:/lib/modules/&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Correct the symbolic links next:&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;sudo &lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; /lib/modules/&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;uname -r&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;/
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;sudo rm build &lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ln -s /home/pi/linux build
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ln -s /home/pi/linux &lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Finally, we need to fix one more problem: During the cross-compilation build, a couple scripts were compiled for the host. We also need them for the Raspberry Pi. Still on the Pi, this can be checked with e.g.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;file /home/pi/linux/scripts/recordmcount &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;returns something with x86-64&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; /home/pi/linux/
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;make scripts
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;file /home/pi/linux/scripts/recordmcount &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;now returns something with 32-bit and ARM&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Reboot the device and see your new kernel load in all its glory.&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Tue, 29 Sep 2015 13:55:07 -0700</pubDate>
+        <link>/2015/09/29/upstream-kernel-raspberry-pi.html</link>
+        <guid isPermaLink="true">/2015/09/29/upstream-kernel-raspberry-pi.html</guid>
+        
+        <category>linux</category>
+        
+        <category>raspberry</category>
+        
+        <category>pi</category>
+        
+        <category>eudyptula</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>Welcome to my blog!</title>
+        <description>&lt;p&gt;As part of my &lt;em&gt;learn something new everyday&lt;/em&gt;, I am migrating all my ramblings to a Jekyll-based blog. It is simple, easy to maintain and super customizable.  With this change, I am hoping to write more often.&lt;/p&gt;
+
+&lt;p&gt;Some of the great features of Jekyll I am thrilled about:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Jekyll offers powerful support for displaying code snippets:&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;print&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;Hello World&amp;quot;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Auto generated blog index
+The content in my home page is auto-generated if you can believe it.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Check out the &lt;a href=&quot;http://jekyllrb.com&quot;&gt;Jekyll docs&lt;/a&gt; for more info on how to get the most out of Jekyll.&lt;/p&gt;
+
+</description>
+        <pubDate>Tue, 29 Sep 2015 13:54:07 -0700</pubDate>
+        <link>/jekyll/2015/09/29/welcome-to-jekyll.html</link>
+        <guid isPermaLink="true">/jekyll/2015/09/29/welcome-to-jekyll.html</guid>
+        
+        
+        <category>jekyll</category>
+        
+      </item>
+    
+  </channel>
+</rss>

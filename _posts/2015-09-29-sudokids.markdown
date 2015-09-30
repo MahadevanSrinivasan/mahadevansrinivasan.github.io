@@ -1,0 +1,11 @@
+---
+layout: post
+title:  "Sudokids"
+date:   2015-09-29 23:43:00
+tags: sudoku for kids sudokids
+---
+
+
+[Sudokids](http://mahadevansrinivasan.github.io/sudokids/) as the name so obviously states is Sudoku for kids. Motivation behind Sudokids is to teach kids set theory with the help of Sudoku.
+
+Let me know what you think!!

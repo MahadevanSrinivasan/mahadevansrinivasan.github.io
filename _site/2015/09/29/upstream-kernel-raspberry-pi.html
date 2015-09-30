@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Upstream linux kernel on a Raspberry Pi</title>
+  <meta name="description" content="Recently, I signed up for the Eudyptula Challenge. If you have not heard of it, it is a series of programming exercises designed to train you with Linux Kern...">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="/2015/09/29/upstream-kernel-raspberry-pi.html">
+  <link rel="alternate" type="application/rss+xml" title="The Shy Bulb" href="/feed.xml" />
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">The Shy Bulb</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About</a>
+          
+        
+          
+        
+          
+        
+          
+        
+          
+          <a class="page-link" href="/projects/">Projects</a>
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Upstream linux kernel on a Raspberry Pi</h1>
+    <p class="post-meta">Sep 29, 2015</p>
+  </header>
+
+  <article class="post-content">
+    <p>Recently, I signed up for the <a href="http://eudyptula-challenge.org/">Eudyptula Challenge</a>. If you have not heard of it, it is a series of programming exercises designed to train you with Linux Kernel Development process.
+One of the tasks is to install the latest linux kernel on your machine. You have an option of doing it in a Virtual box setting. Hey, but where is the fun in doing that? I had a Raspberry Pi handy and found a couple of good Wiki pages on how to compile your own kernel for Raspberry Pi (<a href="http://elinux.org/RPi_Upstream_Kernel_Compilation">here</a> and <a href="http://elinux.org/RPi_Kernel_Compilation">here</a>). These two pages have the all the info needed but it is kind of scattered.
+Fastest way to compile the kernel is to do in in Ubuntu (You could technically do it on a MAC, but it is slightly more involved). I tried on my MAC first but ended up installing Ubuntu through Virtualbox to do the compilation. Here are the steps:</p>
+
+<ul>
+  <li>Install Virtualbox on your MAC (skip if you already have a Ubuntu setup)
+    <ul>
+      <li>Make sure you allocate atleast 16 GB for your Ubuntu partition.</li>
+    </ul>
+  </li>
+  <li>Create a new directory in your home directory and call it whatever you want (I called it linux).</li>
+  <li>Install git using the following command:</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">sudo apt-get install git</code></pre></div>
+
+<ul>
+  <li>Change your current directory to the new  one you just created.</li>
+  <li>Run this command to get the compiler:</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">sudo apt-get install gcc-arm-linux-gnueabi make ncurses-dev</code></pre></div>
+
+<ul>
+  <li>Run this command to get the u-boot (default raspberry pi bootloader won’t work for the upstream kernel)</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">git clone https://github.com/swarren/u-boot</code></pre></div>
+
+<ul>
+  <li>Get the kernel source from Linus Torvalds</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git --depth<span class="o">=</span>1</code></pre></div>
+
+<ul>
+  <li>Create the following exports:</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">export </span><span class="nv">KERNEL_SRC</span><span class="o">=</span>/path/to/your/linux
+<span class="nb">export </span><span class="nv">CCPREFIX</span><span class="o">=</span>/path/to/your/compiler/binary/prefix-of-binary-
+mkdir /path/to/your/modules
+<span class="nb">export </span><span class="nv">MODULES_TEMP</span><span class="o">=</span>/path/to/your/modules</code></pre></div>
+
+<ul>
+  <li>Time to create a config file which tells what to compile and what not to.  (<code>ARCH=arm &amp; CROSS_COMPILE=${CCPREFIX}</code> very important).</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd </span>linux
+<span class="nv">$ ARCH</span><span class="o">=</span>arm <span class="nv">CROSS_COMPILE</span><span class="o">=</span><span class="k">${</span><span class="nv">CCPREFIX</span><span class="k">}</span> make bcm2835_defconfig
+<span class="nv">$ ARCH</span><span class="o">=</span>arm <span class="nv">CROSS_COMPILE</span><span class="o">=</span><span class="k">${</span><span class="nv">CCPREFIX</span><span class="k">}</span> make menuconfig</code></pre></div>
+
+<ul>
+  <li>Second command creates a .config file in your current directory and the menuconfig command opens up a new window for selecting different modules to compile. Just enabled the option which says “Modules” and save the configuration.</li>
+  <li>Finally to do the actual the compilation and install all the needed modules (in a temporary location):</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ ARCH</span><span class="o">=</span>arm <span class="nv">CROSS_COMPILE</span><span class="o">=</span><span class="k">${</span><span class="nv">CCPREFIX</span><span class="k">}</span> chrt -i <span class="m">0</span> make -j 2
+<span class="nv">$ ARCH</span><span class="o">=</span>arm <span class="nv">CROSS_COMPILE</span><span class="o">=</span><span class="k">${</span><span class="nv">CCPREFIX</span><span class="k">}</span> <span class="nv">INSTALL_MOD_PATH</span><span class="o">=</span><span class="k">${</span><span class="nv">MODULES_TEMP</span><span class="k">}</span> make modules_install</code></pre></div>
+
+<ul>
+  <li>Once kernel compiles successfully (which it should if you have followed the steps), time to compile the bootloader. Run the following commands:</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd</span> ../u-boot
+<span class="nv">$ </span>git checkout -b rpi_dev origin/rpi_dev
+<span class="nv">$ ARCH</span><span class="o">=</span>arm <span class="nv">CROSS_COMPILE</span><span class="o">=</span><span class="k">${</span><span class="nv">CCPREFIX</span><span class="k">}</span> chrt -i <span class="m">0</span> make rpi_config
+<span class="nv">$ ARCH</span><span class="o">=</span>arm <span class="nv">CROSS_COMPILE</span><span class="o">=</span><span class="k">${</span><span class="nv">CCPREFIX</span><span class="k">}</span> chrt -i <span class="m">0</span> make -j 8</code></pre></div>
+
+<ul>
+  <li>Once this is done, go inside the tools directory under u-boot directory:</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd </span>tools</code></pre></div>
+
+<ul>
+  <li>Create a file by name boot.scr with the following contents (for Raspberry Pi Model B):</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">mmc dev 0
+setenv fdtfile bcm2835-rpi-b.dtb
+setenv bootargs earlyprintk <span class="nv">console</span><span class="o">=</span>tty0 <span class="nv">console</span><span class="o">=</span>ttyAMA0 <span class="nv">root</span><span class="o">=</span>/dev/mmcblk0p2 rootwait
+fatload mmc 0:1 <span class="k">${</span><span class="nv">kernel_addr_r</span><span class="k">}</span> zImage
+fatload mmc 0:1 <span class="k">${</span><span class="nv">fdt_addr_r</span><span class="k">}</span> <span class="k">${</span><span class="nv">fdtfile</span><span class="k">}</span>
+bootz <span class="k">${</span><span class="nv">kernel_addr_r</span><span class="k">}</span> - <span class="k">${</span><span class="nv">fdt_addr_r</span><span class="k">}</span></code></pre></div>
+
+<ul>
+  <li>Or for Model B+:</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">mmc dev 0
+setenv fdtfile bcm2835-rpi-b-plus.dtb
+setenv bootargs earlyprintk <span class="nv">console</span><span class="o">=</span>tty0 <span class="nv">console</span><span class="o">=</span>ttyAMA0 <span class="nv">root</span><span class="o">=</span>/dev/mmcblk0p2 rootwait
+fatload mmc 0:1 <span class="k">${</span><span class="nv">kernel_addr_r</span><span class="k">}</span> zImage
+fatload mmc 0:1 <span class="k">${</span><span class="nv">fdt_addr_r</span><span class="k">}</span> <span class="k">${</span><span class="nv">fdtfile</span><span class="k">}</span>
+bootz <span class="k">${</span><span class="nv">kernel_addr_r</span><span class="k">}</span> - <span class="k">${</span><span class="nv">fdt_addr_r</span><span class="k">}</span></code></pre></div>
+
+<ul>
+  <li>And then run the following command (this should generate a boot.scr.img)</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>./mkimage -A arm -O linux -T script -C none -n boot.scr -d boot.scr boot.scr.uimg</code></pre></div>
+
+<ul>
+  <li>Now, go to your /boot directory on your Raspberry Pi and create a new directory called backup and move everything inside the backup directory. You might have to sudo the last command.</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">export </span><span class="nv">SD</span><span class="o">=</span>/boot
+<span class="nv">$ </span>mkdir <span class="nv">$SD</span>/backup
+<span class="nv">$ </span>mv <span class="nv">$SD</span>/* <span class="nv">$SD</span>/backup</code></pre></div>
+
+<ul>
+  <li>Fetch <code>start.elf</code> and <code>bootcode.bin</code> from https://github.com/raspberrypi/firmware/tree/master/boot and save it to your <code>$SD</code></li>
+  <li>Finally, move all the required files from your Ubuntu machine to your Raspberry Pi using scp. You might have to move it to a temporary location first (in this case I am moving it to the home directory).</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>scp u-boot/u-boot.bin pi@192.168.1.101:~/kernel.img
+<span class="nv">$ </span>scp linux/arch/arm/boot/zImage linux/arch/arm/boot/dts/bcm2835-rpi-b.dtb u-boot/tools/boot.scr.uimg pi@192.168.1.101:~/</code></pre></div>
+
+<ul>
+  <li>Go to your Raspberry Pi and use sudo mv to move the files from your home directory to the /boot directory as follows:</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>sudo mv ~/kernel.img ~/zImage ~/bcm2835-rpi-b.dtb ~/boot.scr.uimg /boot/</code></pre></div>
+
+<ul>
+  <li>Now your boot directory should have the following files:</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">u-boot.bin
+kernel.img
+zImage
+bcm2835-rpi-b.dtb
+boot.scr.uimg
+start.elf
+bootcode.bin</code></pre></div>
+
+<ul>
+  <li>For Model B+, you will have <code>bcm2835-rpi-b-plus.dtb</code> instead of <code>bcm2835-rpi-b.dtb</code>.</li>
+  <li>Copy your source code from the Ubuntu machine to your Raspberry Pi:</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>scp -r /path/to/your/linux/ pi@192.168.1.101:/home/pi/</code></pre></div>
+
+<ul>
+  <li>Change the permissions just in case</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd</span> /home/pi
+<span class="nv">$ </span>sudo chown -R pi:pi linux/</code></pre></div>
+
+<ul>
+  <li>Copy the modules next (Move to a temporary folder if you can’t write to /lib/modules directly and then sudo mv it).</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>sudo scp -r /path/to/your/modules/<span class="sb">`</span>uname -r<span class="sb">`</span>/ pi@192.168.1.101:/lib/modules/</code></pre></div>
+
+<ul>
+  <li>Correct the symbolic links next:</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>sudo <span class="nb">cd</span> /lib/modules/<span class="sb">`</span>uname -r<span class="sb">`</span>/
+<span class="nv">$ </span>sudo rm build <span class="nb">source</span>
+<span class="nv">$ </span>ln -s /home/pi/linux build
+<span class="nv">$ </span>ln -s /home/pi/linux <span class="nb">source</span></code></pre></div>
+
+<ul>
+  <li>Finally, we need to fix one more problem: During the cross-compilation build, a couple scripts were compiled for the host. We also need them for the Raspberry Pi. Still on the Pi, this can be checked with e.g.</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>file /home/pi/linux/scripts/recordmcount <span class="o">(</span>returns something with x86-64<span class="o">)</span>
+<span class="nv">$ </span><span class="nb">cd</span> /home/pi/linux/
+<span class="nv">$ </span>make scripts
+<span class="nv">$ </span>file /home/pi/linux/scripts/recordmcount <span class="o">(</span>now returns something with 32-bit and ARM<span class="o">)</span></code></pre></div>
+
+<ul>
+  <li>Reboot the device and see your new kernel load in all its glory.</li>
+</ul>
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">The Shy Bulb</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col  footer-col-1">
+        <ul class="contact-list">
+          <li>The Shy Bulb</li>
+          <li><a href="mailto:crossthelinedb {at} gmail {dot} com">crossthelinedb {at} gmail {dot} com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/MahadevanSrinivasan">
+              <span class="icon  icon--github">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+                </svg>
+              </span>
+
+              <span class="username">MahadevanSrinivasan</span>
+            </a>
+          </li>
+          
+
+          
+          <li>
+            <a href="https://twitter.com/macsdev">
+              <span class="icon  icon--twitter">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809
+                  c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/>
+                </svg>
+              </span>
+
+              <span class="username">macsdev</span>
+            </a>
+          </li>
+          
+        </ul>
+      </div>
+
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
