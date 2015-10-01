@@ -1,0 +1,76 @@
+---
+layout: post
+title:  "Hex to base64 conversion"
+date:   2015-09-30 16:54:00
+tags: crypto challenge matasano
+---
+
+I came across another set of online coding challenges called [The Matasano Crypto Challenges](http://cryptopals.com/). From a quick google search, it seems like lots of people have tried and recommended it. I got intrigued and started coding right away. To keep the blog rolling, I will share my experience with these coding challenges.
+
+[Challenge Set 1](http://cryptopals.com/sets/1/) is apparently for warming up. Today, I worked on the first problem in set 1 and solved it (quite efficiently, I hope.) This problem involves converting a hex string to base64. Looked quite straightforward but there were a few *gotchas* for me.
+
+#### Understanding the Input
+
+First step in solving any coding problem would be to understand how the input(s) and the output(s) are represented. In our case, input is a string of hex characters. Borrowing from the wikipedia page for [Base 64](https://en.wikipedia.org/wiki/Base64), if we want to represent the word "Man" in our input format, it will be represented as "4D616E". From now on, try to think of everything in this format. Each hex *digit* needs 4 bits for representation. But, when stored as a character array, each *digit* needs 8 bits.
+
+#### Understanding the Output
+A base 64 *digit* needs a minimum of 6 bits. Another way of looking at this is, if we represent this as an integer, we won't exceed the value of 63. So, the input "4D616E" can be represented as 4 base-64 digits. Why? Look at the value of the input in binary:
+
+{% highlight %}
+8-bit grouping: 01001101 01100001 01101110
+6-bit grouping: 010011 010110 000101 101110
+{% endhighlight %}
+
+#### Doing the conversion
+First step is to convert the set of hex values into an intermediate representation. Why not good ol' decimal system? Following function takes in a hex character and spits out its decimal value.
+
+{% highlight c %}
+int hexchartoint(char hex)
+{
+  /* Convert incoming character to lower case first */
+  hex = tolower((int)hex);
+  if(hex >= '0' && hex <= '9')
+    return hex - '0';
+  else if(hex >= 'a' && hex <= 'f')
+    return hex - 'a' + 10;
+
+  printf("Not sure what to do with this input: %c\n", hex);
+  return 0;
+}
+{% endhighlight %}
+
+Next, we need to somehow represent our 6 hex input into an equivalent decimal representation. Keep in mind, we don't have a 6 digit hexadecimal number. We have three 2 digit hexadecimal numbers. This distinction is important and is the reason why we combine them using a logical or and not addition. So, we want 0x4D converted to 77, 0x61 converted to 91 and 0x6E converted to 110. And finally all of them logical or-ed together.
+
+{% highlight c %}
+long temp = hexchartoint(input[i])*16 + hexchartoint(input[i+1]);
+temp = temp<<8 | (hexchartoint(input[i+2])*16 + hexchartoint(input[i+3]));
+temp = temp<<8 | (hexchartoint(input[i+4])*16 + hexchartoint(input[i+5]));
+{% endhighlight %}
+
+Next step would be to look at individual 6-bit groups and convert it to base 64. [Base 64](https://en.wikipedia.org/wiki/Base64) wiki page has the information about what letters to use. In C, this character array will do the trick:
+
+{% highlight c %}
+char map[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+{% endhighlight %}
+
+Finally, we loop through the 6 bit values and store them in the output character array:
+
+{% highlight c %}
+for(j = 3; j >= 0; j--)
+{
+  output[k++] = map[temp>>j*6&0x3F];
+}
+{% endhighlight %}
+
+#### Running the program
+Another thing I learned today is how to send the data from a file as command line arguments to your program. For example, if you have program.exe and you want to send the text from input.txt as command line parameters, you could do the following:
+
+{% highlight bash %}
+program.exe ` < input.txt`
+{% endhighlight %}
+
+There are other ways of doing this. But, this was the simplest way.
+
+
+#### Complete solution
+I have the complete solution uploaded to my github repository [here](https://github.com/MahadevanSrinivasan/cprograms). Cheers!!
