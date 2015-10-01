@@ -16,7 +16,7 @@ First step in solving any coding problem would be to understand how the input(s)
 #### Understanding the Output
 A base 64 *digit* needs a minimum of 6 bits. Another way of looking at this is, if we represent this as an integer, we won't exceed the value of 63. So, the input "4D616E" can be represented as 4 base-64 digits. Why? Look at the value of the input in binary:
 
-{% highlight %}
+{% highlight bash %}
 8-bit grouping: 01001101 01100001 01101110
 6-bit grouping: 010011 010110 000101 101110
 {% endhighlight %}

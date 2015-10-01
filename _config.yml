@@ -10,3 +10,4 @@ github_username:  MahadevanSrinivasan
 
 # Build settings
 markdown: kramdown
+highlighter: pygments
