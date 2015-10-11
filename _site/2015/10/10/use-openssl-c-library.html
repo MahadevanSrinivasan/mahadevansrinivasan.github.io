@@ -6,12 +6,11 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>Projects</title>
-  <meta name="description" content="Stream to XBMC Sudoku Sudokids Pickpocket Raspberry Pi
-">
+  <title>HOWTO: Using Openssl C library</title>
+  <meta name="description" content="For one of the Matasano crypto challenges, I had to decrypt the text which was encrypted using AES in ECB mode. Everything about AES is actually documented b...">
 
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="/projects/">
+  <link rel="canonical" href="/2015/10/10/use-openssl-c-library.html">
   <link rel="alternate" type="application/rss+xml" title="The Shy Bulb" href="/feed.xml" />
 </head>
 
@@ -62,23 +61,54 @@
         <div class="post">
 
   <header class="post-header">
-    <h1 class="post-title">Projects</h1>
+    <h1 class="post-title">HOWTO: Using Openssl C library</h1>
+    <p class="post-meta">Oct 10, 2015</p>
   </header>
 
   <article class="post-content">
-    <ul>
-  <li>
-    <h4 id="stream-to-xbmc20150929stream-to-xbmchtml"><a href="/2015/09/29/stream-to-xbmc.html">Stream to XBMC</a></h4>
-  </li>
-  <li>
-    <h4 id="sudokids20150929sudokidshtml"><a href="/2015/09/29/sudokids.html">Sudokids</a></h4>
-  </li>
-  <li>
-    <h4 id="pickpocket">Pickpocket</h4>
-  </li>
-  <li>
-    <h4 id="podcast-downloader">Podcast Downloader</h4>
-  </li>
+    <p>For one of the <a href="http://cryptopals.com/sets/1/challenges/7/">Matasano crypto challenges</a>, I had to decrypt the text 
+which was encrypted using AES in ECB mode. Everything about AES is actually documented by the 
+<a href="http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf">National Institute of Standards and Technology</a>. 
+You can get all the algorithms behind AES encryption. It is probably not a good idea to implement it from scratch.
+Openssl has a well tested and widely used library which works.</p>
+
+<p>This <a href="https://www.openssl.org/docs/manmaster/crypto/EVP_EncryptInit.html">Openssl library page</a> gives a complete example 
+of how to use Openssl libraries. There are a few preparatory steps before you can use the instructions though. These 
+instructions are for Ubunutu like Linux distributions. These worked well on my Raspberry Pi too.</p>
+
+<h3 id="installing-openssl-library">Installing Openssl library</h3>
+
+<p>Following command installs all the C libraries needed to use Openssl with your C code.</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">sudo apt-get install libssl-dev</code></pre></div>
+
+<p>For example, you will want to include the following header files:</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#include &lt;openssl/evp.h&gt;</span>
+<span class="cp">#include &lt;openssl/ssl.h&gt;</span>
+<span class="cp">#include &lt;openssl/rsa.h&gt;</span>
+<span class="cp">#include &lt;openssl/x509.h&gt;</span></code></pre></div>
+
+<h3 id="compiling-your-c-program-with-the-openssl-library">Compiling your C program with the Openssl library</h3>
+
+<p>Next, you can follow the instructions from the 
+<a href="https://www.openssl.org/docs/manmaster/crypto/EVP_EncryptInit.html">Openssl crypto library page</a> to create 
+your C program. I have an example program in my <a href="https://github.com/MahadevanSrinivasan/cryptopals/blob/master/s1c7.c">Crytopals</a>
+Github repository. While compiling the program you need to provide the ssl and crypto libraries. 
+Following command should do it:</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">gcc yourprogram.c -lssl -lcrypto</code></pre></div>
+
+<h3 id="a-few-pointers-on-the-docrypt-function">A few pointers on the <code>do_crypt</code> function</h3>
+
+<ul>
+  <li>If you are going to use the <code>do_crypt</code> function for decrypting a text encrypted using electronic code book (ECB) mode, you should remove the following assert line since there is no Initialization Vector for ECB.</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">OPENSSL_assert</span><span class="p">(</span><span class="n">EVP_CIPHER_CTX_iv_length</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">)</span> <span class="o">==</span> <span class="mi">16</span><span class="p">);</span></code></pre></div>
+
+<ul>
+  <li>The example code operates on the raw data. So, if you are trying to decrypt the data which is base64 encoded, your first step should be to convert it into raw data.</li>
 </ul>
 
   </article>

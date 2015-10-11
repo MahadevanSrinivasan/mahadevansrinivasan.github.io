@@ -73,4 +73,4 @@ There are other ways of doing this. But, this was the simplest way.
 
 
 #### Complete solution
-I have the complete solution uploaded to my github repository [here](https://github.com/MahadevanSrinivasan/cprograms). Cheers!!
+I have the complete solution uploaded to my github repository [here](https://github.com/MahadevanSrinivasan/cryptopals). Cheers!!

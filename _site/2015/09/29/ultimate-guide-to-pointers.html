@@ -6,12 +6,11 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>Projects</title>
-  <meta name="description" content="Stream to XBMC Sudoku Sudokids Pickpocket Raspberry Pi
-">
+  <title>Ultimate guide to pointers</title>
+  <meta name="description" content="Pointers in C are one of the most confusing concepts. I am going to documenthow pointers work in the order of increasing complexity.">
 
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="/projects/">
+  <link rel="canonical" href="/2015/09/29/ultimate-guide-to-pointers.html">
   <link rel="alternate" type="application/rss+xml" title="The Shy Bulb" href="/feed.xml" />
 </head>
 
@@ -62,24 +61,43 @@
         <div class="post">
 
   <header class="post-header">
-    <h1 class="post-title">Projects</h1>
+    <h1 class="post-title">Ultimate guide to pointers</h1>
+    <p class="post-meta">Sep 29, 2015</p>
   </header>
 
   <article class="post-content">
-    <ul>
-  <li>
-    <h4 id="stream-to-xbmc20150929stream-to-xbmchtml"><a href="/2015/09/29/stream-to-xbmc.html">Stream to XBMC</a></h4>
-  </li>
-  <li>
-    <h4 id="sudokids20150929sudokidshtml"><a href="/2015/09/29/sudokids.html">Sudokids</a></h4>
-  </li>
-  <li>
-    <h4 id="pickpocket">Pickpocket</h4>
-  </li>
-  <li>
-    <h4 id="podcast-downloader">Podcast Downloader</h4>
-  </li>
-</ul>
+    <p>Pointers in C are one of the most confusing concepts. I am going to document
+how pointers work in the order of increasing complexity.</p>
+
+<h3 id="simple-example-of-an-integer-pointer">Simple example of an integer pointer</h3>
+
+<p>A pointer variable is specific to a specific type. For example, if you want
+to point to an integer variable, you define it as <code>int *p</code>. The asterisk says
+that p can point to an integer. Right now, it is pointing to nothing. In C, nothing
+is <code>NULL</code>. To make it point to an integer <code>x</code>, you do it like on line 11. Below 
+example also shows how to pass the variable x as a pointer to a different function.</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#include &lt;stdio.h&gt;</span>
+
+<span class="kt">void</span> <span class="nf">printvalueofx</span><span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="n">p</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="n">printf</span><span class="p">(</span><span class="s">&quot;printvalueof: Addr: %p,  Value = %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="o">*</span><span class="n">p</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">12</span><span class="p">;</span>
+	<span class="kt">int</span> <span class="o">*</span><span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">x</span><span class="p">;</span>
+
+	<span class="n">printf</span><span class="p">(</span><span class="s">&quot;x = %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">);</span>
+	<span class="o">*</span><span class="n">p</span> <span class="o">=</span> <span class="mi">42</span><span class="p">;</span>
+	<span class="n">printf</span><span class="p">(</span><span class="s">&quot;main: Addr: %p, Value = %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="o">*</span><span class="n">p</span><span class="p">);</span>
+	<span class="cm">/* Pass the pointer to the function */</span>
+	<span class="n">printvalueofx</span><span class="p">(</span><span class="n">p</span><span class="p">);</span>
+
+	<span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></div>
+
 
   </article>
 

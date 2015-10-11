@@ -6,9 +6,69 @@
 </description>
     <link>/</link>
     <atom:link href="/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Wed, 30 Sep 2015 19:33:30 -0700</pubDate>
-    <lastBuildDate>Wed, 30 Sep 2015 19:33:30 -0700</lastBuildDate>
+    <pubDate>Sun, 11 Oct 2015 16:08:13 -0700</pubDate>
+    <lastBuildDate>Sun, 11 Oct 2015 16:08:13 -0700</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>HOWTO: Using Openssl C library</title>
+        <description>&lt;p&gt;For one of the &lt;a href=&quot;http://cryptopals.com/sets/1/challenges/7/&quot;&gt;Matasano crypto challenges&lt;/a&gt;, I had to decrypt the text 
+which was encrypted using AES in ECB mode. Everything about AES is actually documented by the 
+&lt;a href=&quot;http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf&quot;&gt;National Institute of Standards and Technology&lt;/a&gt;. 
+You can get all the algorithms behind AES encryption. It is probably not a good idea to implement it from scratch.
+Openssl has a well tested and widely used library which works.&lt;/p&gt;
+
+&lt;p&gt;This &lt;a href=&quot;https://www.openssl.org/docs/manmaster/crypto/EVP_EncryptInit.html&quot;&gt;Openssl library page&lt;/a&gt; gives a complete example 
+of how to use Openssl libraries. There are a few preparatory steps before you can use the instructions though. These 
+instructions are for Ubunutu like Linux distributions. These worked well on my Raspberry Pi too.&lt;/p&gt;
+
+&lt;h3 id=&quot;installing-openssl-library&quot;&gt;Installing Openssl library&lt;/h3&gt;
+
+&lt;p&gt;Following command installs all the C libraries needed to use Openssl with your C code.&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo apt-get install libssl-dev&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;For example, you will want to include the following header files:&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;cp&quot;&gt;#include &amp;lt;openssl/evp.h&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#include &amp;lt;openssl/ssl.h&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#include &amp;lt;openssl/rsa.h&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#include &amp;lt;openssl/x509.h&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;compiling-your-c-program-with-the-openssl-library&quot;&gt;Compiling your C program with the Openssl library&lt;/h3&gt;
+
+&lt;p&gt;Next, you can follow the instructions from the 
+&lt;a href=&quot;https://www.openssl.org/docs/manmaster/crypto/EVP_EncryptInit.html&quot;&gt;Openssl crypto library page&lt;/a&gt; to create 
+your C program. I have an example program in my &lt;a href=&quot;https://github.com/MahadevanSrinivasan/cryptopals/blob/master/s1c7.c&quot;&gt;Crytopals&lt;/a&gt;
+Github repository. While compiling the program you need to provide the ssl and crypto libraries. 
+Following command should do it:&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;gcc yourprogram.c -lssl -lcrypto&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;a-few-pointers-on-the-docrypt-function&quot;&gt;A few pointers on the &lt;code&gt;do_crypt&lt;/code&gt; function&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;If you are going to use the &lt;code&gt;do_crypt&lt;/code&gt; function for decrypting a text encrypted using electronic code book (ECB) mode, you should remove the following assert line since there is no Initialization Vector for ECB.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;n&quot;&gt;OPENSSL_assert&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;EVP_CIPHER_CTX_iv_length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ctx&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;The example code operates on the raw data. So, if you are trying to decrypt the data which is base64 encoded, your first step should be to convert it into raw data.&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Sat, 10 Oct 2015 16:07:00 -0700</pubDate>
+        <link>/2015/10/10/use-openssl-c-library.html</link>
+        <guid isPermaLink="true">/2015/10/10/use-openssl-c-library.html</guid>
+        
+        <category>Openssl</category>
+        
+        <category>C</category>
+        
+        <category>HOWTO</category>
+        
+        
+      </item>
     
       <item>
         <title>Hex to base64 conversion</title>
@@ -99,6 +159,52 @@
         <category>kids</category>
         
         <category>sudokids</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>Ultimate guide to pointers</title>
+        <description>&lt;p&gt;Pointers in C are one of the most confusing concepts. I am going to document
+how pointers work in the order of increasing complexity.&lt;/p&gt;
+
+&lt;h3 id=&quot;simple-example-of-an-integer-pointer&quot;&gt;Simple example of an integer pointer&lt;/h3&gt;
+
+&lt;p&gt;A pointer variable is specific to a specific type. For example, if you want
+to point to an integer variable, you define it as &lt;code&gt;int *p&lt;/code&gt;. The asterisk says
+that p can point to an integer. Right now, it is pointing to nothing. In C, nothing
+is &lt;code&gt;NULL&lt;/code&gt;. To make it point to an integer &lt;code&gt;x&lt;/code&gt;, you do it like on line 11. Below 
+example also shows how to pass the variable x as a pointer to a different function.&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;cp&quot;&gt;#include &amp;lt;stdio.h&amp;gt;&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;printvalueofx&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;printvalueof: Addr: %p,  Value = %d&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;12&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+	&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+	&lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;x = %d&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+	&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;42&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;main: Addr: %p, Value = %d&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+	&lt;span class=&quot;cm&quot;&gt;/* Pass the pointer to the function */&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;printvalueofx&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+	&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+</description>
+        <pubDate>Tue, 29 Sep 2015 16:36:00 -0700</pubDate>
+        <link>/2015/09/29/ultimate-guide-to-pointers.html</link>
+        <guid isPermaLink="true">/2015/09/29/ultimate-guide-to-pointers.html</guid>
+        
+        <category>pointers</category>
+        
+        <category>c</category>
         
         
       </item>

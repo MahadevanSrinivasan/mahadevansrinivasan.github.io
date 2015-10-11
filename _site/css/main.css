@@ -11,7 +11,7 @@ dl, dd, ol, ul, figure {
  * Basic styling
  */
 body {
-  font-family: PT Sans, Roboto, Arial, sans-serif;
+  font-family: "Palantino", "Georgia", "Times New Roman", serif;
   font-size: 16px;
   line-height: 1.5;
   font-weight: 300;
@@ -70,7 +70,7 @@ a {
     color: #1756a9; }
   a:hover {
     color: #111;
-    text-decoration: underline; }
+    text-decoration: none; }
 
 /**
  * Blockquotes
@@ -157,7 +157,7 @@ pre {
   letter-spacing: -1px;
   margin-bottom: 0;
   float: left;
-  font-family: Raleway, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: #4582EC; }
   .site-title, .site-title:visited {
     color: #4582EC; }
@@ -286,9 +286,11 @@ pre {
   margin-bottom: 30px; }
 
 .post-title {
-  font-size: 42px;
+  font-size: 36px;
   letter-spacing: -1px;
-  line-height: 1; }
+  line-height: 1;
+  font-family: 'Palantino', 'Georgia', serif;
+  font-weight: bold; }
   @media screen and (max-width: 800px) {
     .post-title {
       font-size: 36px; } }
