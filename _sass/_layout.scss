@@ -16,7 +16,6 @@
     letter-spacing: -1px;
     margin-bottom: 0;
     float: left;
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     color: #4582EC;
 
     &,
@@ -203,7 +202,6 @@
     font-size: 36px;
     letter-spacing: -1px;
     line-height: 1;
-    font-family: 'Palantino', 'Georgia', serif;
     font-weight: bold;
 
     @include media-query($on-laptop) {

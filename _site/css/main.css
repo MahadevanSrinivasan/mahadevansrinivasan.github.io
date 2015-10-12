@@ -58,7 +58,7 @@ li > ol {
  * Headings
  */
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 300; }
+  font-weight: bold; }
 
 /**
  * Links
@@ -157,7 +157,6 @@ pre {
   letter-spacing: -1px;
   margin-bottom: 0;
   float: left;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: #4582EC; }
   .site-title, .site-title:visited {
     color: #4582EC; }
@@ -289,7 +288,6 @@ pre {
   font-size: 36px;
   letter-spacing: -1px;
   line-height: 1;
-  font-family: 'Palantino', 'Georgia', serif;
   font-weight: bold; }
   @media screen and (max-width: 800px) {
     .post-title {

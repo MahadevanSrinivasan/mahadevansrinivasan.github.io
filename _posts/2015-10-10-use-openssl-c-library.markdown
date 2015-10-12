@@ -12,8 +12,8 @@ You can get all the algorithms behind AES encryption. It is probably not a good 
 Openssl has a well tested and widely used library which works.
 
 This [Openssl library page](https://www.openssl.org/docs/manmaster/crypto/EVP_EncryptInit.html) gives a complete example 
-of how to use Openssl libraries. There are a few preparatory steps before you can use the instructions though. These 
-instructions are for Ubunutu like Linux distributions. These worked well on my Raspberry Pi too.
+of how to use them. There are a few preparatory steps before you can use the instructions though. These 
+instructions are for Ubuntu like Linux distributions. These worked well on my Raspberry Pi too.
 
 ### Installing Openssl library
 
@@ -37,7 +37,7 @@ For example, you will want to include the following header files:
 Next, you can follow the instructions from the 
 [Openssl crypto library page](https://www.openssl.org/docs/manmaster/crypto/EVP_EncryptInit.html) to create 
 your C program. I have an example program in my [Crytopals](https://github.com/MahadevanSrinivasan/cryptopals/blob/master/s1c7.c)
-Github repository. While compiling the program you need to provide the ssl and crypto libraries. 
+Github repository. While linking the program you need to provide the ssl and crypto library names. 
 Following command should do it:
 
 {% highlight bash %}
