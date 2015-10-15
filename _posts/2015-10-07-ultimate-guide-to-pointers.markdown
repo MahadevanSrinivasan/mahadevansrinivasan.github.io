@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Ultimate guide to pointers"
-date:   2015-09-29 23:36:00
+date:   2015-10-07 19:54:00
 tags: pointers c
 ---
 
