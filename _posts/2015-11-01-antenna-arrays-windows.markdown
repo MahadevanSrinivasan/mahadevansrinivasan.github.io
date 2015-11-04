@@ -36,11 +36,14 @@ Suppose it is desired to design a sector pattern of beamwidth 60
 Design of array means finding the current excitations required on the array elements to give the required pattern. Since the currents and the radiation pattern are related through a fourier series, we can find the currents using that relation.
 
 \begin{equation}SF_A(w) = \sum_{m=-N}^N i_m e^{j2\pi m \frac{d}{\lambda} w}\end{equation}
+
 \begin{equation}SF_A(w) = \sum_{m=1}^N i_m e^{j\pi (2m-1) (\frac{d}{\lambda}) w} + \sum_{m=1}^N i_{-m} e^{j\pi (2m-1) (\frac{d}{\lambda}) w}\end{equation}  
 
 As we know, the Fourier Series expansion of a periodic signal \\( x(t) \\) results in an infinite number of terms.
 
-\begin{equation}c_n = \frac{1}{T_0} \int_{-T_0/2}^{T_0/2} x(t)e^{-jn2\pi f_0t} \,dt\end{equation} \begin{equation}x(t) = \sum_{n=-\infty}^{\infty}c_ne^{jn2\pi f_0t}\end{equation}
+\begin{equation}c_n = \frac{1}{T_0} \int_{-T_0/2}^{T_0/2} x(t)e^{-jn2\pi f_0t} \,dt\end{equation}
+
+\begin{equation}x(t) = \sum_{n=-\infty}^{\infty}c_ne^{jn2\pi f_0t}\end{equation}
 
 But, we can have only finite number of elements in the array. Hence, we truncate. This could be viewed as applying a rectangular window to the actual fourier series expansion. For simplicity, we consider only the odd elements case. It could easily be extended to even elements case.
 
