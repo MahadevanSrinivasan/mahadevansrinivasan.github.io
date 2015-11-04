@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Design of Antenna Arrays using Windows</title>
+  <meta name="description" content="When I was in grad school, I wrote a paper on how to design Antenna Arrays usingWindow functions. I uploaded it to Academia.edu and forgotall about it. Once ...">
+  <link rel="stylesheet" href="/Serif/cmun-serif.css">
+  <link href='https://fonts.googleapis.com/css?family=Lusitana' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="/2015/11/01/antenna-arrays-windows.html">
+  <link rel="alternate" type="application/rss+xml" title="The Shy Bulb" href="/feed.xml" />
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">The Shy Bulb</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About</a>
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+          <a class="page-link" href="/projects/">Projects</a>
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Design of Antenna Arrays using Windows</h1>
+    <p class="post-meta">Nov 1, 2015</p>
+  </header>
+
+  <article class="post-content">
+    <p>When I was in grad school, I wrote a paper on how to design Antenna Arrays using
+Window functions. I uploaded it to <a href="www.academia.edu">Academia.edu</a> and forgot
+all about it. Once in a while I get an email from Academia.edu that someone
+searched for me. I got intrigued today and did a google search for
+<a href="https://www.google.com/#q=antenna+array+windows">“Antenna Arrays Windows”</a> and
+was surprised to note that my paper is the second best match :stuck_out_tongue:. Here is my shameless
+blog article to get that traffic to come to my site instead. If you prefer a PDF version
+of the paper, you can find it <a href="(/assets/Ant_Report.pdf)">here</a>.</p>
+
+<h4 id="abstract">Abstract</h4>
+
+<p>The design of uniformly-spaced antenna arrays has a significant similarity to the design of FIR filters in signal processing and is illustrated first. This paper compares the effect of various windows on the shape of the radiation pattern of an antenna array. To illustrate the power of windows, we will design a sector pattern and a cosine pattern using various windows available namely Blackmann, Hanning, Hamming and the customizable Kaiser Window. Comparison is made on the radiation patterns produced whilst using each of the windows using the parameters of the generated pattern namely, beam width and side lobe level. To demonstrate the generality of the window design method, we see that there exists a window which gives an radiation pattern with all the side lobe levels having the same value which gives the same results as the Chebyshev Design Method for Uniformly Spaced arrays. Also, there is a window for Taylor Array Design Method.</p>
+
+<h3 id="introduction">Introduction</h3>
+
+<p>The design of uniformly spaced arrays is extremely similar to the problem of FIR filter design. So, many methods that are used there can be used in antenna array design. One such method is the window based FIR filter design. We already know that the fourier series method used in antenna array design is also there in FIR filter design. We first explain the fourier series method briefly before going into the Window Method.</p>
+
+<h4 id="fourier-series-method">Fourier Series Method</h4>
+<p>Suppose it is desired to design a sector pattern of beamwidth 60</p>
+
+<p>\begin{equation}
+\ f(\theta) = \left\{
+\begin{array}{l l}
+  1 &amp; \quad 0^\circ \leq  \theta \leq 60 ^\circ \\
+  0 &amp; \quad elsewhere
+\end{array} \right. \
+\end{equation}</p>
+
+<p>Design of array means finding the current excitations required on the array elements to give the required pattern. Since the currents and the radiation pattern are related through a fourier series, we can find the currents using that relation.</p>
+
+<p>\begin{equation}SF_A(w) = \sum_{m=-N}^N i_m e^{j2\pi m \frac{d}{\lambda} w}\end{equation}
+\begin{equation}SF_A(w) = \sum_{m=1}^N i_m e^{j\pi (2m-1) (\frac{d}{\lambda}) w} + \sum_{m=1}^N i_{-m} e^{j\pi (2m-1) (\frac{d}{\lambda}) w}\end{equation}</p>
+
+<p>As we know, the Fourier Series expansion of a periodic signal \( x(t) \) results in an infinite number of terms.</p>
+
+<p>\begin{equation}c_n = \frac{1}{T_0} \int_{-T_0/2}^{T_0/2} x(t)e^{-jn2\pi f_0t} \,dt\end{equation} \begin{equation}x(t) = \sum_{n=-\infty}^{\infty}c_ne^{jn2\pi f_0t}\end{equation}</p>
+
+<p>But, we can have only finite number of elements in the array. Hence, we truncate. This could be viewed as applying a rectangular window to the actual fourier series expansion. For simplicity, we consider only the odd elements case. It could easily be extended to even elements case.</p>
+
+<p>\begin{equation}SF_A(w) = \sum_{m=-\infty}^{\infty} i_m w_m e^{j2\pi m \frac{d}{\lambda}w}\end{equation}</p>
+
+<p>where, \( w_m \) is the window sequence which is defined as follows.</p>
+
+<p>\begin{equation}
+w(m) = \left\{
+\begin{array}{l l}
+  1 &amp; \quad -N \leq  m \leq N \\
+  0 &amp; \quad elsewhere
+\end{array} \right.
+\end{equation}</p>
+
+<p>The effect of using the window is seen in the obtained approximate radiation pattern in the form of a main lobe width and side lobe levels. These are the signatures of the rectangular window function. Intuitively, the side lobes could be explained as due to the abrupt truncation of the fourier series coefficients.</p>
+
+<p>The problem with using this window is that the ratio of the main lobe peak to the side lobe peak is always constant and doesn’t depend upon the number of elements we use. So, in an application where there is a need for a side lobe level which is significantly lesser than the main lobe peak, we cannot use this method to design the array.</p>
+
+<p><img src="/assets/plot1.jpg" alt="Fourier series method output" /></p>
+
+<h4 id="window-based-design">Window based design</h4>
+<p>To reduce the side lobe levels in the generated pattern, we could smoothly taper the current distribution obtained from the Fourier Series Method using a properly chosen window. There are several windows available in the literature with each having some advantages over the other. Here, we will study the effect of using the following windows : Hann, Hamming, Blackman, Kaiser. These windows are defined by the following equations.</p>
+
+<h5 id="hann">Hann</h5>
+<p>\begin{equation}
+w(n) = \left\{
+\begin{array}{l l}
+  0.5 - 0.5\cos(2\pi n/N), &amp; \quad 0 \leq  n \leq N \\
+  0, &amp; \quad otherwise
+\end{array} \right.
+\end{equation}</p>
+
+<h5 id="hamming">Hamming</h5>
+<p>\begin{equation}
+w(n) = \left\{
+\begin{array}{l l}
+  0.54 - 0.46\cos(2\pi n/N), &amp; \quad 0 \leq  n \leq N \\
+  0, &amp; \quad otherwise
+\end{array} \right.
+\end{equation}</p>
+
+<h5 id="blackman">Blackman</h5>
+<p>\begin{equation}
+w(n) = \left\{
+\begin{array}{l l}
+  0.42 - 0.5\cos(2\pi n/N) + 0.08\cos(4\pi n/N), &amp; \quad 0 \leq  n \leq N \\
+  0, &amp; \quad otherwise
+\end{array} \right.
+\end{equation}</p>
+
+<p>Through a proper choice of the shape and the length of the window, we could control the resulting approximate radiation pattern. The windows defined in the above equations are fixed and offer very little in terms of control to the designer. This is where the Kaiser Window comes in. It gives one more parameter (\( \beta \)) to the designer which helps in controlling the shape of the window.</p>
+
+<p>The compromise between the width of the main lobe and the area under the side lobe can be obtained by having a window function that is concentrated around 0 in frequency domain. This was considered in classic papers by Slepian et al. (1961). Kaiser(1966,1974) came up with a near-optimal window using modified first kind Bessel Function of the zeroth order. It is defined as follows</p>
+
+<p>\begin{equation}
+w(n) = \left\{
+\begin{array}{l l}
+  \frac{I_0[\beta(1-[(n-\alpha)/\alpha]^2)^{1/2}]}{I_0(\beta)}, &amp; \quad 0 \leq  n \leq N \\
+  0, &amp; \quad otherwise
+\end{array} \right.
+\end{equation}
+where \( \alpha = N/2 \) and \( I_0(.) \) is the Modified Bessel Function of zeroth order and first kind.</p>
+
+<p>In figure 2, we have plotted the window function for various values of \( \beta \) and a fixed value of M. In figure 3, we have plotted the fourier transform of the window functions. Finally, we have plotted the fourier transforms of windows with same \( \beta \) parameter but different N parameter. For a more detailed reference on windows, refer to the paper by Harris[2].</p>
+
+<p><img src="/assets/plot2.png" alt="Kaiser Window Spectrum for various values of beta with M = 21" /></p>
+
+<p><img src="/assets/plot3.png" alt="Kaiser Window Spectrum for various values of M with beta = 6" /></p>
+
+<p>Clearly, the parameter \( \beta \) decides the side-Lobe Level. By keeping \( \beta \) fixed and by increasing N, we could achieve a reduced main lobe width without any effect on the side lobe Level. Kaiser also came up with a pair of formulae that allows the designer to estimate the parameters M and \( \beta \) for the required specification of peak approximate error. Peak Approximate Error as the name implies is the maximum error between the desired and the approximate response. Peak Approximate Error in a way specifies the maximum side lobe level \(A = -20log_{10}(\delta) \). The empirical relation is as follows:
+\begin{equation}
+\beta = \left\{
+\begin{array}{l l}
+  0.1102(A-8.7), &amp; \quad A &gt; 50, \\
+  0.5842(A - 21)^{0.4} + 0.07886(A-21), &amp; \quad 21 \leq A \leq 50, \\
+  0.0, &amp; \quad A &lt; 21.
+\end{array} \right.
+\end{equation}
+Kaiser also determined that to achieve the required values of A and the \( \Delta \omega \) (called the transition width), N must satisfy \( N = \frac{A-8}{2.285\Delta \omega} \)</p>
+
+<p>Of particular importance are the special windows Chebychev and Taylor. The use of these windows result in a radiation pattern which are comparable to the results obtained using the Dolph’s Method [3] and Taylor’s Method [4]. We say comparable since we don’t obtain the exact equiripple sidelobes since multiplying the Fourier Series Method current coefficients with the window is equivalent to convolving the Fourier transform of the window function with that of the approximate radiation pattern.</p>
+
+<h4 id="examples">Examples</h4>
+
+<p>First, we consider the example of a sector pattern as defined in equation (1) using various fixed windows. We have chosen an array having 21 elements to compare the performances of various windows. Clearly, we see a reduced side lobe level compared to the rectangular window output. But, the catch is we have an increased main lobe width. Performance of the sector pattern synthesis using window method is summarized in Table 1.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Window</th>
+      <th style="text-align: center">Beamwidth</th>
+      <th style="text-align: center">Sidelobe Level</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">Rectangular</td>
+      <td style="text-align: center">68</td>
+      <td style="text-align: center">-20.8</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Hamming</td>
+      <td style="text-align: center">85.6</td>
+      <td style="text-align: center">-55.22</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Hanning</td>
+      <td style="text-align: center">81</td>
+      <td style="text-align: center">-44.03</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Blackman</td>
+      <td style="text-align: center">116</td>
+      <td style="text-align: center">-72.63</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Table 1: Performance of various windows for Sector Pattern Synthesis</p>
+
+<p>To see how the use of window affects a different pattern, we next consider the example of a cosine pattern [5] with main lobe maximum at 0◦ and a half-power beamwidth of 30◦. We see the performance while using various fixed windows is similar to that obtained for a Sector Pattern in terms of the Beam Width. But, the side lobe level performance is better for the Cosine Pattern synthesis. This can explained due to the smoothness of the pattern we started with in the first place. Performance of the cosine pattern synthesis using window Method is summarized in Table 2.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Window</th>
+      <th style="text-align: right">Beamwidth</th>
+      <th style="text-align: center">Sidelobe Level</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">Rectangular</td>
+      <td style="text-align: right">68.1116</td>
+      <td style="text-align: center">-39.2285</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Hamming</td>
+      <td style="text-align: right">85.6873</td>
+      <td style="text-align: center">-63.4069</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Hanning</td>
+      <td style="text-align: right">81.0832</td>
+      <td style="text-align: center">-61.1224</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">Blackman</td>
+      <td style="text-align: right">116.4233</td>
+      <td style="text-align: center">-94.7030</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Table 2: Performance of various windows for Cosine Pattern Synthesis</p>
+
+<p><img src="/assets/plot4.png" alt="Sector Pattern Synthesis using various fixed windows (Array size 21)" /></p>
+
+<h4 id="kaiser-window-design-of-a-sector-pattern">Kaiser window design of a sector pattern</h4>
+
+<p>Suppose it is desired to have a sector pattern with beam width of 60 degrees with a side lobe level of -26 dB and with a transition width of 0.2 (in normalized frequency). The design procedure is as follows :</p>
+
+<ol>
+  <li>Compute the required value of \( \beta \) using equation (12) with \( A = -26 dB \).</li>
+  <li>Compute the number of elements using equation (13) with \( \Delta \omega = 0.2 \).</li>
+  <li>Compute the currents using the Fourier series method.</li>
+  <li>Compute the window coefficients using the relation in (11).</li>
+  <li>Form the required currents by multiplying the currents obtained using the Fourier series method and the window function values.</li>
+</ol>
+
+<p>For the given design specifications, we obtained a value of \( \beta = 1.5064 \) and M = 41. The approximate radiation pattern obtained while using these values are shown in figure 5.
+The Kaiser window design method provides a procedure to calculate the number of elements required in the array to achieve the specifications. To illustrate the improvement obtained by using Kaiser Window, we have plotted the radiation pattern of the array with size 41 while using a rectangular Window. Clearly, there is a 6 dB improvement.</p>
+
+<p><img src="/assets/plot5.png" alt="Sector Pattern Synthesis using Chebyshev and Taylor Windows (Array size 21)" /></p>
+
+<p><img src="/assets/plot6.png" alt="Cosine Pattern Synthesis using various fixed windows (Array size 21)" /></p>
+
+<p><img src="/assets/plot7.png" alt="Sector Pattern Synthesis using Kaiser Window (Array Size 41)" /></p>
+
+<h4 id="conclusion">Conclusion</h4>
+
+<p>In essence, all the methods that are available for design of uniformly spaced array can be viewed as a special case of the window design method with a proper choice of window. We have demonstrated the generality by showing examples of Fourier Series Method and Chebyshev Method. Also, we have outlined a procedure for array design using Kaiser Window where we could specify the constraints in the required approximate pattern and could come up with a window function and the length of the array required to realize such a pattern.</p>
+
+<h4 id="references">References</h4>
+<ul>
+  <li>[1] A. V. Oppenheim and R. W. Schafer, <em>Digital Signal Processing</em>. NJ: Prentice- Hall: Englewood Cliffs, 1975.</li>
+  <li>[2] F. J. Harris, “On the use of windows for harmonic analysis with discrete fourier transform,” <em>IEEE</em>, vol. 66, 1978.</li>
+  <li>[3] C.L.Dolph, “A current distribution for broadside arrays which optimizes the relationship between beamwith and sidelobe level,” <em>IRE</em>, vol. 34, pp. 335– 348, 1946.</li>
+  <li>[4] T. T. Taylor, “Design of line-source antennas for narrow beamwidth and low sidelobes,” <em>IRE Transactions Antennas Propagation</em>, vol. AP-3, pp. 16–28, 1955.</li>
+  <li>[5] D. H.Werner and A. J.Ferraro, “Cosine pattern synthesis for single and multiple main beam uniformly spaced linear arrays,” <em>IEEE</em>, vol. 37, no. 11, pp. 1480–1484, 1989.</li>
+</ul>
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">The Shy Bulb</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col  footer-col-1">
+        <ul class="contact-list">
+          <li>The Shy Bulb</li>
+          <li><a href="mailto:crossthelinedb {at} gmail {dot} com">crossthelinedb {at} gmail {dot} com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/MahadevanSrinivasan">
+              <span class="icon  icon--github">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+                </svg>
+              </span>
+
+              <span class="username">MahadevanSrinivasan</span>
+            </a>
+          </li>
+          
+
+          
+          <li>
+            <a href="https://twitter.com/macsdev">
+              <span class="icon  icon--twitter">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809
+                  c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/>
+                </svg>
+              </span>
+
+              <span class="username">macsdev</span>
+            </a>
+          </li>
+          
+        </ul>
+      </div>
+
+    </div>
+
+  </div>
+  <script type="text/javascript"
+            src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+
+</footer>
+
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-61562983-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+
+
+  </body>
+
+</html>

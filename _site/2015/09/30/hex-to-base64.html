@@ -9,6 +9,8 @@
   <title>Hex to base64 conversion</title>
   <meta name="description" content="I came across another set of online coding challenges called The Matasano Crypto Challenges. From a quick google search, it seems like lots of people have tr...">
   <link rel="stylesheet" href="/Serif/cmun-serif.css">
+  <link href='https://fonts.googleapis.com/css?family=Lusitana' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" href="/css/main.css">
   <link rel="canonical" href="/2015/09/30/hex-to-base64.html">
   <link rel="alternate" type="application/rss+xml" title="The Shy Bulb" href="/feed.xml" />
@@ -79,13 +81,13 @@
 <h4 id="understanding-the-output">Understanding the Output</h4>
 <p>A base 64 <em>digit</em> needs a minimum of 6 bits. Another way of looking at this is, if we represent this as an integer, we won’t exceed the value of 63. So, the input “4D616E” can be represented as 4 base-64 digits. Why? Look at the value of the input in binary:</p>
 
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">8-bit grouping: <span class="m">01001101</span> <span class="m">01100001</span> 01101110
-6-bit grouping: <span class="m">010011</span> <span class="m">010110</span> <span class="m">000101</span> 101110</code></pre></div>
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">8-bit grouping: <span class="m">01001101</span> <span class="m">01100001</span> 01101110
+6-bit grouping: <span class="m">010011</span> <span class="m">010110</span> <span class="m">000101</span> 101110</code></pre></figure>
 
 <h4 id="doing-the-conversion">Doing the conversion</h4>
 <p>First step is to convert the set of hex values into an intermediate representation. Why not good ol’ decimal system? Following function takes in a hex character and spits out its decimal value.</p>
 
-<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">hexchartoint</span><span class="p">(</span><span class="kt">char</span> <span class="n">hex</span><span class="p">)</span>
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">hexchartoint</span><span class="p">(</span><span class="kt">char</span> <span class="n">hex</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="cm">/* Convert incoming character to lower case first */</span>
   <span class="n">hex</span> <span class="o">=</span> <span class="n">tolower</span><span class="p">((</span><span class="kt">int</span><span class="p">)</span><span class="n">hex</span><span class="p">);</span>
@@ -96,29 +98,29 @@
 
   <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Not sure what to do with this input: %c</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">hex</span><span class="p">);</span>
   <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-<span class="p">}</span></code></pre></div>
+<span class="p">}</span></code></pre></figure>
 
 <p>Next, we need to somehow represent our 6 hex input into an equivalent decimal representation. Keep in mind, we don’t have a 6 digit hexadecimal number. We have three 2 digit hexadecimal numbers. This distinction is important and is the reason why we combine them using a logical or and not addition. So, we want 0x4D converted to 77, 0x61 converted to 91 and 0x6E converted to 110. And finally all of them logical or-ed together.</p>
 
-<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">long</span> <span class="n">temp</span> <span class="o">=</span> <span class="n">hexchartoint</span><span class="p">(</span><span class="n">input</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">*</span><span class="mi">16</span> <span class="o">+</span> <span class="n">hexchartoint</span><span class="p">(</span><span class="n">input</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]);</span>
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">long</span> <span class="n">temp</span> <span class="o">=</span> <span class="n">hexchartoint</span><span class="p">(</span><span class="n">input</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">*</span><span class="mi">16</span> <span class="o">+</span> <span class="n">hexchartoint</span><span class="p">(</span><span class="n">input</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]);</span>
 <span class="n">temp</span> <span class="o">=</span> <span class="n">temp</span><span class="o">&lt;&lt;</span><span class="mi">8</span> <span class="o">|</span> <span class="p">(</span><span class="n">hexchartoint</span><span class="p">(</span><span class="n">input</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">])</span><span class="o">*</span><span class="mi">16</span> <span class="o">+</span> <span class="n">hexchartoint</span><span class="p">(</span><span class="n">input</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">3</span><span class="p">]));</span>
-<span class="n">temp</span> <span class="o">=</span> <span class="n">temp</span><span class="o">&lt;&lt;</span><span class="mi">8</span> <span class="o">|</span> <span class="p">(</span><span class="n">hexchartoint</span><span class="p">(</span><span class="n">input</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">4</span><span class="p">])</span><span class="o">*</span><span class="mi">16</span> <span class="o">+</span> <span class="n">hexchartoint</span><span class="p">(</span><span class="n">input</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">5</span><span class="p">]));</span></code></pre></div>
+<span class="n">temp</span> <span class="o">=</span> <span class="n">temp</span><span class="o">&lt;&lt;</span><span class="mi">8</span> <span class="o">|</span> <span class="p">(</span><span class="n">hexchartoint</span><span class="p">(</span><span class="n">input</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">4</span><span class="p">])</span><span class="o">*</span><span class="mi">16</span> <span class="o">+</span> <span class="n">hexchartoint</span><span class="p">(</span><span class="n">input</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">5</span><span class="p">]));</span></code></pre></figure>
 
 <p>Next step would be to look at individual 6-bit groups and convert it to base 64. <a href="https://en.wikipedia.org/wiki/Base64">Base 64</a> wiki page has the information about what letters to use. In C, this character array will do the trick:</p>
 
-<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">char</span> <span class="n">map</span><span class="p">[]</span> <span class="o">=</span> <span class="s">&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/&quot;</span><span class="p">;</span></code></pre></div>
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">char</span> <span class="n">map</span><span class="p">[]</span> <span class="o">=</span> <span class="s">&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/&quot;</span><span class="p">;</span></code></pre></figure>
 
 <p>Finally, we loop through the 6 bit values and store them in the output character array:</p>
 
-<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span> <span class="n">j</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span><span class="o">--</span><span class="p">)</span>
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span> <span class="n">j</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span><span class="o">--</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="n">output</span><span class="p">[</span><span class="n">k</span><span class="o">++</span><span class="p">]</span> <span class="o">=</span> <span class="n">map</span><span class="p">[</span><span class="n">temp</span><span class="o">&gt;&gt;</span><span class="n">j</span><span class="o">*</span><span class="mi">6</span><span class="o">&amp;</span><span class="mh">0x3F</span><span class="p">];</span>
-<span class="p">}</span></code></pre></div>
+<span class="p">}</span></code></pre></figure>
 
 <h4 id="running-the-program">Running the program</h4>
 <p>Another thing I learned today is how to send the data from a file as command line arguments to your program. For example, if you have program.exe and you want to send the text from input.txt as command line parameters, you could do the following:</p>
 
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">program.exe <span class="sb">`</span> &lt; input.txt<span class="sb">`</span></code></pre></div>
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">program.exe <span class="sb">`</span> &lt; input.txt<span class="sb">`</span></code></pre></figure>
 
 <p>There are other ways of doing this. But, this was the simplest way.</p>
 
@@ -182,6 +184,9 @@
     </div>
 
   </div>
+  <script type="text/javascript"
+            src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
 
 </footer>
 

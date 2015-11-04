@@ -6,17 +6,13 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>The Shy Bulb</title>
-  <meta name="description" content="Stream to XBMC Sudoku Sudokids Pickpocket Raspberry Pi
-">
-  <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" />
-  <link rel="stylesheet" type="text/css" href="css/justcast.css" />
-  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"/>
-  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js" type="text/JAVASCRIPT"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" type="text/JAVASCRIPT"></script>
-  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js" type="text/JAVASCRIPT"></script>  
+  <title>Announcing shut up and cast</title>
+  <meta name="description" content="Thanks for the 4000 odd users of my previous chrome plugin Stream to XBMC, I have decided to extend the plugin’s capability to be used with the most popular ...">
+  <link rel="stylesheet" href="/Serif/cmun-serif.css">
+  <link href='https://fonts.googleapis.com/css?family=Lusitana' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="/justcast.html">
+  <link rel="canonical" href="/2015/10/18/announcing-shutupandcast.html">
   <link rel="alternate" type="application/rss+xml" title="The Shy Bulb" href="/feed.xml" />
 </head>
 
@@ -66,48 +62,42 @@
 
     <div class="page-content">
       <div class="wrapper">
-        <article class='post-content'>
-<div class='text-center'>
-    <h2>Shut up and Cast!</h2>
-    <div class="row">
-        <button type='button' class='btn btn-primary' id='castme'>Cast</button>
-        <button type='button' class='btn btn-primary' id='stop'>Stop</button>
-    </div>
+        <div class="post">
 
-    <div class="row">
-        <p id="hoverTime"><br></p>
-    </div>
-    <br>
+  <header class="post-header">
+    <h1 class="post-title">Announcing shut up and cast</h1>
+    <p class="post-meta">Oct 18, 2015</p>
+  </header>
 
-    <div class="row">
-        <div class="col-md-1 col-md-offset-2">
-            <i id="play" class="fa fa-play fa-2x"></i>
-            <i id="pause" class="fa fa-pause fa-2x hidden"></i>
-        </div>
-        <div id="progress" class="progress col-md-6" style="height: 30px;">
-            <div id ="progressBar" class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style= "width: 0%;">
-            </div>
-        </div>
-        <div class="col-md-1">
-            <i class="fa fa-volume-up fa-2x"></i>
-        </div>
-        </div> <!-- end progress -->
+  <article class="post-content">
+    <p>Thanks for the 4000 odd users of my previous chrome plugin <a href="https://chrome.google.com/webstore/developer/edit/acjnpiepgaicjaeiphocgkekciflonfi">Stream to XBMC</a>, I have decided to extend the plugin’s capability to be used with the most popular casting device and the one which started it all, Chromecast. If you have a Chromecast and want to watch videos from sites for which there is no Chromecast app, you have come to the right place.</p>
 
-        <div class="row">
-            <div id="timeleft" class="text-center"></div>
-        </div>
+<p><a href="https://chrome.google.com/webstore/developer/edit/eikiogacofhnibkedemjpfgammfhdcgf">Shut up and cast</a> is designed to do just that. It supports the following sites:</p>
+
+<ul>
+  <li>gorillavid.in</li>
+  <li>einthusan.com</li>
+  <li>allmyvideos.net</li>
+  <li>vidto.me</li>
+  <li>played.to</li>
+  <li>megafiles.se</li>
+  <li>bestreams.net</li>
+  <li>vodmine.com</li>
+  <li>ishared.eu</li>
+  <li>thevideo.me</li>
+</ul>
+
+<p>What more? You can control the video playback from your browser window too. I promise, I will write up a phone app to control the playback next :).</p>
+
+<h3 id="how-to-use-the-plugin">How to use the plugin?</h3>
+
+<p>Install the plugin first (Duh!). Go to any video link from the above list of sites. At the top right corner of you Chrome Address Bar, you should see a small icon when the plugin detects a video link which can be pushed to your Chromecast. Click the icon, it should open another tab from which you can choose your Chromecast (it can take a couple of seconds to detect the Chromecast). Select your chromecast, sit back and enjoy!!!</p>
+
+<p><img src="/assets/shutupandcast.gif" alt="" /></p>
+
+  </article>
+
 </div>
-</article>
-
-<script src="js\script.js" type="text/JAVASCRIPT"></script>
-<script type="text/javascript">
-var justCastPlayer = new JustCast();
-</script>
-<script language="javascript">
-var text = window.location.search;
-var videoLink = decodeURIComponent(text.substring(text.indexOf("=")+1, text.length));
-</script>
-
 
       </div>
     </div>

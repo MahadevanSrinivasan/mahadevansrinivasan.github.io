@@ -11,13 +11,16 @@ dl, dd, ol, ul, figure {
  * Basic styling
  */
 body {
-  font-family: "Computer Modern Serif", "Palantino", "Georgia", "Times New Roman", serif;
+  font-family: "Lusitana", "Palantino", "Georgia", "Times New Roman", serif;
   font-size: 18px;
   line-height: 1.5;
   font-weight: 300;
   color: #111;
   background-color: #fdfdfd;
   -webkit-text-size-adjust: 100%; }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "PT Sans", sans-serif; }
 
 /**
  * Set `margin-bottom` to maintain vertical rhythm
@@ -26,7 +29,7 @@ h1, h2, h3, h4, h5, h6,
 p, blockquote, pre,
 ul, ol, dl, figure,
 .highlight {
-  margin-bottom: 15px; }
+  margin-bottom: 14px; }
 
 /**
  * Images
@@ -48,7 +51,7 @@ figcaption {
  * Lists
  */
 ul, ol {
-  margin-left: 30px; }
+  margin-left: 28px; }
 
 li > ul,
 li > ol {
@@ -78,7 +81,7 @@ a {
 blockquote {
   color: #828282;
   border-left: 4px solid #e8e8e8;
-  padding-left: 15px;
+  padding-left: 14px;
   font-size: 18px;
   letter-spacing: -1px;
   font-style: italic; }
@@ -110,18 +113,18 @@ pre {
  * Wrapper
  */
 .wrapper {
-  max-width: -webkit-calc(800px - (30px * 2));
-  max-width: calc(800px - (30px * 2));
+  max-width: -webkit-calc(800px - (28px * 2));
+  max-width: calc(800px - (28px * 2));
   margin-right: auto;
   margin-left: auto;
-  padding-right: 30px;
-  padding-left: 30px; }
+  padding-right: 28px;
+  padding-left: 28px; }
   @media screen and (max-width: 800px) {
     .wrapper {
-      max-width: -webkit-calc(800px - (30px));
-      max-width: calc(800px - (30px));
-      padding-right: 15px;
-      padding-left: 15px; } }
+      max-width: -webkit-calc(800px - (28px));
+      max-width: calc(800px - (28px));
+      padding-right: 14px;
+      padding-left: 14px; } }
 
 /**
  * Clearfix
@@ -208,11 +211,11 @@ pre {
  */
 .site-footer {
   border-top: 1px solid #e8e8e8;
-  padding: 30px 0; }
+  padding: 28px 0; }
 
 .footer-heading {
   font-size: 18px;
-  margin-bottom: 15px; }
+  margin-bottom: 14px; }
 
 .contact-list,
 .social-media-list {
@@ -222,44 +225,44 @@ pre {
 .footer-col-wrapper {
   font-size: 15px;
   color: #828282;
-  margin-left: -15px; }
+  margin-left: -14px; }
 
 .footer-col {
   float: left;
-  margin-bottom: 15px;
-  padding-left: 15px; }
+  margin-bottom: 14px;
+  padding-left: 14px; }
 
 .footer-col-1 {
-  width: -webkit-calc(35% - (30px / 2));
-  width: calc(35% - (30px / 2)); }
+  width: -webkit-calc(35% - (28px / 2));
+  width: calc(35% - (28px / 2)); }
 
 .footer-col-2 {
-  width: -webkit-calc(20% - (30px / 2));
-  width: calc(20% - (30px / 2)); }
+  width: -webkit-calc(20% - (28px / 2));
+  width: calc(20% - (28px / 2)); }
 
 .footer-col-3 {
-  width: -webkit-calc(45% - (30px / 2));
-  width: calc(45% - (30px / 2)); }
+  width: -webkit-calc(45% - (28px / 2));
+  width: calc(45% - (28px / 2)); }
 
 @media screen and (max-width: 800px) {
   .footer-col-1,
   .footer-col-2 {
-    width: -webkit-calc(50% - (30px / 2));
-    width: calc(50% - (30px / 2)); }
+    width: -webkit-calc(50% - (28px / 2));
+    width: calc(50% - (28px / 2)); }
 
   .footer-col-3 {
-    width: -webkit-calc(100% - (30px / 2));
-    width: calc(100% - (30px / 2)); } }
+    width: -webkit-calc(100% - (28px / 2));
+    width: calc(100% - (28px / 2)); } }
 @media screen and (max-width: 600px) {
   .footer-col {
     float: none;
-    width: -webkit-calc(100% - (30px / 2));
-    width: calc(100% - (30px / 2)); } }
+    width: -webkit-calc(100% - (28px / 2));
+    width: calc(100% - (28px / 2)); } }
 /**
  * Page content
  */
 .page-content {
-  padding: 30px 0; }
+  padding: 28px 0; }
 
 .page-heading {
   font-size: 20px; }
@@ -268,7 +271,7 @@ pre {
   margin-left: 0;
   list-style: none; }
   .post-list > li {
-    margin-bottom: 30px; }
+    margin-bottom: 28px; }
 
 .post-meta {
   font-size: 15.75px;
@@ -282,7 +285,7 @@ pre {
  * Posts
  */
 .post-header {
-  margin-bottom: 30px; }
+  margin-bottom: 28px; }
 
 .post-title {
   font-size: 36px;
@@ -294,7 +297,7 @@ pre {
       font-size: 36px; } }
 
 .post-content {
-  margin-bottom: 30px; }
+  margin-bottom: 28px; }
   .post-content h2 {
     font-size: 32px; }
     @media screen and (max-width: 800px) {
