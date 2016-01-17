@@ -13,7 +13,7 @@ This part is well documented in [Google's help articles](https://developer.chrom
 "permissions": [
     "tabs"
   ],
-{% endhightlight %}
+{% endhighlight %}
 
 Now we are ready to open a new tab. We need to do this from your `background.js` script. In the following example, we open a new tab when the *page action* button is clicked. If your extenstion does not use a *page action*, you could modify it to be used with a button click or some other event. Notice the **question mark** at the end of the URL. Of course, there should be a global variable named *data* which contains the get parameters.
 
