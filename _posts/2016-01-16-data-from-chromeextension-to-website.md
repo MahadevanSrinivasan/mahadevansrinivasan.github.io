@@ -9,7 +9,7 @@ tags: chrome extension get post request
 
 This part is well documented in [Google's help articles](https://developer.chrome.com/extensions/tabs#method-create). For completeness sake, let us start with discussing this. Before we create a new tab, we should add permissions for accessing "chrome.tabs" in your `manifest.json`.
 
-{% highlight %}
+{% highlight json %}
 "permissions": [
     "tabs"
   ],
