@@ -59,7 +59,7 @@ chrome.pageAction.onClicked.addListener(function sendData() {
     }
   );  
 });
-{% endhightlight %}
+{% endhighlight %}
 
 #### Code to be placed in send.html
 
@@ -73,7 +73,7 @@ chrome.pageAction.onClicked.addListener(function sendData() {
     <script src="post.js"></script>
   </body>
 </html>
-{% endhightlight %}
+{% endhighlight %}
 
 #### Code to be placed in post.js
 
@@ -99,4 +99,4 @@ chrome.pageAction.onClicked.addListener(function sendData() {
 
 chrome.runtime.onMessage.addListener(onMessageHandler);
 
-{% endhightlight %}
+{% endhighlight %}
