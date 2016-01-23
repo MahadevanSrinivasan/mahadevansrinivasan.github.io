@@ -77,8 +77,8 @@ $('#pause').click(function()
 function pauseSuccess()
 {
   console.log("Pause Success");
-  $('#play').addClass("hidden");
-  $('#pause').removeClass("hidden");
+  $('#pause').addClass("hidden");
+  $('#play').removeClass("hidden");
 }
 
 function playPauseFailure()
@@ -98,8 +98,8 @@ $('#play').click(function()
 function playSuccess()
 {
   console.log("Play Success");
-  $('#pause').addClass("hidden");
-  $('#play').removeClass("hidden");
+  $('#play').addClass("hidden");
+  $('#pause').removeClass("hidden");
 }
 
 function launchApp() 
