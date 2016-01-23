@@ -72,7 +72,7 @@ $('#pause').click(function()
   }
   
   currentMediaSession.pause(null, pauseSuccess, playPauseFailure);
-}
+});
 
 function pauseSuccess()
 {
@@ -93,7 +93,7 @@ $('#play').click(function()
   }
   
   currentMediaSession.play(null, playSuccess, playPauseFailure);
-}
+});
 
 function playSuccess()
 {
