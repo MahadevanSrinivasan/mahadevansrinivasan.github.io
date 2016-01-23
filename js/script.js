@@ -65,6 +65,42 @@ $('#castme').click(function()
   launchApp();
 });
 
+$('#pause').click(function()
+{
+  if(!session || !currentMediaSession) {
+    return;
+  }
+  
+  currentMediaSession.pause(null, pauseSuccess, playPauseFailure);
+}
+
+function pauseSuccess()
+{
+  console.log("Pause Success");
+  $('#play').addClass("hidden");
+  $('#pause').removeClass("hidden");
+}
+
+function playPauseFailure()
+{
+  console.log("Pause Failure");
+}
+
+$('#play').click(function()
+{
+  if(!session || !currentMediaSession) {
+    return;
+  }
+  
+  currentMediaSession.play(null, playSuccess, playPauseFailure);
+}
+
+function playSuccess()
+{
+  console.log("Play Success");
+  $('#pause').addClass("hidden");
+  $('#play').removeClass("hidden");
+}
 
 function launchApp() 
 {
