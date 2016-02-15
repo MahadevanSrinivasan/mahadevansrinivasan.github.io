@@ -51,7 +51,7 @@ function periodicFunction()
 }
 {% endhighlight %}
 
-This is perfect. But, you need to be careful that the periodicFunction won't be called more than once. If that happens, there is nothing stopping from creating two timers or worse several. That's why it is a good idea to save the timer information to a global variable. Wit thism you can clear the timer if needed to stop the periodic update. And then, when needed again, you can start it.
+This is perfect. But, you need to be careful that the periodicFunction won't be called more than once. If that happens, there is nothing stopping from creating two timers or worse several. That's why it is a good idea to save the timer information to a global variable. With this you can clear the timer if needed to stop the periodic update. And then, when needed again, you can start it.
 
 {% highlight js %}
 if(globalTimer)
