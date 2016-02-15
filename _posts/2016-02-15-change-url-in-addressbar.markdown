@@ -5,7 +5,7 @@ date:   2016-02-15 12:51:00
 tags: javascript chromeextension
 ---
 
-While developing my chrome plugin [Shut up and cast]({% post_url 2015-10-18-announcing-shutupandcast %}), I learned a lot of tricks in Javascript. I shared one of them in them in the [last post]({% post_url 2016-01-16-data-from-chromeextension-to-website }). In this post, I am planning to share a few small tricks.
+While developing my chrome plugin [Shut up and cast]({% post_url 2015-10-18-announcing-shutupandcast %}), I learned a lot of tricks in Javascript. I shared one of them in them in the [last post]({% post_url 2016-01-16-data-from-chromeextension-to-website %}). In this post, I am planning to share a few small tricks.
 
 ### Change the URL in the address bar without reloading the page
 
