@@ -1,6 +1,6 @@
 # Site settings
 title: The Shy Bulb
-email: crossthelinedb {at} gmail {dot} com
+email: macsdev {at} gmail {dot} com
 description: > # this means to ignore newlines until "baseurl:"
   Stream to XBMC Sudoku Sudokids Pickpocket Raspberry Pi
 baseurl: "" # the subpath of your site, e.g. /blog/
@@ -10,7 +10,7 @@ github_username:  MahadevanSrinivasan
 
 # Build settings
 markdown: kramdown
-highlighter: pygments
+highlighter: rouge 
 
 gems:
   - jemoji
