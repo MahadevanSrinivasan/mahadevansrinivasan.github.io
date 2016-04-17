@@ -28,22 +28,6 @@ $content-width:    800px;
 $on-palm:          600px;
 $on-laptop:        800px;
 
-.post-title {
-  font-size: 24px;
-}
-
-.post-link {
-  font-size: 20px;	
-}
-
-.post-content { margin-bottom: 28px; }
-.post-content h2 { font-size: 22px; }
-@media screen and (max-width: 800px) { .post-content h2 { font-size: 22px; } }
-.post-content h3 { font-size: 21px; }
-@media screen and (max-width: 800px) { .post-content h3 { font-size: 21px; } }
-.post-content h4 { font-size: 20px; }
-@media screen and (max-width: 800px) { .post-content h4 { font-size: 18px; } }
-
 // Using media queries with like this:
 // @include media-query($on-palm) {
 //     .wrapper {
@@ -65,3 +49,21 @@ $on-laptop:        800px;
         "layout",
         "syntax-highlighting"
 ;
+
+
+.post-title {
+  font-size: 24px;
+}
+
+.post-link {
+  font-size: 20px;	
+}
+
+.post-content { margin-bottom: 28px; }
+.post-content h2 { font-size: 22px; }
+@media screen and (max-width: 800px) { .post-content h2 { font-size: 22px; } }
+.post-content h3 { font-size: 21px; }
+@media screen and (max-width: 800px) { .post-content h3 { font-size: 21px; } }
+.post-content h4 { font-size: 20px; }
+@media screen and (max-width: 800px) { .post-content h4 { font-size: 18px; } }
+

@@ -5,9 +5,7 @@ date:   2016-01-16 21:18:00
 tags: chrome extension get post request
 ---
 
-### Opening a new tab with a specific address from your Chrome extension
-
-This part is well documented in [Google's help articles](https://developer.chrome.com/extensions/tabs#method-create). For completeness sake, let us start with discussing this. Before we create a new tab, we should add permissions for accessing "chrome.tabs" in your `manifest.json`.
+How to open a new tab with a specific address from your Chrome extension is well documented in [Google's help articles](https://developer.chrome.com/extensions/tabs#method-create). For completeness sake, let us start with discussing this. Before we create a new tab, we should add permissions for accessing "chrome.tabs" in your `manifest.json`.
 
 {% highlight json %}
 "permissions": [
