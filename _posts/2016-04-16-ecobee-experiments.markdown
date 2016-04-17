@@ -5,7 +5,6 @@ date:   2016-04-16 21:01:00
 tags: ecobee internetofthings
 ---
 
-# Ecobee Experiments
 I got a free ecobee thermostat from my utility company. It was a big step forward from my older analog Honeywell thermostat. For one I could use an iPhone app to control the thermostat. Their App is great and all. But, I need to click through 5 different buttons to turn off my thermostat. I got lazy and so I got inspired. I went and looked into their developer API which turned out to be a pretty good reference. Best place to start is their [examples page](https://www.ecobee.com/home/developer/api/examples/index.shtml).
 
 ## Honey, look! Our thermostat turned itself off at 8 AM!
@@ -24,7 +23,7 @@ Get your API key by following the instructions on the [ecobee developer page](ht
 
 ## Setting up the script
 
-Get all the files from the Github repository. Follow the steps below:
+Get all the files from the [Github repository](https://github.com/MahadevanSrinivasan/ecobeeexperiments). Follow the steps below:
 - Put your API key on line 2
 - Change the refreshkey.txt path on line 6 to point to your local file.
 - Change the json.txt path on line 8 to point to your local file.
