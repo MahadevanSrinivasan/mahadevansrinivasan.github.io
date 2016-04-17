@@ -24,6 +24,7 @@ Get your API key by following the instructions on the [ecobee developer page](ht
 ## Setting up the script
 
 Get all the files from the [Github repository](https://github.com/MahadevanSrinivasan/ecobeeexperiments). Follow the steps below:
+
 - Put your API key on line 2
 - Change the refreshkey.txt path on line 6 to point to your local file.
 - Change the json.txt path on line 8 to point to your local file.
