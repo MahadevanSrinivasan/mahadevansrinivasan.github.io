@@ -21,6 +21,7 @@ I used it recently to solve the problem of finding the kth largest element in an
 
 You can try solving this problem in [Leetcode](https://leetcode.com/problems/kth-largest-element-in-an-array/). Here's my quick implementation. Notice how we need to only look at the k/2 elements while forming the heap the first time. I leave it as an exercise to understand that part. formHeap function makes the given vector a heap in-place. heapify function takes in a vector and the index of the heap's root and restores the heap property.
 
+For the complete solution with small test driver function, have a look at my [Github repository](https://github.com/MahadevanSrinivasan/cprograms/blob/master/topkusingheap.cpp)
 
 {% highlight c %}
 
