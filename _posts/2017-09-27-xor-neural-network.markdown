@@ -2,7 +2,7 @@
 layout: post
 title:  "Neural Network Implementation of an XOR gate"
 date:   2017-09-27 19:10:00
-tags: xo neural network deep learning
+tags: xor neural network deep learning
 ---
 
 I have been meaning to refresh my memory about neural networks. As any beginner would do, I started with the XOR problem. In fact, this was the first neural network problem I solved when I was in grad school.
@@ -27,7 +27,7 @@ First, let us import all the Python packages needed to implement this neural net
 {% highlight python %}
 import numpy as np
 from matplotlib import pyplot as plt
-{% highlight python %}
+{% endhighlight %}
 
 For the activation functions, let us try and use the sigmoid function for the hidden layer. For the output layer, we don't have a choice. We have to use a sigmoid since we want our outputs to be 0 or 1. A sigmoid output followed by a threshold operation should do it.
 
@@ -36,7 +36,7 @@ For the activation functions, let us try and use the sigmoid function for the hi
 {% highlight python %}
 def sigmoid(z):
     return 1 / (1 + np.exp(-z))
-{% highlight python %}
+{% endhighlight %}
 
 ### Initialization the neural network parameters
 
@@ -52,7 +52,7 @@ def initialize_parameters(n_x, n_h, n_y):
     parameters = {"W1" : W1, "b1": b1,
                   "W2" : W2, "b2": b2}
     return parameters
-{% highlight python %}
+{% endhighlight %}
 
 ### Forward Propagation
 
@@ -73,7 +73,7 @@ def forward_propagation(X, Y, parameters):
     logprobs = np.multiply(np.log(A2), Y) + np.multiply(np.log(1 - A2), (1 - Y))
     cost = -np.sum(logprobs) / m
     return cost, cache, A2
-{% highlight python %}
+{% endhighlight %}
 
 ### Backward Propagation
 
@@ -98,7 +98,7 @@ def backward_propagation(X, Y, cache):
     gradients = {"dZ2": dZ2, "dW2": dW2, "db2": db2,
                  "dZ1": dZ1, "dW1": dW1, "db1": db1}
     return gradients
-{% highlight python %}
+{% endhighlight %}
 
 ### Updating the weights
 
@@ -111,7 +111,7 @@ def update_parameters(parameters, grads, learning_rate):
     parameters["b1"] = parameters["b1"] - learning_rate * grads["db1"]
     parameters["b2"] = parameters["b2"] - learning_rate * grads["db2"]
     return parameters
-{% highlight python %}
+{% endhighlight %}
 
 ### Putting it all together
 
@@ -136,7 +136,7 @@ for i in range(num_iterations):
     losses[i, 0], cache, A2 = forward_propagation(X, Y, parameters)
     grads = backward_propagation(X, Y, cache)
     parameters = update_parameters(parameters, grads, learning_rate)
-{% highlight python %}
+{% endhighlight %}
 
 ### Evaluating the performance
 
@@ -150,7 +150,7 @@ print(pred)
 plt.figure()
 plt.plot(losses)
 plt.show()
-{% highlight python %}
+{% endhighlight %}
 
 In one of the runs, my network produced the following values for the inputs X (which perfectly models the XOR function).
 
@@ -172,7 +172,7 @@ Feel free to play around with the training algorithm to model other logic gates.
 Y = np.array([[0, 0, 0, 1]]) # AND
 Y = np.array([[0, 1, 1, 1]]) # OR
 Y = np.array([[1, 1, 1, 0]]) # NAND
-{% highlight python %}
+{% endhighlight %}
 
 ### A few gotchas
 
