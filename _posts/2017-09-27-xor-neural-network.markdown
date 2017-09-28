@@ -38,7 +38,7 @@ def sigmoid(z):
     return 1 / (1 + np.exp(-z))
 {% endhighlight %}
 
-### Initialization the neural network parameters
+### Initialization of the neural network parameters
 
 This step is very important and is very easy to mess up. For example, if you initialize all the weights to zero, your network won't learn anything. In our case, we are initializing all the weights to random numbers between 0 and 1. Bias terms are initialized to 0. Instead of passing around multiple variables, we are using a dictionary to pass all the weights and biases.
 
@@ -56,7 +56,7 @@ def initialize_parameters(n_x, n_h, n_y):
 
 ### Forward Propagation
 
-Forward propagation is very simple to implement. It just involves multiplication of weights with inputs, addition with biases and sigmoid function. Note that we are storing all the intermediate resilts in a cache. This is needed for the gradient computation in the back propagation step. Also, we compute the cost function just like we do for [logistic regression]({% post_url 2016-08-29-logistic-regression %}) but only over all the samples.
+Forward propagation is very simple to implement. It just involves multiplication of weights with inputs, addition with biases and sigmoid function. Note that we are storing all the intermediate results in a cache. This is needed for the gradient computation in the back propagation step. Also, we compute the cost function just like we do for [logistic regression]({% post_url 2016-08-29-logistic-regression %}) but only over all the samples.
 
 {% highlight python %}
 def forward_propagation(X, Y, parameters):
@@ -79,7 +79,7 @@ def forward_propagation(X, Y, parameters):
 
 This is the most complicated of all the steps in designing a neural network. I am not going to go over all the details of the implementation but just give an intuition. I recommend you take the [Machine Learning](https://www.coursera.org/learn/machine-learning) on Coursera to get a much better understanding. 
 
-Intuition behind back-prop is that we want to make small changes to the weights and biases so that our network output moves towards the expected output. This is done by the differentiating the cost function with respect to the weights and moving the direction of the negative of the gradient (since we want to minimize the cost function). To calculate the gradients, we use the cache values from the forward propagation. 
+Intuition behind back-prop is that we want to make small changes to the weights and biases so that our network output moves towards the expected output. This is done by the differentiating the cost function with respect to the weights and moving in the direction of the negative of the gradient (since we want to minimize the cost function). To calculate the gradients, we use the cache values from the forward propagation. 
 
 {% highlight python %}
 def backward_propagation(X, Y, cache):
@@ -115,9 +115,9 @@ def update_parameters(parameters, grads, learning_rate):
 
 ### Putting it all together
 
-Using all the methods we discussed, we are going to put together the complete neural network model to learn the XOR truth table. First we define the inputs and outputs as 2D arrays. Next, we compute the number of input features (2), number of output features (1) and set the number of hidden layer neurons. The beauty of this code is that you can reuse it for any input/output combinations as long as you shape the X and Y values correctly.
+Using all the methods we discussed, we are going to put together the complete neural network model to learn the XOR truth table. First, we define the inputs and outputs as 2D arrays. Next, we compute the number of input features (2), number of output features (1) and set the number of hidden layer neurons. The beauty of this code is that you can reuse it for any input/output combinations as long as you shape the X and Y values correctly.
 
-Each column of X and Y holds an input/output. Within a column, we have all the features as rows. Next, we call the `initialize_parameters` function to initialize the weights. Next, we have two hyperparameters - `num_iterations` and `learning_rate`. These two need to be carefully chosen for your problem. For example, choosing a large learning rate may cause the network to diverge but a small learning rate may take forever to converge. Next, we create an array for storing the cost function (`losses`) at the end of every iteration.
+Each column of X (Y) holds an input (output). Within a column, we have all the features as rows. Next, we call the `initialize_parameters` function to initialize the weights. Next, we have two hyperparameters - `num_iterations` and `learning_rate`. These two need to be carefully chosen for your problem. For example, choosing a large learning rate may cause the network to diverge but a small learning rate may take forever to converge. Next, we create an array for storing the cost function (`losses`) at the end of every iteration.
 
 It is just magic after that. Do a forward propagation and compute the intermediate results `cache`. Follow it up with a back-prop which spits out the gradients. Finally, update the parameters using the computed gradients. Rinse and repeat.
 
