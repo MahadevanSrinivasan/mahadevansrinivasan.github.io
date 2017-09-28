@@ -12,7 +12,7 @@ searched for me. I got intrigued today and did a google search for
 ["Antenna Arrays Windows"](https://www.google.com/#q=antenna+array+windows) and
 was surprised to note that my paper is the second best match :stuck_out_tongue:. Here is my shameless
 blog article to get that traffic to come to my site instead. If you prefer a PDF version
-of the paper, you can find it [here](({{ site.url }}/assets/Ant_Report.pdf)).
+of the paper, you can find it [here]({{ site.url }}/assets/Ant_Report.pdf).
 
 ####Abstract
 
