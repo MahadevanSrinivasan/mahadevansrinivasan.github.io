@@ -24,25 +24,25 @@ This is in fact how a two-way switch works. If both the switches are on or off, 
 
 First, let us import all the Python packages needed to implement this neural network. We are going to implement a neural network with two layers (one hidden and one output). As an exercise, you can try to implement this logic with a single layer with a single neuron (it's not possible ;) )
 
-{% higlight python %}
+{% highlight python %}
 import numpy as np
 from matplotlib import pyplot as plt
-{% higlight python %}
+{% highlight python %}
 
 For the activation functions, let us try and use the sigmoid function for the hidden layer. For the output layer, we don't have a choice. We have to use a sigmoid since we want our outputs to be 0 or 1. A sigmoid output followed by a threshold operation should do it.
 
 ### Sigmoid function
 
-{% higlight python %}
+{% highlight python %}
 def sigmoid(z):
     return 1 / (1 + np.exp(-z))
-{% higlight python %}
+{% highlight python %}
 
 ### Initialization the neural network parameters
 
 This step is very important and is very easy to mess up. For example, if you initialize all the weights to zero, your network won't learn anything. In our case, we are initializing all the weights to random numbers between 0 and 1. Bias terms are initialized to 0. Instead of passing around multiple variables, we are using a dictionary to pass all the weights and biases.
 
-{% higlight python %}
+{% highlight python %}
 def initialize_parameters(n_x, n_h, n_y):
     W1 = np.random.randn(n_h, n_x)
     b1 = np.zeros((n_h, 1))
@@ -52,13 +52,13 @@ def initialize_parameters(n_x, n_h, n_y):
     parameters = {"W1" : W1, "b1": b1,
                   "W2" : W2, "b2": b2}
     return parameters
-{% higlight python %}
+{% highlight python %}
 
 ### Forward Propagation
 
 Forward propagation is very simple to implement. It just involves multiplication of weights with inputs, addition with biases and sigmoid function. Note that we are storing all the intermediate resilts in a cache. This is needed for the gradient computation in the back propagation step. Also, we compute the cost function just like we do for [logistic regression]({% post_url 2016-08-29-logistic-regression %}) but only over all the samples.
 
-{% higlight python %}
+{% highlight python %}
 def forward_propagation(X, Y, parameters):
     m = X.shape[1]
     W1 = parameters["W1"]
@@ -73,7 +73,7 @@ def forward_propagation(X, Y, parameters):
     logprobs = np.multiply(np.log(A2), Y) + np.multiply(np.log(1 - A2), (1 - Y))
     cost = -np.sum(logprobs) / m
     return cost, cache, A2
-{% higlight python %}
+{% highlight python %}
 
 ### Backward Propagation
 
@@ -81,7 +81,7 @@ This is the most complicated of all the steps in designing a neural network. I a
 
 Intuition behind back-prop is that we want to make small changes to the weights and biases so that our network output moves towards the expected output. This is done by the differentiating the cost function with respect to the weights and moving the direction of the negative of the gradient (since we want to minimize the cost function). To calculate the gradients, we use the cache values from the forward propagation. 
 
-{% higlight python %}
+{% highlight python %}
 def backward_propagation(X, Y, cache):
     m = X.shape[1]
     (Z1, A1, W1, b1, Z2, A2, W2, b2) = cache
@@ -98,20 +98,20 @@ def backward_propagation(X, Y, cache):
     gradients = {"dZ2": dZ2, "dW2": dW2, "db2": db2,
                  "dZ1": dZ1, "dW1": dW1, "db1": db1}
     return gradients
-{% higlight python %}
+{% highlight python %}
 
 ### Updating the weights
 
 As we said before, we are updating the weights based on the negative gradients. 
 
-{% higlight python %}
+{% highlight python %}
 def update_parameters(parameters, grads, learning_rate):
     parameters["W1"] = parameters["W1"] - learning_rate * grads["dW1"]
     parameters["W2"] = parameters["W2"] - learning_rate * grads["dW2"]
     parameters["b1"] = parameters["b1"] - learning_rate * grads["db1"]
     parameters["b2"] = parameters["b2"] - learning_rate * grads["db2"]
     return parameters
-{% higlight python %}
+{% highlight python %}
 
 ### Putting it all together
 
@@ -121,7 +121,7 @@ Each column of X and Y holds an input/output. Within a column, we have all the f
 
 It is just magic after that. Do a forward propagation and compute the intermediate results `cache`. Follow it up with a back-prop which spits out the gradients. Finally, update the parameters using the computed gradients. Rinse and repeat.
 
-{% higlight python %}
+{% highlight python %}
 X = np.array([[0, 0, 1, 1], [0, 1, 0, 1]])
 Y = np.array([[0, 1, 1, 0]]) # XOR
 n_h = 2
@@ -136,13 +136,13 @@ for i in range(num_iterations):
     losses[i, 0], cache, A2 = forward_propagation(X, Y, parameters)
     grads = backward_propagation(X, Y, cache)
     parameters = update_parameters(parameters, grads, learning_rate)
-{% higlight python %}
+{% highlight python %}
 
 ### Evaluating the performance
 
 How do we test the network? We just need to do forward propagation again with the learned parameters. To compute the output, we can use 0.5 as a threshold. Finally, we are also plotting the losses to see how the cost function varied with each iteration. If everything is right, cost function should continuously decrease. 
 
-{% higlight python %}
+{% highlight python %}
 cost, _, A2 = forward_propagation(X, Y, parameters)
 pred = (A2 > 0.5) * 1.0
 print(A2)
@@ -150,7 +150,7 @@ print(pred)
 plt.figure()
 plt.plot(losses)
 plt.show()
-{% higlight python %}
+{% highlight python %}
 
 In one of the runs, my network produced the following values for the inputs X (which perfectly models the XOR function).
 
@@ -168,11 +168,11 @@ In one of the runs, my network produced the following values for the inputs X (w
 
 Feel free to play around with the training algorithm to model other logic gates. For example, here are the Y values for a few logic gates. See if you can model all of them (you should be able to).
 
-{% higlight python %}
+{% highlight python %}
 Y = np.array([[0, 0, 0, 1]]) # AND
 Y = np.array([[0, 1, 1, 1]]) # OR
 Y = np.array([[1, 1, 1, 0]]) # NAND
-{% higlight python %}
+{% highlight python %}
 
 ### A few gotchas
 
