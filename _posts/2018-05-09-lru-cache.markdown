@@ -1,0 +1,82 @@
+---
+layout: post
+date: 2018-05-09 15:51:00
+title: "LRU cache"
+tags: lru cache algorithm
+---
+
+Another interesting algorithm I ran into recently is for a Least Recently Used (LRU) cache. Imagine a caching system that stores key-value pairs. And you have room for only a limited number of key-value pairs. So, when the capacity is exceeded, we need to remove the least recently used (used means accessed) key-value pair. This can be simply implemented using a linked list to keep track of which key was accessed least recently. Whenever a key is read / written, we can just move the corresponding linked list node to the head of the list. And when the capacity is exceeded, simply delete the last key in the linked list and remove that key-value pair from the hash table. Hash table look up is O(1). So is removing a node and adding it to the head of the list. But, what about figuring out where the key is in the linked list itself so we can move it?
+
+We need an auxiliary data structure (another hash table) which can map the key to the corresponding linked list node. With this, we can achieve a constant access time for all the operations.
+
+### API
+
+For simplicity, I am using ints for key and value types. One could technically use templates and make this generic. I will do a future post with that change.
+
+{% highlight c++ %}
+
+class LRUCache {
+public:
+  LRUCache(int capacity);
+  int get(int key);
+  void put(int key, int value);
+private:
+  unordered_map<int, pair<int, list<int>::iterator>> cache;
+  int maxcapacity;
+  list<int> used;
+};
+
+{% endhighlight %}
+
+### Implementation
+
+In this implementation instead of using two hash tables, I am using just one. As the *value* in this hash table, I store a pair - one is the actual value associated with the key and the other is the pointer to the linked list element. I am using the standard library data structures for unordered_map and list (which is a doubly linked list). Only with a doubly linked list can we remove a node in constant time. A beginner mistake is to use a deque instead of a list. That can lead to some very weird results. That is because a deque is not a doubly linked list. 
+
+{% highlight c++ %}
+
+    LRUCache::LRUCache(int capacity) {
+        cache.clear();
+        used.clear();
+        maxcapacity = capacity;
+    }
+    
+    int LRUCache::get(int key) {
+        auto it = cache.find(key);
+        int retval = -1;
+        if(it != cache.end())
+        {
+            retval = it->second.first;
+            used.erase(it->second.second);
+            used.push_front(key);
+            it->second.second = used.begin();
+        }
+        return retval;
+    }
+    
+    void LRUCache::put(int key, int value) {
+        auto it = cache.find(key);
+        if(it != cache.end())
+        {
+            it->second.first = value;
+            used.erase(it->second.second);
+            used.push_front(key);
+            it->second.second = used.begin();
+        }
+        else
+        {
+            if(cache.size() == maxcapacity)
+            {
+                cache.erase(used.back());
+                used.pop_back();
+            }
+            used.push_front(key);
+        }    
+        cache[key] = {value, used.begin()};
+    }
+
+{% endhighlight %}
+
+### What next?
+
+We will look at a more generic implementation of an LRU cache in a future post. Also, how to test this implementation? You could use [leetcode](https://leetcode.com/problems/lru-cache/) to test the implementation but it is good to write tests ourselves to understand the intricacies better. That also will be in a future post.
+
