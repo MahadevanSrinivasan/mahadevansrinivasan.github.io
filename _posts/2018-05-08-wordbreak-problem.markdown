@@ -9,33 +9,9 @@ I recently ran into this interesting problem called "Word Break" - quite a popul
 
 I wanted to solve this problem multiple ways to understand this problem better. I currently have two approaches. I will update this post when I have more.
 
-### Approach 1 - Dynamic Programming
+### Approach 1 - Backtracking with memoization
 
-This approach is quite straightforward using dynamic programming.
-
-{% highlight c++ %}
-bool wordBreak(string s, vector<string>& wordDict) {
-        unordered_set<string> wordmap(wordDict.begin(), wordDict.end());
-        vector<bool> dp(s.size()+1, false);
-        dp[0] = true;
-        for(int end = 1; end <= s.size(); end++)
-        {
-            for(int split = 1; split <= end; split++)
-            {
-                if(dp[split-1] == true && wordmap.find(s.substr(split-1, end-split+1)) != wordmap.end())
-                {
-                    dp[end] = true;
-                    break;
-                }
-            }
-        }
-        return dp[s.size()];
-}
-{% endhighlight %}
-
-### Approach 2 - Backtracking with memoization
-
-This is a brute force approach.
+This is a brute force approach. We check for all possible combinations.
 
 {% highlight c++ %}
     enum class States {UNKNOWN, WORD, NOTAWORD};
@@ -74,3 +50,33 @@ This is a brute force approach.
         return split_to_words(s, 0, m, words);
     }
 {% endhighlight %}
+### Approach 2 - Dynamic Programming
+
+This approach is quite straightforward and it uses dynamic programming. The main idea behind it is this: if the string ending at index i forms a sentence and the string from i+1 to the last index also forms a sentence, then it is a proper sentence. Let us break this logic down for our example: "thisisatest". For convenience we create a bool vector of size N+1 (N being the length of the string) and initialize the 0th index to be true. Why we do this will become clear soon. 
+
+Now, we start at string ending at index 0. If that is a sentence or not is stored in index 1 of the dp array. 't' is not a word - so it is not a sentence. We proceed so forth and reach 's'. Now, "this" is a word in the dictionary. So, we set index 4 of dp array to true. Notice how we are checking if dp[split-1] is true. Essentially, we are trying to see if the string that ends at index 4 is a word. This could happen if 0 index character itself is a word and index 1 to 4 forms antoher word. Or, 0 to 1 form a word and 2 to 4 form another word. And so on. It does not matter which. As soon as we figure out that at index 4, we have a proper sentence (a single word is also a proper sentence for this problem), we can move on to the next index. That is why the break statement. 
+
+Now in the next iteration, we check if string ending at 5 forms a sentence or not. Same logic as before. "thisi" is not a word. Also, "this" and "i" are not proper words (as per this dictionary). There are only these two cases because dp[...] for all other splits are false. 
+
+Let us do one last iteration: the final one. We have figured out "thisisa" forms a proper sentence. Finally, we check for the last word. These are the combinations we check: 1. "this", "isatest", 2. "thisis", "atest", 3. "thisisa", "test". Clearly we hit jackpot for the 3rd case. Now that we are done iterating over the entire string. We return the last value in the dp array. If the string ending at the last index is a sentence, then it is a valid sentence.
+
+{% highlight c++ %}
+bool wordBreak(string s, vector<string>& wordDict) {
+        unordered_set<string> wordmap(wordDict.begin(), wordDict.end());
+        vector<bool> dp(s.size()+1, false);
+        dp[0] = true;
+        for(int end = 1; end <= s.size(); end++)
+        {
+            for(int split = 1; split <= end; split++)
+            {
+                if(dp[split-1] == true && wordmap.find(s.substr(split-1, end-split+1)) != wordmap.end())
+                {
+                    dp[end] = true;
+                    break;
+                }
+            }
+        }
+        return dp[s.size()];
+}
+{% endhighlight %}
+
