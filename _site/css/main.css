@@ -1,3 +1,5 @@
+@import url(https://fonts.googleapis.com/css?family=Open+Sans:400,400italic);
+@import url(https://fonts.googleapis.com/css?family=Merriweather:400,400italic);
 /**
  * Reset some basic elements
  */
@@ -11,16 +13,16 @@ dl, dd, ol, ul, figure {
  * Basic styling
  */
 body {
-  font-family: "Lusitana", "Palantino", "Georgia", "Times New Roman", serif;
-  font-size: 18px;
-  line-height: 1.5;
+  font-family: "Merriweather", serif;
+  font-size: 15px;
+  line-height: 1.6;
   font-weight: 300;
-  color: #111;
+  color: #333;
   background-color: #fdfdfd;
   -webkit-text-size-adjust: 100%; }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: "PT Sans", sans-serif; }
+  font-family: "Merriweather", serif; }
 
 /**
  * Set `margin-bottom` to maintain vertical rhythm
@@ -45,7 +47,7 @@ figure > img {
   display: block; }
 
 figcaption {
-  font-size: 15.75px; }
+  font-size: 13.125px; }
 
 /**
  * Lists
@@ -72,7 +74,7 @@ a {
   a:visited {
     color: #1756a9; }
   a:hover {
-    color: #111;
+    color: #333;
     text-decoration: none; }
 
 /**
@@ -149,7 +151,6 @@ pre {
  * Site header
  */
 .site-header {
-  border-top: 5px solid #424242;
   border-bottom: 1px solid #e8e8e8;
   min-height: 56px;
   position: relative; }
@@ -171,7 +172,7 @@ pre {
     display: none; }
   .site-nav .page-link {
     color: #4582EC;
-    line-height: 1.5; }
+    line-height: 1.6; }
     .site-nav .page-link:not(:first-child) {
       margin-left: 20px; }
   @media screen and (max-width: 600px) {
@@ -274,7 +275,7 @@ pre {
     margin-bottom: 28px; }
 
 .post-meta {
-  font-size: 15.75px;
+  font-size: 13.125px;
   color: #828282; }
 
 .post-link {
@@ -452,3 +453,35 @@ pre {
     color: #008080; }
   .highlight .il {
     color: #099; }
+
+.post-title {
+  font-size: 24px;
+  font-weight: 200; }
+
+.post-link {
+  font-size: 20px; }
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 200; }
+
+.post-content {
+  margin-bottom: 28px; }
+
+.post-content h2 {
+  font-size: 22px; }
+
+@media screen and (max-width: 800px) {
+  .post-content h2 {
+    font-size: 22px; } }
+.post-content h3 {
+  font-size: 21px; }
+
+@media screen and (max-width: 800px) {
+  .post-content h3 {
+    font-size: 21px; } }
+.post-content h4 {
+  font-size: 20px; }
+
+@media screen and (max-width: 800px) {
+  .post-content h4 {
+    font-size: 18px; } }

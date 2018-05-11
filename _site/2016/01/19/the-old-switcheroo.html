@@ -6,11 +6,10 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>Projects</title>
-  <meta name="description" content="Stream to XBMC Sudoku Sudokids Pickpocket Raspberry Pi
-">
+  <title>The Old Switcheroo</title>
+  <meta name="description" content="I recently learned (the hard way, as usual) something about the Switch statement in C. I had a part of code which I want executed for all the cases in the sw...">
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="http://localhost:4000/projects/">
+  <link rel="canonical" href="http://localhost:4000/2016/01/19/the-old-switcheroo.html">
   <link rel="alternate" type="application/rss+xml" title="The Shy Bulb" href="http://localhost:4000/feed.xml" />
 </head>
 
@@ -63,28 +62,35 @@
         <div class="post">
 
   <header class="post-header">
-    <h1 class="post-title">Projects</h1>
+    <h1 class="post-title">The Old Switcheroo</h1>
+    <p class="post-meta">Jan 19, 2016</p>
   </header>
 
   <article class="post-content">
-    <ul>
-  <li>
-    <h4 id="stream-to-xbmc"><a href="/2015/09/29/stream-to-xbmc.html">Stream to XBMC</a></h4>
-    <p>Are you one of those people who watch the funny videos from some of the free video streaming sites on your laptop? Do you want to watch it on your big screen TV instead? I have the perfect tool for you. My chrome-plugin can push videos from several sites to your XBMC setup. It can be used it with Raspberry Pi or any other XBMC setup to watch videos from CBS, Youtube and so many other sites. Check it out!</p>
-  </li>
-  <li>
-    <h4 id="sudokids"><a href="/2015/09/29/sudokids.html">Sudokids</a></h4>
-    <p>Sudokids as the name so obviously states is Sudoku for kids. Motivation behind Sudokids is to teach kids set theory with the help of Sudoku. Let me know what you think!</p>
-  </li>
-  <li>
-    <h4 id="shut-up-and-cast"><a href="/2015/10/18/announcing-shutupandcast.html">Shut up and cast</a></h4>
-    <p>Thanks for the 4000 odd users of my previous chrome plugin Stream to XBMC, I decided to extend the plugin’s capability to be used with the most popular casting device and the one which started it all, Chromecast. If you have a Chromecast and want to watch videos from sites for which there is no Chromecast app, you have come to the right place. Take it for a spin.</p>
-  </li>
-  <li>
-    <h4 id="podcast-downloader"><a href="https://github.com/MahadevanSrinivasan/podcastdownloader">Podcast Downloader</a></h4>
-    <p>This is a side project which is designed to automatically download your podcasts as and when they become available. Fully written in python, this uses BeautifulSoup to parse the podcast websites and downloads the MP3s to your laptop/desktop. Listen on!</p>
-  </li>
-</ul>
+    <p>I recently learned (the hard way, as usual) something about the Switch statement in C. I had a part of code which I want executed for all the cases in the switch statement. So I naively put that statement just above the first case statement inside the switch structure.</p>
+
+<p>Take a look at this simplified version of the code:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#include &lt;stdio.h&gt;
+</span><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">100</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="k">switch</span> <span class="p">(</span><span class="n">i</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span> <span class="c1">// This statement never executes</span>
+    <span class="k">case</span> <span class="mi">0</span><span class="p">:</span>
+      <span class="n">printf</span><span class="p">(</span><span class="s">"b = %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
+    <span class="k">break</span><span class="p">;</span>
+    <span class="nl">default:</span>
+      <span class="k">break</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p><code class="highlighter-rouge">b = 10</code> is the common code that I want executed for all the values of <code class="highlighter-rouge">i</code>. To my surprise, the above program returned an output of 100 and the worst part is gcc does not throw any warnings even with the <code class="highlighter-rouge">-Wall</code> option.</p>
+
+<p>Solution is quite simple. Move the <code class="highlighter-rouge">b = 10</code> statement above the switch statement. Don’t know if it is a quirk of the language or if it is expected. I will provide an update if I find any more details.</p>
 
   </article>
 

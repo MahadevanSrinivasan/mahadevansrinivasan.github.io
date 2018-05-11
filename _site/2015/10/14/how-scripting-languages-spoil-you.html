@@ -8,12 +8,9 @@
 
   <title>How scripting languages spoil you</title>
   <meta name="description" content="I love Python. But, I have to admit that it spoils you. I just spent 20 minutes trying to code up a simple program to do linear regression. This problem look...">
-  <link rel="stylesheet" href="/Serif/cmun-serif.css">
-  <link href='https://fonts.googleapis.com/css?family=Lusitana' rel='stylesheet' type='text/css'>
-  <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="/2015/10/14/how-scripting-languages-spoil-you.html">
-  <link rel="alternate" type="application/rss+xml" title="The Shy Bulb" href="/feed.xml" />
+  <link rel="canonical" href="http://localhost:4000/2015/10/14/how-scripting-languages-spoil-you.html">
+  <link rel="alternate" type="application/rss+xml" title="The Shy Bulb" href="http://localhost:4000/feed.xml" />
 </head>
 
 
@@ -72,7 +69,7 @@
   <article class="post-content">
     <p>I love Python. But, I have to admit that it spoils you. I just spent 20 minutes trying to code up a simple program to do linear regression. This problem looks deceptively simple. In fact, it <em>is</em> deceptively simple, <em>on paper</em>.</p>
 
-<p>Here is the problem. You have a set of numbers X and another set of number Y. Find the linear fit that best describes the relation between Y and X. Here is an <a href="http://www.stat.wmich.edu/s216/book/node126.html">example</a> that I took. Copying the numbers here for easy reference. <code>miles[]</code> represent X and <code>price[]</code> represent Y.</p>
+<p>Here is the problem. You have a set of numbers X and another set of number Y. Find the linear fit that best describes the relation between Y and X. Here is an <a href="http://www.stat.wmich.edu/s216/book/node126.html">example</a> that I took. Copying the numbers here for easy reference. <code class="highlighter-rouge">miles[]</code> represent X and <code class="highlighter-rouge">price[]</code> represent Y.</p>
 
 <figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="n">miles</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">9300</span><span class="p">,</span> <span class="mi">10565</span><span class="p">,</span> <span class="mi">15000</span><span class="p">,</span> <span class="mi">15000</span><span class="p">,</span> <span class="mi">17764</span><span class="p">,</span>
                <span class="mi">57000</span><span class="p">,</span> <span class="mi">65940</span><span class="p">,</span> <span class="mi">73676</span><span class="p">,</span> <span class="mi">77006</span><span class="p">,</span> <span class="mi">93739</span><span class="p">,</span>
@@ -84,11 +81,11 @@
 
 <p>Computation of Mean is so simple I won’t go over it. Let us go into the standard deviation computation. To compute standard deviation, we need take every element, find how far it is from the mean, square it to make it a positive number. Do this calculation for all the elements and average them up. Another minor thing to take into account is how to average them up. If you have N elements, you could either divide by N or (N-1) to compute the average. More information on the wikipedia article on <a href="https://en.wikipedia.org/wiki/Standard_deviation#Estimation">standard deviation</a>. For our calculation, we will use N-1.</p>
 
-<p>That’s quite easy. Loop over each element using a for loop and compute the sum of the <em>deviations</em> first. That’s where I hit my first roadblock. I was happily declaring all the variables as integers and to make things worse I was running my program on a Raspberry Pi (which is a 32-bit machine). I coded up everything and out comes the result which is totally unexpected. Started scratching my head. Let us call mean of <code>miles[]</code> as <code>xbar</code> which computes to 61194. What was happening was, <code>(miles[0] - xbar)*(miles[0] - xbar)</code> was happily overflowing. Computing it manually (of course I used a Calculator), it is <code>(9300 - 61194) * (9300 - 61194) = 2692987236</code> which was happily overflowing the signed integer number I had blissfully declared. So, I figured that out and got cocky again. Made the standard deviation variable a <code>long</code> and ran the program again. My Pi FU-ed me again. Turns out, <code>long</code> is not that long. In Raspberry Pi, I have to use <code>long long</code> to get to 64 bits.</p>
+<p>That’s quite easy. Loop over each element using a for loop and compute the sum of the <em>deviations</em> first. That’s where I hit my first roadblock. I was happily declaring all the variables as integers and to make things worse I was running my program on a Raspberry Pi (which is a 32-bit machine). I coded up everything and out comes the result which is totally unexpected. Started scratching my head. Let us call mean of <code class="highlighter-rouge">miles[]</code> as <code class="highlighter-rouge">xbar</code> which computes to 61194. What was happening was, <code class="highlighter-rouge">(miles[0] - xbar)*(miles[0] - xbar)</code> was happily overflowing. Computing it manually (of course I used a Calculator), it is <code class="highlighter-rouge">(9300 - 61194) * (9300 - 61194) = 2692987236</code> which was happily overflowing the signed integer number I had blissfully declared. So, I figured that out and got cocky again. Made the standard deviation variable a <code class="highlighter-rouge">long</code> and ran the program again. My Pi FU-ed me again. Turns out, <code class="highlighter-rouge">long</code> is not that long. In Raspberry Pi, I have to use <code class="highlighter-rouge">long long</code> to get to 64 bits.</p>
 
 <h3 id="typecasting">Typecasting</h3>
 
-<p>Next lesson I learned today was about typecasting. Look at this very simple C program. Without the typecast, you end up overflowing the data. Why? <code>a</code> is defined as a signed number. When we do the multiplication without the cast, we first do a signed mutliplication which goes over 32 bits. And then we try to fit this into the variable b which is also unsigned. C sign extends the data and you end up with a negative number. On the other hand, if you do the cast, you first create enough room to store a 64 bit number and then do the multiplication. This fixes the overflow. Another way to fix this problem would be, if you know your number <code>a</code> is going to be unsigned, you could define it as unsigned. But still it is only a matter of time before we end up with a value of 65536 or more as <code>a</code> to cause the overflow. So, always be cautious and know your limits.</p>
+<p>Next lesson I learned today was about typecasting. Look at this very simple C program. Without the typecast, you end up overflowing the data. Why? <code class="highlighter-rouge">a</code> is defined as a signed number. When we do the multiplication without the cast, we first do a signed mutliplication which goes over 32 bits. And then we try to fit this into the variable b which is also unsigned. C sign extends the data and you end up with a negative number. On the other hand, if you do the cast, you first create enough room to store a 64 bit number and then do the multiplication. This fixes the overflow. Another way to fix this problem would be, if you know your number <code class="highlighter-rouge">a</code> is going to be unsigned, you could define it as unsigned. But still it is only a matter of time before we end up with a value of 65536 or more as <code class="highlighter-rouge">a</code> to cause the overflow. So, always be cautious and know your limits.</p>
 
 <figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
 <span class="p">{</span>
@@ -96,9 +93,9 @@
      <span class="kt">long</span> <span class="kt">long</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
  
      <span class="n">b</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">a</span><span class="p">;</span> <span class="c1">// b = -550261660, Wrong!</span>
-     <span class="n">printf</span><span class="p">(</span><span class="s">&quot;b = %lld</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span> 
+     <span class="n">printf</span><span class="p">(</span><span class="s">"b = %lld</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span> 
      <span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="kt">long</span> <span class="kt">long</span><span class="p">)</span> <span class="n">a</span> <span class="o">*</span> <span class="n">a</span><span class="p">;</span> <span class="c1">// b = 3744705636, Correct!</span>
-     <span class="n">printf</span><span class="p">(</span><span class="s">&quot;b = %lld</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
+     <span class="n">printf</span><span class="p">(</span><span class="s">"b = %lld</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
  
      <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
 <span class="p">}</span></code></pre></figure>
@@ -124,7 +121,7 @@
       <div class="footer-col  footer-col-1">
         <ul class="contact-list">
           <li>The Shy Bulb</li>
-          <li><a href="mailto:crossthelinedb {at} gmail {dot} com">crossthelinedb {at} gmail {dot} com</a></li>
+          <li><a href="mailto:macsdev {at} gmail {dot} com">macsdev {at} gmail {dot} com</a></li>
         </ul>
       </div>
 

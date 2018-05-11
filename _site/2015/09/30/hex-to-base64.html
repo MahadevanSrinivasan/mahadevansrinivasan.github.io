@@ -8,12 +8,9 @@
 
   <title>Hex to base64 conversion</title>
   <meta name="description" content="I came across another set of online coding challenges called The Matasano Crypto Challenges. From a quick google search, it seems like lots of people have tr...">
-  <link rel="stylesheet" href="/Serif/cmun-serif.css">
-  <link href='https://fonts.googleapis.com/css?family=Lusitana' rel='stylesheet' type='text/css'>
-  <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="/2015/09/30/hex-to-base64.html">
-  <link rel="alternate" type="application/rss+xml" title="The Shy Bulb" href="/feed.xml" />
+  <link rel="canonical" href="http://localhost:4000/2015/09/30/hex-to-base64.html">
+  <link rel="alternate" type="application/rss+xml" title="The Shy Bulb" href="http://localhost:4000/feed.xml" />
 </head>
 
 
@@ -81,8 +78,8 @@
 <h4 id="understanding-the-output">Understanding the Output</h4>
 <p>A base 64 <em>digit</em> needs a minimum of 6 bits. Another way of looking at this is, if we represent this as an integer, we won’t exceed the value of 63. So, the input “4D616E” can be represented as 4 base-64 digits. Why? Look at the value of the input in binary:</p>
 
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash">8-bit grouping: <span class="m">01001101</span> <span class="m">01100001</span> 01101110
-6-bit grouping: <span class="m">010011</span> <span class="m">010110</span> <span class="m">000101</span> 101110</code></pre></figure>
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">8-bit grouping: 01001101 01100001 01101110
+6-bit grouping: 010011 010110 000101 101110</code></pre></figure>
 
 <h4 id="doing-the-conversion">Doing the conversion</h4>
 <p>First step is to convert the set of hex values into an intermediate representation. Why not good ol’ decimal system? Following function takes in a hex character and spits out its decimal value.</p>
@@ -91,12 +88,12 @@
 <span class="p">{</span>
   <span class="cm">/* Convert incoming character to lower case first */</span>
   <span class="n">hex</span> <span class="o">=</span> <span class="n">tolower</span><span class="p">((</span><span class="kt">int</span><span class="p">)</span><span class="n">hex</span><span class="p">);</span>
-  <span class="k">if</span><span class="p">(</span><span class="n">hex</span> <span class="o">&gt;=</span> <span class="sc">&#39;0&#39;</span> <span class="o">&amp;&amp;</span> <span class="n">hex</span> <span class="o">&lt;=</span> <span class="sc">&#39;9&#39;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">hex</span> <span class="o">-</span> <span class="sc">&#39;0&#39;</span><span class="p">;</span>
-  <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">hex</span> <span class="o">&gt;=</span> <span class="sc">&#39;a&#39;</span> <span class="o">&amp;&amp;</span> <span class="n">hex</span> <span class="o">&lt;=</span> <span class="sc">&#39;f&#39;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">hex</span> <span class="o">-</span> <span class="sc">&#39;a&#39;</span> <span class="o">+</span> <span class="mi">10</span><span class="p">;</span>
+  <span class="k">if</span><span class="p">(</span><span class="n">hex</span> <span class="o">&gt;=</span> <span class="sc">'0'</span> <span class="o">&amp;&amp;</span> <span class="n">hex</span> <span class="o">&lt;=</span> <span class="sc">'9'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hex</span> <span class="o">-</span> <span class="sc">'0'</span><span class="p">;</span>
+  <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">hex</span> <span class="o">&gt;=</span> <span class="sc">'a'</span> <span class="o">&amp;&amp;</span> <span class="n">hex</span> <span class="o">&lt;=</span> <span class="sc">'f'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hex</span> <span class="o">-</span> <span class="sc">'a'</span> <span class="o">+</span> <span class="mi">10</span><span class="p">;</span>
 
-  <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Not sure what to do with this input: %c</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">hex</span><span class="p">);</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Not sure what to do with this input: %c</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">hex</span><span class="p">);</span>
   <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
 <span class="p">}</span></code></pre></figure>
 
@@ -108,7 +105,7 @@
 
 <p>Next step would be to look at individual 6-bit groups and convert it to base 64. <a href="https://en.wikipedia.org/wiki/Base64">Base 64</a> wiki page has the information about what letters to use. In C, this character array will do the trick:</p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">char</span> <span class="n">map</span><span class="p">[]</span> <span class="o">=</span> <span class="s">&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/&quot;</span><span class="p">;</span></code></pre></figure>
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">char</span> <span class="n">map</span><span class="p">[]</span> <span class="o">=</span> <span class="s">"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"</span><span class="p">;</span></code></pre></figure>
 
 <p>Finally, we loop through the 6 bit values and store them in the output character array:</p>
 
@@ -144,7 +141,7 @@
       <div class="footer-col  footer-col-1">
         <ul class="contact-list">
           <li>The Shy Bulb</li>
-          <li><a href="mailto:crossthelinedb {at} gmail {dot} com">crossthelinedb {at} gmail {dot} com</a></li>
+          <li><a href="mailto:macsdev {at} gmail {dot} com">macsdev {at} gmail {dot} com</a></li>
         </ul>
       </div>
 

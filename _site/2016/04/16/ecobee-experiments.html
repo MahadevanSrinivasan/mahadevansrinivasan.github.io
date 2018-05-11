@@ -6,11 +6,10 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>Projects</title>
-  <meta name="description" content="Stream to XBMC Sudoku Sudokids Pickpocket Raspberry Pi
-">
+  <title>Ecobee Experiments</title>
+  <meta name="description" content="I got a free ecobee thermostat from my utility company. It was a big step forward from my older analog Honeywell thermostat. For one I could use an iPhone ap...">
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="http://localhost:4000/projects/">
+  <link rel="canonical" href="http://localhost:4000/2016/04/16/ecobee-experiments.html">
   <link rel="alternate" type="application/rss+xml" title="The Shy Bulb" href="http://localhost:4000/feed.xml" />
 </head>
 
@@ -63,28 +62,54 @@
         <div class="post">
 
   <header class="post-header">
-    <h1 class="post-title">Projects</h1>
+    <h1 class="post-title">Ecobee Experiments</h1>
+    <p class="post-meta">Apr 16, 2016</p>
   </header>
 
   <article class="post-content">
-    <ul>
-  <li>
-    <h4 id="stream-to-xbmc"><a href="/2015/09/29/stream-to-xbmc.html">Stream to XBMC</a></h4>
-    <p>Are you one of those people who watch the funny videos from some of the free video streaming sites on your laptop? Do you want to watch it on your big screen TV instead? I have the perfect tool for you. My chrome-plugin can push videos from several sites to your XBMC setup. It can be used it with Raspberry Pi or any other XBMC setup to watch videos from CBS, Youtube and so many other sites. Check it out!</p>
-  </li>
-  <li>
-    <h4 id="sudokids"><a href="/2015/09/29/sudokids.html">Sudokids</a></h4>
-    <p>Sudokids as the name so obviously states is Sudoku for kids. Motivation behind Sudokids is to teach kids set theory with the help of Sudoku. Let me know what you think!</p>
-  </li>
-  <li>
-    <h4 id="shut-up-and-cast"><a href="/2015/10/18/announcing-shutupandcast.html">Shut up and cast</a></h4>
-    <p>Thanks for the 4000 odd users of my previous chrome plugin Stream to XBMC, I decided to extend the plugin’s capability to be used with the most popular casting device and the one which started it all, Chromecast. If you have a Chromecast and want to watch videos from sites for which there is no Chromecast app, you have come to the right place. Take it for a spin.</p>
-  </li>
-  <li>
-    <h4 id="podcast-downloader"><a href="https://github.com/MahadevanSrinivasan/podcastdownloader">Podcast Downloader</a></h4>
-    <p>This is a side project which is designed to automatically download your podcasts as and when they become available. Fully written in python, this uses BeautifulSoup to parse the podcast websites and downloads the MP3s to your laptop/desktop. Listen on!</p>
-  </li>
+    <p>I got a free ecobee thermostat from my utility company. It was a big step forward from my older analog Honeywell thermostat. For one I could use an iPhone app to control the thermostat. Their App is great and all. But, I need to click through 5 different buttons to turn off my thermostat. I got lazy and so I got inspired. I went and looked into their developer API which turned out to be a pretty good reference. Best place to start is their <a href="https://www.ecobee.com/home/developer/api/examples/index.shtml">examples page</a>.</p>
+
+<h2 id="honey-look-our-thermostat-turned-itself-off-at-8-am">Honey, look! Our thermostat turned itself off at 8 AM!</h2>
+
+<p>I had a Raspberry Pi sitting idly connected to my internet. And it runs Linux so it already has cron on it. Why not use it? So, I dug through their documentation and came up with a quick and dirty bash script which when executed turns off my thermostat. At this point, I don’t have a lot of error checking. But, hey, this is Github. Go ahead, make my day.</p>
+
+<h2 id="keys-tokens-and-autorunning-thermostats">Keys, Tokens and Autorunning Thermostats</h2>
+
+<p>Get your API key by following the instructions on the <a href="https://www.ecobee.com/home/developer/api/examples/ex1.shtml">ecobee developer page</a>. Use that API key to get a PIN &amp; an authorization code. Use the pin and go activate your application. Next, use the API key and the authorization code to get your first set of “Access token” and “Refresh token”. These two are very important. For security reasons, your access token is valid only for 60 minutes. To get a new “Access token”, you need to use the API key and the previous <em>refresh token</em>. Doing so will give you another set of <em>access token</em> and <em>refresh token</em>. That is pretty much all. You can use the access token to turn off your thermostat. To recap:</p>
+
+<ul>
+  <li>Create application and get API key</li>
+  <li>Obtain Pin and Authorization code</li>
+  <li>Activate App using the Pin</li>
+  <li>Use API key and Activation code to get access and refresh tokens</li>
+  <li>Begin automating things</li>
 </ul>
+
+<h2 id="setting-up-the-script">Setting up the script</h2>
+
+<p>Get all the files from the <a href="https://github.com/MahadevanSrinivasan/ecobeeexperiments">Github repository</a>. Follow the steps below:</p>
+
+<ul>
+  <li>Put your API key on line 2</li>
+  <li>Change the refreshkey.txt path on line 6 to point to your local file.</li>
+  <li>Change the json.txt path on line 8 to point to your local file.</li>
+  <li>Make sure you use <strong>full absolute</strong> paths for both files.</li>
+  <li>Modify the refreshkey.txt contents with your “Refresh token”.</li>
+  <li>Do <code class="highlighter-rouge">chmod 700 autooff.sh</code></li>
+  <li>Turn your ecobee thermostat on and then do <code class="highlighter-rouge">.\autooff.sh</code> from your terminal.</li>
+  <li>Magic!</li>
+</ul>
+
+<h2 id="adding-your-script-to-cron">Adding your script to cron</h2>
+
+<p>This step is quite simple if you are on a Linux box (should work on Macs too). Make a note of your <code class="highlighter-rouge">autooff.sh</code> script’s full path. In my example, it is <code class="highlighter-rouge">/home/pi/ecobee/test.sh</code>. Do <code class="highlighter-rouge">crontab -e</code>. Add the following line to your crontab. Remember that there are tabs between the fields. For a quick overview of crontab fields, have a look at <a href="http://www.thegeekstuff.com/2009/06/15-practical-crontab-examples/">this article</a>.</p>
+
+<p><code class="highlighter-rouge">
+00      08      *       *       *       /home/pi/ecobee/test.sh
+</code></p>
+
+<p>With the above setting in my crontab, my thermostat is turned off every morning (all days of the week) at 08:00 AM. Side note: Make sure the linux box has the correct timezone setting. Otherwise, you might need to modify the script to account for the system time. Use the <code class="highlighter-rouge">date</code> command to check the current time.</p>
+
 
   </article>
 

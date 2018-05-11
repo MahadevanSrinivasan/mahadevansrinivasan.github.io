@@ -8,12 +8,9 @@
 
   <title>Upstream linux kernel on a Raspberry Pi</title>
   <meta name="description" content="Recently, I signed up for the Eudyptula Challenge. If you have not heard of it, it is a series of programming exercises designed to train you with Linux Kern...">
-  <link rel="stylesheet" href="/Serif/cmun-serif.css">
-  <link href='https://fonts.googleapis.com/css?family=Lusitana' rel='stylesheet' type='text/css'>
-  <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="/2015/09/29/upstream-kernel-raspberry-pi.html">
-  <link rel="alternate" type="application/rss+xml" title="The Shy Bulb" href="/feed.xml" />
+  <link rel="canonical" href="http://localhost:4000/2015/09/29/upstream-kernel-raspberry-pi.html">
+  <link rel="alternate" type="application/rss+xml" title="The Shy Bulb" href="http://localhost:4000/feed.xml" />
 </head>
 
 
@@ -84,14 +81,14 @@ Fastest way to compile the kernel is to do in in Ubuntu (You could technically d
   <li>Install git using the following command:</li>
 </ul>
 
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash">sudo apt-get install git</code></pre></figure>
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">sudo </span>apt-get <span class="nb">install </span>git</code></pre></figure>
 
 <ul>
   <li>Change your current directory to the new  one you just created.</li>
   <li>Run this command to get the compiler:</li>
 </ul>
 
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash">sudo apt-get install gcc-arm-linux-gnueabi make ncurses-dev</code></pre></figure>
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">sudo </span>apt-get <span class="nb">install </span>gcc-arm-linux-gnueabi make ncurses-dev</code></pre></figure>
 
 <ul>
   <li>Run this command to get the u-boot (default raspberry pi bootloader won’t work for the upstream kernel)</li>
@@ -103,7 +100,7 @@ Fastest way to compile the kernel is to do in in Ubuntu (You could technically d
   <li>Get the kernel source from Linus Torvalds</li>
 </ul>
 
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash">git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git --depth<span class="o">=</span>1</code></pre></figure>
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git <span class="nt">--depth</span><span class="o">=</span>1</code></pre></figure>
 
 <ul>
   <li>Create the following exports:</li>
@@ -111,11 +108,11 @@ Fastest way to compile the kernel is to do in in Ubuntu (You could technically d
 
 <figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">export </span><span class="nv">KERNEL_SRC</span><span class="o">=</span>/path/to/your/linux
 <span class="nb">export </span><span class="nv">CCPREFIX</span><span class="o">=</span>/path/to/your/compiler/binary/prefix-of-binary-
-mkdir /path/to/your/modules
+<span class="nb">mkdir</span> /path/to/your/modules
 <span class="nb">export </span><span class="nv">MODULES_TEMP</span><span class="o">=</span>/path/to/your/modules  </code></pre></figure>
 
 <ul>
-  <li>Time to create a config file which tells what to compile and what not to.  (<code>ARCH=arm &amp; CROSS_COMPILE=${CCPREFIX}</code> very important).</li>
+  <li>Time to create a config file which tells what to compile and what not to.  (<code class="highlighter-rouge">ARCH=arm &amp; CROSS_COMPILE=${CCPREFIX}</code> very important).</li>
 </ul>
 
 <figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd </span>linux
@@ -127,7 +124,7 @@ mkdir /path/to/your/modules
   <li>Finally to do the actual the compilation and install all the needed modules (in a temporary location):</li>
 </ul>
 
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ ARCH</span><span class="o">=</span>arm <span class="nv">CROSS_COMPILE</span><span class="o">=</span><span class="k">${</span><span class="nv">CCPREFIX</span><span class="k">}</span> chrt -i <span class="m">0</span> make -j 2
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ ARCH</span><span class="o">=</span>arm <span class="nv">CROSS_COMPILE</span><span class="o">=</span><span class="k">${</span><span class="nv">CCPREFIX</span><span class="k">}</span> chrt <span class="nt">-i</span> 0 make <span class="nt">-j</span> 2
 <span class="nv">$ ARCH</span><span class="o">=</span>arm <span class="nv">CROSS_COMPILE</span><span class="o">=</span><span class="k">${</span><span class="nv">CCPREFIX</span><span class="k">}</span> <span class="nv">INSTALL_MOD_PATH</span><span class="o">=</span><span class="k">${</span><span class="nv">MODULES_TEMP</span><span class="k">}</span> make modules_install</code></pre></figure>
 
 <ul>
@@ -135,9 +132,9 @@ mkdir /path/to/your/modules
 </ul>
 
 <figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd</span> ../u-boot
-<span class="nv">$ </span>git checkout -b rpi_dev origin/rpi_dev
-<span class="nv">$ ARCH</span><span class="o">=</span>arm <span class="nv">CROSS_COMPILE</span><span class="o">=</span><span class="k">${</span><span class="nv">CCPREFIX</span><span class="k">}</span> chrt -i <span class="m">0</span> make rpi_config
-<span class="nv">$ ARCH</span><span class="o">=</span>arm <span class="nv">CROSS_COMPILE</span><span class="o">=</span><span class="k">${</span><span class="nv">CCPREFIX</span><span class="k">}</span> chrt -i <span class="m">0</span> make -j 8</code></pre></figure>
+<span class="nv">$ </span>git checkout <span class="nt">-b</span> rpi_dev origin/rpi_dev
+<span class="nv">$ ARCH</span><span class="o">=</span>arm <span class="nv">CROSS_COMPILE</span><span class="o">=</span><span class="k">${</span><span class="nv">CCPREFIX</span><span class="k">}</span> chrt <span class="nt">-i</span> 0 make rpi_config
+<span class="nv">$ ARCH</span><span class="o">=</span>arm <span class="nv">CROSS_COMPILE</span><span class="o">=</span><span class="k">${</span><span class="nv">CCPREFIX</span><span class="k">}</span> chrt <span class="nt">-i</span> 0 make <span class="nt">-j</span> 8</code></pre></figure>
 
 <ul>
   <li>Once this is done, go inside the tools directory under u-boot directory:</li>
@@ -171,18 +168,18 @@ bootz <span class="k">${</span><span class="nv">kernel_addr_r</span><span class=
   <li>And then run the following command (this should generate a boot.scr.img)</li>
 </ul>
 
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>./mkimage -A arm -O linux -T script -C none -n boot.scr -d boot.scr boot.scr.uimg</code></pre></figure>
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>./mkimage <span class="nt">-A</span> arm <span class="nt">-O</span> linux <span class="nt">-T</span> script <span class="nt">-C</span> none <span class="nt">-n</span> boot.scr <span class="nt">-d</span> boot.scr boot.scr.uimg</code></pre></figure>
 
 <ul>
   <li>Now, go to your /boot directory on your Raspberry Pi and create a new directory called backup and move everything inside the backup directory. You might have to sudo the last command.</li>
 </ul>
 
 <figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">export </span><span class="nv">SD</span><span class="o">=</span>/boot
-<span class="nv">$ </span>mkdir <span class="nv">$SD</span>/backup
-<span class="nv">$ </span>mv <span class="nv">$SD</span>/* <span class="nv">$SD</span>/backup</code></pre></figure>
+<span class="nv">$ </span><span class="nb">mkdir</span> <span class="nv">$SD</span>/backup
+<span class="nv">$ </span><span class="nb">mv</span> <span class="nv">$SD</span>/<span class="k">*</span> <span class="nv">$SD</span>/backup</code></pre></figure>
 
 <ul>
-  <li>Fetch <code>start.elf</code> and <code>bootcode.bin</code> from https://github.com/raspberrypi/firmware/tree/master/boot and save it to your <code>$SD</code></li>
+  <li>Fetch <code class="highlighter-rouge">start.elf</code> and <code class="highlighter-rouge">bootcode.bin</code> from https://github.com/raspberrypi/firmware/tree/master/boot and save it to your <code class="highlighter-rouge">$SD</code></li>
   <li>Finally, move all the required files from your Ubuntu machine to your Raspberry Pi using scp. You might have to move it to a temporary location first (in this case I am moving it to the home directory).</li>
 </ul>
 
@@ -193,7 +190,7 @@ bootz <span class="k">${</span><span class="nv">kernel_addr_r</span><span class=
   <li>Go to your Raspberry Pi and use sudo mv to move the files from your home directory to the /boot directory as follows:</li>
 </ul>
 
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>sudo mv ~/kernel.img ~/zImage ~/bcm2835-rpi-b.dtb ~/boot.scr.uimg /boot/</code></pre></figure>
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">sudo mv</span> ~/kernel.img ~/zImage ~/bcm2835-rpi-b.dtb ~/boot.scr.uimg /boot/</code></pre></figure>
 
 <ul>
   <li>Now your boot directory should have the following files:</li>
@@ -208,33 +205,33 @@ start.elf
 bootcode.bin</code></pre></figure>
 
 <ul>
-  <li>For Model B+, you will have <code>bcm2835-rpi-b-plus.dtb</code> instead of <code>bcm2835-rpi-b.dtb</code>.</li>
+  <li>For Model B+, you will have <code class="highlighter-rouge">bcm2835-rpi-b-plus.dtb</code> instead of <code class="highlighter-rouge">bcm2835-rpi-b.dtb</code>.</li>
   <li>Copy your source code from the Ubuntu machine to your Raspberry Pi:</li>
 </ul>
 
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>scp -r /path/to/your/linux/ pi@192.168.1.101:/home/pi/</code></pre></figure>
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>scp <span class="nt">-r</span> /path/to/your/linux/ pi@192.168.1.101:/home/pi/</code></pre></figure>
 
 <ul>
   <li>Change the permissions just in case</li>
 </ul>
 
 <figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd</span> /home/pi
-<span class="nv">$ </span>sudo chown -R pi:pi linux/</code></pre></figure>
+<span class="nv">$ </span><span class="nb">sudo chown</span> <span class="nt">-R</span> pi:pi linux/</code></pre></figure>
 
 <ul>
   <li>Copy the modules next (Move to a temporary folder if you can’t write to /lib/modules directly and then sudo mv it).</li>
 </ul>
 
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>sudo scp -r /path/to/your/modules/<span class="sb">`</span>uname -r<span class="sb">`</span>/ pi@192.168.1.101:/lib/modules/</code></pre></figure>
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">sudo </span>scp <span class="nt">-r</span> /path/to/your/modules/<span class="sb">`</span><span class="nb">uname</span> <span class="nt">-r</span><span class="sb">`</span>/ pi@192.168.1.101:/lib/modules/</code></pre></figure>
 
 <ul>
   <li>Correct the symbolic links next:</li>
 </ul>
 
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>sudo <span class="nb">cd</span> /lib/modules/<span class="sb">`</span>uname -r<span class="sb">`</span>/
-<span class="nv">$ </span>sudo rm build <span class="nb">source</span>
-<span class="nv">$ </span>ln -s /home/pi/linux build
-<span class="nv">$ </span>ln -s /home/pi/linux <span class="nb">source</span></code></pre></figure>
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">sudo cd</span> /lib/modules/<span class="sb">`</span><span class="nb">uname</span> <span class="nt">-r</span><span class="sb">`</span>/
+<span class="nv">$ </span><span class="nb">sudo rm </span>build <span class="nb">source</span>
+<span class="nv">$ </span><span class="nb">ln</span> <span class="nt">-s</span> /home/pi/linux build
+<span class="nv">$ </span><span class="nb">ln</span> <span class="nt">-s</span> /home/pi/linux <span class="nb">source</span></code></pre></figure>
 
 <ul>
   <li>Finally, we need to fix one more problem: During the cross-compilation build, a couple scripts were compiled for the host. We also need them for the Raspberry Pi. Still on the Pi, this can be checked with e.g.</li>
@@ -266,7 +263,7 @@ bootcode.bin</code></pre></figure>
       <div class="footer-col  footer-col-1">
         <ul class="contact-list">
           <li>The Shy Bulb</li>
-          <li><a href="mailto:crossthelinedb {at} gmail {dot} com">crossthelinedb {at} gmail {dot} com</a></li>
+          <li><a href="mailto:macsdev {at} gmail {dot} com">macsdev {at} gmail {dot} com</a></li>
         </ul>
       </div>
 
