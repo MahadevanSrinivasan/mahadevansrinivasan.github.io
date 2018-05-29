@@ -8,9 +8,12 @@
 
   <title>HOWTO: Using Openssl C library</title>
   <meta name="description" content="For one of the Matasano crypto challenges, I had to decrypt the text which was encrypted using AES in ECB mode. Everything about AES is actually documented b...">
+  <link rel="stylesheet" href="/Serif/cmun-serif.css">
+  <link href='https://fonts.googleapis.com/css?family=Lusitana' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="http://localhost:4000/2015/10/10/use-openssl-c-library.html">
-  <link rel="alternate" type="application/rss+xml" title="The Shy Bulb" href="http://localhost:4000/feed.xml" />
+  <link rel="canonical" href="/2015/10/10/use-openssl-c-library.html">
+  <link rel="alternate" type="application/rss+xml" title="The Shy Bulb" href="/feed.xml" />
 </head>
 
 
@@ -81,14 +84,14 @@ instructions are for Ubuntu like Linux distributions. These worked well on my Ra
 
 <p>Following command installs all the C libraries needed to use Openssl with your C code.</p>
 
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">sudo </span>apt-get <span class="nb">install </span>libssl-dev</code></pre></figure>
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">sudo apt-get install libssl-dev</code></pre></figure>
 
 <p>For example, you will want to include the following header files:</p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#include &lt;openssl/evp.h&gt;
-#include &lt;openssl/ssl.h&gt;
-#include &lt;openssl/rsa.h&gt;
-#include &lt;openssl/x509.h&gt;</span></code></pre></figure>
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#include &lt;openssl/evp.h&gt;</span>
+<span class="cp">#include &lt;openssl/ssl.h&gt;</span>
+<span class="cp">#include &lt;openssl/rsa.h&gt;</span>
+<span class="cp">#include &lt;openssl/x509.h&gt;</span></code></pre></figure>
 
 <h3 id="compiling-your-c-program-with-the-openssl-library">Compiling your C program with the Openssl library</h3>
 
@@ -98,12 +101,12 @@ your C program. I have an example program in my <a href="https://github.com/Maha
 Github repository. While linking the program you need to provide the ssl and crypto library names. 
 Following command should do it:</p>
 
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash">gcc yourprogram.c <span class="nt">-lssl</span> <span class="nt">-lcrypto</span></code></pre></figure>
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">gcc yourprogram.c -lssl -lcrypto</code></pre></figure>
 
-<h3 id="a-few-pointers-on-the-do_crypt-function">A few pointers on the <code class="highlighter-rouge">do_crypt</code> function</h3>
+<h3 id="a-few-pointers-on-the-docrypt-function">A few pointers on the <code>do_crypt</code> function</h3>
 
 <ul>
-  <li>If you are going to use the <code class="highlighter-rouge">do_crypt</code> function for decrypting a text encrypted using electronic code book (ECB) mode, you should remove the following assert line since there is no Initialization Vector for ECB.</li>
+  <li>If you are going to use the <code>do_crypt</code> function for decrypting a text encrypted using electronic code book (ECB) mode, you should remove the following assert line since there is no Initialization Vector for ECB.</li>
 </ul>
 
 <figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">OPENSSL_assert</span><span class="p">(</span><span class="n">EVP_CIPHER_CTX_iv_length</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">)</span> <span class="o">==</span> <span class="mi">16</span><span class="p">);</span></code></pre></figure>
@@ -129,7 +132,7 @@ Following command should do it:</p>
       <div class="footer-col  footer-col-1">
         <ul class="contact-list">
           <li>The Shy Bulb</li>
-          <li><a href="mailto:macsdev {at} gmail {dot} com">macsdev {at} gmail {dot} com</a></li>
+          <li><a href="mailto:crossthelinedb {at} gmail {dot} com">crossthelinedb {at} gmail {dot} com</a></li>
         </ul>
       </div>
 

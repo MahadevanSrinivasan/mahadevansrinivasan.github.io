@@ -5,8 +5,6 @@ var currentMediaSession;
 
 $( document ).ready(function(){
   document.getElementById("progress").addEventListener('mouseup', seekMedia);
-  document.getElementById("progress").addEventListener('mouseenter', showTime);
-  document.getElementById("progress").addEventListener('mouseleave', hideTime);
   var loadCastInterval = setInterval(function(){
     if (chrome.cast.isAvailable) 
     {
@@ -67,45 +65,6 @@ $('#castme').click(function()
   launchApp();
 });
 
-$('#pause').click(function()
-{
-  if(!session || !currentMediaSession) {
-    return;
-  }
-  
-  currentMediaSession.pause(null, pauseSuccess, playPauseFailure);
-});
-
-function pauseSuccess()
-{
-  console.log("Pause Success");
-  $('#pause').addClass("hidden");
-  $('#play').removeClass("hidden");
-  increment = 0;
-}
-
-function playPauseFailure()
-{
-  console.log("Pause Failure");
-}
-
-$('#play').click(function()
-{
-  if(!session || !currentMediaSession) {
-    return;
-  }
-  
-  currentMediaSession.play(null, playSuccess, playPauseFailure);
-});
-
-function playSuccess()
-{
-  console.log("Play Success");
-  $('#play').addClass("hidden");
-  $('#pause').removeClass("hidden");
-  var tt = mediaSession.media.duration;
-  increment = (1/tt)*100;
-}
 
 function launchApp() 
 {
@@ -150,7 +109,6 @@ function loadMedia()
 
 function onLoadSuccess(mediaSession) {
   console.log('Successfully loaded.');
-  playSuccess();
   currentMediaSession = mediaSession;
   mediaSession.addUpdateListener(onMediaStatusUpdate);
   var tt = mediaSession.media.duration;
@@ -227,26 +185,6 @@ function seekMedia(event)
   var request = new chrome.cast.media.SeekRequest();
   request.currentTime = (pos/total)*currentMediaSession.media.duration;
   currentMediaSession.seek(request, onSeekSuccess(request.currentTime), onSeekError);
-}
-
-function showTime(event)
-{
-  var pos = parseInt(event.offsetX);
-  var total = document.getElementById("progress").clientWidth;
-  console.log(pos/total);
-  var timeLeftInSecs = (pos/total)*currentMediaSession.media.duration;
-  var hours = Math.floor(timeLeftInSecs / 3600);
-  var minutes = Math.floor(timeLeftInSecs / 60);
-  var seconds = timeLeftInSecs - hours * 3600 - minutes * 60;
-  if(!isNaN(timeLeftInSecs))
-  {
-    document.getElementById('hoverTime').innerHTML = ((hours < 10) ? ('0' + hours) : hours) + ':' + ((minutes<10) ? ('0' + minutes) : minutes) + ':' + ((seconds<10) ? ('0'+seconds.toFixed(3)) : seconds.toFixed(3));
-  }
-}
-
-function hideTime(event)
-{
-  document.getElementById('hoverTime').innerHTML = '00:00:00.000';
 }
 
 function onSeekSuccess(currTime)

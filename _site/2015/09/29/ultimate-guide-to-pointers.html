@@ -6,17 +6,11 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>The Shy Bulb</title>
-  <meta name="description" content="Stream to XBMC Sudoku Sudokids Pickpocket Raspberry Pi
-">
-  <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" />
-  <link rel="stylesheet" type="text/css" href="css/justcast.css" />
-  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"/>
-  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js" type="text/JAVASCRIPT"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" type="text/JAVASCRIPT"></script>
-  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js" type="text/JAVASCRIPT"></script>  
+  <title>Ultimate guide to pointers</title>
+  <meta name="description" content="Pointers in C are one of the most confusing concepts. I am going to documenthow pointers work in the order of increasing complexity.">
+  <link rel="stylesheet" href="/Serif/cmun-serif.css">
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="/justcast.html">
+  <link rel="canonical" href="/2015/09/29/ultimate-guide-to-pointers.html">
   <link rel="alternate" type="application/rss+xml" title="The Shy Bulb" href="/feed.xml" />
 </head>
 
@@ -66,48 +60,50 @@
 
     <div class="page-content">
       <div class="wrapper">
-        <article class='post-content'>
-<div class='text-center'>
-    <h2>Shut up and Cast!</h2>
-    <div class="row">
-        <button type='button' class='btn btn-primary' id='castme'>Cast</button>
-        <button type='button' class='btn btn-primary' id='stop'>Stop</button>
-    </div>
+        <div class="post">
 
-    <div class="row">
-        <p id="hoverTime"><br></p>
-    </div>
-    <br>
+  <header class="post-header">
+    <h1 class="post-title">Ultimate guide to pointers</h1>
+    <p class="post-meta">Sep 29, 2015</p>
+  </header>
 
-    <div class="row">
-        <div class="col-md-1 col-md-offset-2">
-            <i id="play" class="fa fa-play fa-2x"></i>
-            <i id="pause" class="fa fa-pause fa-2x hidden"></i>
-        </div>
-        <div id="progress" class="progress col-md-6" style="height: 30px;">
-            <div id ="progressBar" class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style= "width: 0%;">
-            </div>
-        </div>
-        <div class="col-md-1">
-            <i class="fa fa-volume-up fa-2x"></i>
-        </div>
-        </div> <!-- end progress -->
+  <article class="post-content">
+    <p>Pointers in C are one of the most confusing concepts. I am going to document
+how pointers work in the order of increasing complexity.</p>
 
-        <div class="row">
-            <div id="timeleft" class="text-center"></div>
-        </div>
+<h3 id="simple-example-of-an-integer-pointer">Simple example of an integer pointer</h3>
+
+<p>A pointer variable is specific to a specific type. For example, if you want
+to point to an integer variable, you define it as <code>int *p</code>. The asterisk says
+that p can point to an integer. Right now, it is pointing to nothing. In C, nothing
+is <code>NULL</code>. To make it point to an integer <code>x</code>, you do it like on line 11. Below 
+example also shows how to pass the variable x as a pointer to a different function.</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#include &lt;stdio.h&gt;</span>
+
+<span class="kt">void</span> <span class="nf">printvalueofx</span><span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="n">p</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="n">printf</span><span class="p">(</span><span class="s">&quot;printvalueof: Addr: %p,  Value = %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="o">*</span><span class="n">p</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">12</span><span class="p">;</span>
+	<span class="kt">int</span> <span class="o">*</span><span class="n">p</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">x</span><span class="p">;</span>
+
+	<span class="n">printf</span><span class="p">(</span><span class="s">&quot;x = %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">);</span>
+	<span class="o">*</span><span class="n">p</span> <span class="o">=</span> <span class="mi">42</span><span class="p">;</span>
+	<span class="n">printf</span><span class="p">(</span><span class="s">&quot;main: Addr: %p, Value = %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="o">*</span><span class="n">p</span><span class="p">);</span>
+	<span class="cm">/* Pass the pointer to the function */</span>
+	<span class="n">printvalueofx</span><span class="p">(</span><span class="n">p</span><span class="p">);</span>
+
+	<span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></div>
+
+
+  </article>
+
 </div>
-</article>
-
-<script src="js\script.js" type="text/JAVASCRIPT"></script>
-<script type="text/javascript">
-var justCastPlayer = new JustCast();
-</script>
-<script language="javascript">
-var text = window.location.search;
-var videoLink = decodeURIComponent(text.substring(text.indexOf("=")+1, text.length));
-</script>
-
 
       </div>
     </div>
@@ -162,9 +158,6 @@ var videoLink = decodeURIComponent(text.substring(text.indexOf("=")+1, text.leng
     </div>
 
   </div>
-  <script type="text/javascript"
-            src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-    </script>
 
 </footer>
 
