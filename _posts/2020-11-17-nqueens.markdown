@@ -11,7 +11,7 @@ To make it a little interesting, I am going to use the [8-queens problem](https:
 
 ### 8 queens problem
 
-Crux of the problem is placing 8 Queens on a chess table without any conflicts. Interestingly, there are quite a few combinations. In fact, a total of 92 combinations are possible. As a fun aside, I have written a javascript version of the same algorithm and [an HTML page](http://shybulb.com/nqueens.html) that loops through all the possible solutions. The algorithm to solve it is quite simple. We use [backtracking](https://en.wikipedia.org/wiki/Backtracking). One possible solution is given below in C++. It is quite a rudimentary backtracking algorithm and is self explanatory. Instead of 8 queens, I have made the algorithm generic for N-queens. At the end of the program, I print out the number of solutions possible. 
+Crux of the problem is placing 8 Queens on a chess table without any conflicts. Interestingly, there are quite a few combinations. In fact, a total of 92 combinations are possible. As a fun aside, I have written a javascript version of the same algorithm and [an HTML page](http://theshybulb.com/nqueens.html) that loops through all the possible solutions. The algorithm to solve it is quite simple. We use [backtracking](https://en.wikipedia.org/wiki/Backtracking). One possible solution is given below in C++. It is quite a rudimentary backtracking algorithm and is self explanatory. Instead of 8 queens, I have made the algorithm generic for N-queens. At the end of the program, I print out the number of solutions possible. 
 
 {% highlight c %}
 
