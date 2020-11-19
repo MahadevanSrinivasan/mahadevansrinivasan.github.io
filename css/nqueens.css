@@ -1,11 +1,11 @@
 .chess-cell {
-    width: 60px;
-    height: 60px;
+    width: 90px;
+    height: 90px;
     margin: 1px;
     border-radius: 5px;
     padding: 0 0px;
-    background: #130f03;
-    border-color: #5A483B;
+    background: black;
+    border-color: #ff964a;
     border-width: 1px;
     border-style: solid;
     float:left;
@@ -16,13 +16,13 @@ input {
     outline: 0px;
     margin: 0px;
     background: transparent;
-    width: 56.25px;
-    height: 56.25px;
+    width: 90px;
+    height: 90px;
     line-height: 0px;
     padding: 0 0px;
     font-size:50px;
     text-align:center;
-    color: #eee4da;
+    color: #ffffff;
 }
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -33,6 +33,6 @@ body {
     align-items: center;
 }
 .content {
-    max-width: 500px;
+    max-width: 900px;
     margin: auto;
 }
