@@ -14,69 +14,82 @@ To make it a little interesting, I am going to use the [8-queens problem](https:
 Crux of the problem is placing 8 Queens on a chess table without any conflicts. Interestingly, there are quite a few combinations. In fact, a total of 92 combinations are possible. As a fun aside, I have written a javascript version of the same algorithm and [an HTML page](http://theshybulb.com/nqueens.html) that loops through all the possible solutions. The algorithm to solve it is quite simple. We use [backtracking](https://en.wikipedia.org/wiki/Backtracking). One possible solution is given below in C++. It is quite a rudimentary backtracking algorithm and is self explanatory. Instead of 8 queens, I have made the algorithm generic for N-queens. At the end of the program, I print out the number of solutions possible. 
 
 {% highlight c %}
-
 #include <iostream>
 #include <vector>
-#include <cstdlib>
-#include <string>
 
 using namespace std;
 
-bool is_pos_valid(vector<string> & board, int row, int col)
+class NQueens
 {
-  int i = 0, j = 0, limit = board.size();
-
-  /* We have only placed queens till row-1, no need to search further */
-  for(i = 0; i < row; i++)
-  {
-    if(board[i][col] == 'Q') return false;
-  }
-  /* Go above current row, towards the left diagonal */
-  for(i = row, j = col; i  >= 0 && j >= 0; i--, j--)
-  {
-    if(board[i][j] == 'Q') return false;
-  }
-  /* Go above current row, towards the right diagonal */
-  for(i = row, j = col; i >= 0 && j < limit; i--, j++)
-  {
-    if(board[i][j] == 'Q') return false;
-  }
-
-  return true;
-}
-
-void nqueens(vector<string> &board, int row, vector<vector<string> > &solutions)
-{
-  int limit = board.size();
-  if(row == limit)
-  {
-    solutions.push_back(board);
-    return;
-  }
-
-  for(int i = 0; i < limit; i++)
-  {
-    if(is_pos_valid(board, row, i))
+public:
+    NQueens(int _N) : N(_N)
     {
-      board[row].replace(i, 1, "Q");
-      nqueens(board, row+1, solutions);
-      board[row].replace(i, 1, ".");
+        board.resize(N*N);
+        curr = 0;
+        solve(0);
     }
-  }
-}
+    int count()
+    {
+        return solutions.size();
+    }
+private:
+    int N;
+    int curr;
+    vector<char> board;
+    vector<vector<char> > solutions;
+    int a(int i, int j)
+    {
+        return i*8+j;
+    }
+
+    bool is_pos_valid(int row, int col)
+    {
+        int i = 0, j = 0;
+
+        /* Only placed queens till row-1, no need to search further */
+        for(i = 0; i < row; i++)
+        {
+            if(board[a(i,col)]) return false;
+        }
+        /* Go above current row, towards the left diagonal */
+        for(i = row, j = col; i  >= 0 && j >= 0; i--, j--)
+        {
+            if(board[a(i,j)]) return false;
+        }
+        /* Go above current row, towards the right diagonal */
+        for(i = row, j = col; i >= 0 && j < N; i--, j++)
+        {
+            if(board[a(i,j)]) return false;
+        }
+
+        return true;
+    }
+
+    void solve(int row)
+    {
+        if(row == N)
+        {
+            solutions.push_back(board);
+            return;
+        }
+
+        for(int i = 0; i < N; i++)
+        {
+            if(is_pos_valid(row, i))
+            {
+                board[a(row, i)] = true;
+                solve(row+1);
+                board[a(row, i)] = false;
+            }
+        }
+    }
+};
 
 int main(int argc, char *argv[])
 {
-  vector<string> board;
-  vector<vector<string> > solutions;
-  int n = atoi(argv[1]);
-  string s(n, '.');
-  for(int i = 0; i < n; i++)
-  {
-    board.push_back(s);
-  }
-  nqueens(board, 0, solutions);
-  cout << "Num solutions = " << solutions.size() << endl;
+  NQueens n(8);
+  cout << "Num solutions = " << n.count() << endl;
+  return 0;
 }
 
 {% endhighlight %}
