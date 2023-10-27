@@ -97,3 +97,42 @@ public:
 };
 
 {% endhighlight %}
+
+Update: 2023/10/27
+
+After posting this blog, I realized that I could optimize it a little more to get rid of some of the intermediate variables. Here is the final implementation:
+
+{% highlight c++ %}
+
+class Solution {
+public:    
+    vector<vector<int>> verticalTraversal(TreeNode* root) {
+        std::vector<std::vector<int>> results;
+        if (!root) return results;
+        dfs(root, 0 , 0);
+        results.resize(max_col_ - min_col_ + 1);
+        while (!pq_.empty()) {
+            int col = std::get<0>(pq_.top());
+            int val = std::get<2>(pq_.top());
+            results[col - min_col_].push_back(val);
+            pq_.pop();
+        }        
+        return results;
+    }
+
+private:
+    using Node = std::tuple<int, int, int>;
+    std::priority_queue<Node, std::vector<Node>, std::greater<>> pq_;
+    int min_col_ = std::numeric_limits<int>::max();
+    int max_col_ = std::numeric_limits<int>::min();
+
+    void dfs(TreeNode* root, int row, int col) {
+        min_col_ = std::min(min_col_, col);
+        max_col_ = std::max(max_col_, col);
+        pq_.push({col, row, root->val}); 
+        if (root->left) dfs(root->left, row+1, col-1);
+        if (root->right) dfs(root->right, row+1, col+1);
+    }
+};
+
+{% endhighlight %}
