@@ -13,19 +13,19 @@ It is a tree traversal problem and we could either use DFS or BFS to do the trav
 In fact, we don't even need to implement the custom sort function if we use `std::tuple` to store the values in the correct order. If we had only two values to sort, we could have stored them in a `std::pair`. We'll use this technique to solve another problem in a later post. 
 
 {% highlight c++ %}
-
+{% raw %}
 using Node = std::tuple<int, int, int>;
 std::vector<Node> nodes = {{1, 0, 5}, {1, 0, 3}, {{1, 0, 2}, {0, 0, 1}};
 std::sort(nodes.begin(), nodes.end());
-
+{% endraw %}
 {% endhighlight %}
 
 The above snippet would result in the following sorted values:
 
 {% highlight c++ %}
-
+{% raw %}
 [[0, 0, 1], [1, 0, 2], [1, 0, 3], [1, 0, 5]]
-
+{% endraw %}
 {% endhighlight %}
 
 which is almost exactly what we want. We need to group values in the same column into a vector.
