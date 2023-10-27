@@ -22,7 +22,7 @@ std::sort(nodes.begin(), nodes.end());
 
 The above snippet would result in the following sorted values:
 ```
-{0, 0, 1}, {{1, 0, 2}, {1, 0, 3}, {1, 0, 5}, 
+{0, 0, 1}, {{1, 0, 2}, {1, 0, 3}, {1, 0, 5}
 ```
 which is almost exactly what we want. We need to group values in the same column into a vector.
 
