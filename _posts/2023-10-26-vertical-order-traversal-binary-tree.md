@@ -24,7 +24,7 @@ The above snippet would result in the following sorted values:
 
 {% highlight c++ %}
 
-{{0, 0, 1}, {1, 0, 2}, {1, 0, 3}, {1, 0, 5}}
+[[0, 0, 1], [1, 0, 2], [1, 0, 3], [1, 0, 5]]
 
 {% endhighlight %}
 
