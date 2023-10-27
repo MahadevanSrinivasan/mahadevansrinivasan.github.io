@@ -21,9 +21,11 @@ std::sort(nodes.begin(), nodes.end());
 {% endhighlight %}
 
 The above snippet would result in the following sorted values:
+
 ```
-{0, 0, 1}, {{1, 0, 2}, {1, 0, 3}, {1, 0, 5}
+{{0, 0, 1}, {1, 0, 2}, {1, 0, 3}, {1, 0, 5}}
 ```
+
 which is almost exactly what we want. We need to group values in the same column into a vector.
 
 This is one way to solve this problem. Another way to solve this is to use a [priority queue](https://en.cppreference.com/w/cpp/container/priority_queue) to keep track of the nodes in sorted order when we traverse them. Keep in mind that a priority queue by default is a max queue but we want a min queue and this can be achieved using this data structure by passing the `std::greater<>` comparator.
