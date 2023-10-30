@@ -121,3 +121,41 @@ private:
 {% endhighlight %}
 
 Note we could have also used a similar approach to the [vertical order traversal problem]({% post_url 2023-10-26-vertical-order-traversal-binary-tree %}) for storing the data using a `std::tuple`. I intentionally used a different approach to showcase the use of a custom node in a priority queue. This approach makes the ordering obvious. 
+
+# Update: 2023/10/30
+
+After writing this post, I realized I don't need to store the index of the list in the priority queue after all. With that realization, I came up with the following more compact implementation:
+
+{% highlight c++ %}
+class Solution {
+public:
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        ListNode* head = nullptr;
+        ListNode* prev = nullptr;
+        auto cmp = [](const ListNode* l, const ListNode* r) { return l->val > r->val; };
+        std::priority_queue<ListNode*, std::vector<ListNode*>, decltype(cmp)> pq(cmp);
+
+        // Fill the priority_queue for the first iteration
+        for (ListNode* node: lists) {
+            if (node != nullptr) { 
+                pq.push(node);
+            }
+        }
+
+        while (!pq.empty()) {
+            ListNode* node = pq.top();
+            pq.pop();
+
+            if (head == nullptr) head = node;
+
+            if (prev != nullptr) prev->next = node;
+            prev = node;
+
+            if (node->next) {
+                pq.push(node->next);
+            }
+        }
+        return head;   
+    }
+};
+{% endhighlight %}
