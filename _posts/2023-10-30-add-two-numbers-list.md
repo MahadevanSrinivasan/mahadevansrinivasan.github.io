@@ -5,7 +5,7 @@ date:   2023-10-30 10:20:00
 tags: Leetcode linkedlist 
 ---
 
-Today, I want to tackle a simpler problem of [adding two numbers represented as linked lists](https://leetcode.com/problems/add-two-numbers/). Each node contains a digit between 0 and 9. This problem will use some of the techniques we used in the [merging of k sorted lists]({% post_url 2023-10-26-2023-10-28-merge-k-sorted-lists %}). Even though this problem is quite simple to solve, it helps build intuition on solving linked list problems.
+Today, I want to tackle a simpler problem of [adding two numbers represented as linked lists](https://leetcode.com/problems/add-two-numbers/). Each node contains a digit between 0 and 9. This problem will use some of the techniques we used in the [merging of k sorted lists]({% post_url 2023-10-28-merge-k-sorted-lists %}). Even though this problem is quite simple to solve, it helps build intuition on solving linked list problems.
 
 # Approach
 
