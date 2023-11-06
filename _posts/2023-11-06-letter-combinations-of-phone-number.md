@@ -42,6 +42,7 @@ This coding paradigm will come up over and over in many problems. I will cover a
 ## Final solution
 
 {% highlight c %}
+{% raw %}
 class Solution {
 public:
     void helper(string& digits, int start) {
@@ -73,4 +74,5 @@ private:
     std::vector<string> results;
     std::vector<char> result;
 };
+{% endraw %}
 {% endhighlight %}
