@@ -1,5 +1,6 @@
 ---
 layout: post
+comments: true
 title:  "Letter Combinations of a Phone Number"
 date:   2023-11-06 10:41:00
 tags: backtracking leetcode
