@@ -22,7 +22,7 @@ In other words, it is a tree that leans to the right with one node at each level
 they are not too interesting. Instead let's see how we can make a balanced binary search tree. 
 
 ## Balanced binary search tree from sorted array
-To make the tree balanced, we need to do something very similar to a [binary search]({%post_url 2017-04-27-binarysearch-codekata}). One way to make a balanced tree is to have roughly the same number of elements in the root's left and right subtrees. We say roughly because
+To make the tree balanced, we need to do something very similar to a [binary search]({% post_url 2017-04-27-binarysearch-codekata %}). One way to make a balanced tree is to have roughly the same number of elements in the root's left and right subtrees. We say roughly because
 we could have even number of elements - like in our example. With 10 elements, one side has to have 4 and the other side has to have 5 to make it balanced. What's the best candidate for the root element in such case? It's the middle element.
 Once we placed the middle element at the root, we need to recursively populate the left and right subtrees using the same logic. The end result is annoyingly simple once we understand it. 
 
@@ -47,7 +47,7 @@ TreeNode *SortedArrayToBST(std::vector<int> &nums) {
 }
 {% endhighlight %}
 
-Now that we have created a nice balanced tree, let's traverse it. We have already covered [vertical order]({%post_url 2023-10-26-vertical-order-traversal-binary-tree}) and [zig-zag]({%post_url 2023-10-28-zigzag-level-order-traversal}) in prior posts. Let's cover some more common traversals. 
+Now that we have created a nice balanced tree, let's traverse it. We have already covered [vertical order]({% post_url 2023-10-26-vertical-order-traversal-binary-tree %}) and [zig-zag]({% post_url 2023-10-28-zigzag-level-order-traversal %}) in prior posts. Let's cover some more common traversals. 
 
 ## In order traversal
 This is an important traversal scheme. Using this traversal on  BST, we can get elements in the sorted order. If we take the tree we created with SortedArrayToBST and fed its root node into this function, we will get the sorted array. Hence the name "In-order". Order of processing is left, root and right. 
