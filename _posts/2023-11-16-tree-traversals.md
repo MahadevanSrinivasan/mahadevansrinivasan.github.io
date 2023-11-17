@@ -10,7 +10,7 @@ For this post, we will take a slightly different approach. Instead of covering a
 ## Generating the input
 Let's start with a simple sorted array with 10 elements. We could use a loop to generate this array but let's do something cool with a standard library function `std::iota`. 
 
-{% highlight c %}
+{% highlight c++ %}
 std::vector<int> nums(10);
 std::iota(nums.begin(), nums.end(), 0);
 {% endhighlight %}
@@ -26,7 +26,7 @@ To make the tree balanced, we need to do something very similar to a [binary sea
 we could have even number of elements - like in our example. With 10 elements, one side has to have 4 and the other side has to have 5 to make it balanced. What's the best candidate for the root element in such case? It's the middle element.
 Once we placed the middle element at the root, we need to recursively populate the left and right subtrees using the same logic. The end result is annoyingly simple once we understand it. 
 
-{% highlight c %}
+{% highlight c++ %}
 struct TreeNode {
     int value;
     TreeNode *left;
@@ -52,7 +52,7 @@ Now that we have created a nice balanced tree, let's traverse it. We have alread
 ## In order traversal
 This is an important traversal scheme. Using this traversal on  BST, we can get elements in the sorted order. If we take the tree we created with SortedArrayToBST and fed its root node into this function, we will get the sorted array. Hence the name "In-order". Order of processing is left, root and right. 
 
-{% highlight c %}
+{% highlight c++ %}
 void InOrderTraversal(TreeNode *root, std::vector<int> &results) {
     if (!root) return;
     InOrderTraversal(root->left, results);
@@ -67,7 +67,7 @@ void InOrderTraversal(TreeNode *root, std::vector<int> &results) {
 
 ## Pre order traversal
 
-{% highlight c %}
+{% highlight c++ %}
 void PreOrderTraversal(TreeNode *root, std::vector<int> &results) {
     if (!root) return;
     results.push_back(root->value);
@@ -82,7 +82,7 @@ void PreOrderTraversal(TreeNode *root, std::vector<int> &results) {
 
 ## Post order traversal
 
-{% highlight c %}
+{% highlight c++ %}
 void PostOrderTraversal(TreeNode *root, std::vector<int> &results) {
     if (!root) return;
     PostOrderTraversal(root->left, results);
@@ -100,7 +100,7 @@ void PostOrderTraversal(TreeNode *root, std::vector<int> &results) {
 This is a useful traversal scheme that can be used to represent a tree uniquely using a string representation. In fact, [leetcode](https://support.leetcode.com/hc/en-us/articles/360011883654-What-does-1-null-2-3-mean-in-binary-tree-representation-) uses this 
 technique to specify their trees for their problems.
 
-{% highlight c %}
+{% highlight c++ %}
 std::vector<TreeNode*> LevelOrderTraversal(TreeNode* root) {
     std::vector<TreeNode*> results;
     std::queue<TreeNode*> q;
