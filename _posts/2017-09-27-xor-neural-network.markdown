@@ -16,7 +16,7 @@ For the uninitiated, the XOR truth table looks as follows:
 | 0 | 0 | 0 |
 | 0 | 1 | 1 |
 | 1 | 0 | 1 |
-| 1 | 0 | 1 |
+| 1 | 1 | 0 |
 
 This is in fact how a two-way switch works. If both the switches are on or off, then the output is off. If only one is on, then the output is on.  
 
