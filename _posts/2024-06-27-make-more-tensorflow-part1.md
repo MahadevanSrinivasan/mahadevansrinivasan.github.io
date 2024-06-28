@@ -121,7 +121,7 @@ for i in range(5):
 
 I set the random seed so you can try reproducing the results that I am getting on your machine. Here are the 5 names I got (even more terrible than the pytorch version that Andrej trained). 
 
-{% endhighlight %}
+{% highlight python %}
 hmyxkqmcp
 pibtzwr
 podmeyshngaloxdopreqplwyxuz
