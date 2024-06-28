@@ -1,11 +1,9 @@
 ---
 layout: post
-title:  "Make More Tensorflow Version"
+title:  "Make More Tensorflow Version (part 1)"
 date:   2024-06-27 17:40:00
 tags: tensorflow keras neural network make more
 ---
-
-# Make More Tensorflow Version (part 1)
 
 I recently started watching Andrej Karpathy's [make more youtube video series](https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ) (I know I'm a year late to the party). In this and the following posts, I plan to reproduce his experiments and models but using tensorflow. 
 
@@ -68,7 +66,7 @@ for i in range(27):
 plt.axis('off')
 ```
 
-![assets/bigram_model_counts]({{ site.url }}/assets/bigram_model_counts.jpg)
+![assets/bigram_model_counts]({{ site.url }}/assets/bigram_model_counts.png)
 
 ## Normalizing the counts
 
