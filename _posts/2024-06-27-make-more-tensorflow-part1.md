@@ -70,7 +70,7 @@ plt.axis('off')
 
 ## Normalizing the counts
 
-To sample based on the distribution, it is better to have probabilities instead of counts. See my earlier post on [Random pick weight]({% post_url 2023-10-30-random-pick-weight %})(!posts/.md) for some detailed explanation. Because we said we would do it with Tensorflow, let's use some tensorflow functions.
+To sample based on the distribution, it is better to have probabilities instead of counts. See my earlier post on [random pick weight]({% post_url 2023-10-30-random-pick-weight %}) for some detailed explanation. Here I will use some tensorflow functions to do the same thing.
 
 {% highlight python %}
 P = tf.constant(counts, dtype=tf.float32)
