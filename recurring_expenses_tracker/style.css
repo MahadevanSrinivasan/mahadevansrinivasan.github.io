@@ -32,23 +32,3 @@ body {
 .dark .payment-overdue {
     color: #f87171;
 }
-
-/* Style for remove button */
-.remove-skip-btn {
-    cursor: pointer;
-    margin-left: 8px;
-    color: #ef4444;
-    /* Red */
-}
-
-.dark .remove-skip-btn {
-    color: #f87171;
-}
-
-.remove-skip-btn:hover {
-    color: #b91c1c;
-}
-
-.dark .remove-skip-btn:hover {
-    color: #ef4444;
-}
