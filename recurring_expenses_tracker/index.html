@@ -60,6 +60,39 @@
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
                             required> </div>
                 </div>
+                <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-medium mb-3 text-gray-900 dark:text-white">Skipped Dates</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Add specific dates when the class will be
+                        skipped. These dates won't affect the remaining class count.</p>
+                    <div class="flex items-end gap-4 mb-4">
+                        <div class="flex-grow">
+                            <label for="skip-date-input"
+                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Date to
+                                Skip</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none"> <svg
+                                        class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true"
+                                        xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                        <path
+                                            d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V4Zm-2 13H4v-7h14v7Z" />
+                                    </svg> </div>
+                                <input datepicker datepicker-autohide type="text" id="skip-date-input"
+                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                                    placeholder="Select date to skip">
+                            </div>
+                        </div>
+                        <button type="button" id="add-skip-date-button"
+                            class="text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-indigo-500 dark:hover:bg-indigo-600 focus:outline-none dark:focus:ring-indigo-800">Add
+                            Skip Date</button>
+                    </div>
+                    <div id="skipped-dates-list-container">
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Currently Skipped
+                            Dates:</label>
+                        <ul id="skipped-dates-list" class="list-disc list-inside text-gray-700 dark:text-gray-300">
+                            <li class="italic text-gray-500 dark:text-gray-400">No dates skipped yet.</li>
+                        </ul>
+                    </div>
+                </div>
                 <button type="submit"
                     class="mt-6 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Save
                     Configuration</button>
@@ -125,14 +158,21 @@
                     Cancelled</button>
             </div>
 
-            <button id="check-class-button" type="button"
-                class="text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900">
-                Check Status / Confirm Today
-            </button>
-            <button id="reset-config-button" type="button"
-                class="text-white bg-gray-500 hover:bg-gray-600 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800">
-                Reset Configuration
-            </button>
+            <div class="flex flex-wrap gap-2">
+                <button id="check-class-button" type="button"
+                    class="text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900">
+                    Check Status / Confirm Today
+                </button>
+                <button id="log-manual-class-button" type="button" data-modal-target="manual-log-modal"
+                    data-modal-toggle="manual-log-modal"
+                    class="text-white bg-cyan-600 hover:bg-cyan-700 focus:ring-4 focus:outline-none focus:ring-cyan-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-cyan-500 dark:hover:bg-cyan-600 dark:focus:ring-cyan-800">
+                    Log Manual Class
+                </button>
+                <button id="reset-config-button" type="button"
+                    class="text-white bg-gray-500 hover:bg-gray-600 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800">
+                    Reset Configuration
+                </button>
+            </div>
         </div>
 
         <div id="history-section" class="hidden">
@@ -183,7 +223,63 @@
                 </svg> </button>
         </div>
 
+        <div id="manual-log-modal" tabindex="-1" aria-hidden="true"
+            class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+            <div class="relative p-4 w-full max-w-md max-h-full">
+                <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+                    <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white"> Log Manual Class Entry </h3>
+                        <button type="button"
+                            class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                            data-modal-hide="manual-log-modal"> <svg class="w-3 h-3" aria-hidden="true"
+                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                    stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                            </svg> <span class="sr-only">Close modal</span> </button>
+                    </div>
+                    <div class="p-4 md:p-5 space-y-4">
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Log a class that happened outside the
+                            regular schedule (e.g., make-up, extra). This entry WILL count towards the current payment
+                            cycle.</p>
+                        <div>
+                            <label for="manual-log-date"
+                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Date of
+                                Class</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none"> <svg
+                                        class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true"
+                                        xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                        <path
+                                            d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V4Zm-2 13H4v-7h14v7Z" />
+                                    </svg> </div>
+                                <input datepicker datepicker-autohide type="text" id="manual-log-date"
+                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                                    placeholder="Select date" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="manual-log-note"
+                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Optional
+                                Note</label>
+                            <textarea id="manual-log-note" rows="2"
+                                class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                                placeholder="e.g., Make-up for last week..."></textarea>
+                        </div>
+                    </div>
+                    <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
+                        <button id="save-manual-log-button" type="button"
+                            class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Save
+                            Manual Entry</button>
+                        <button data-modal-hide="manual-log-modal" type="button"
+                            class="py-2.5 px-5 ms-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
     </div>
+
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
     <script src="./app.js">
