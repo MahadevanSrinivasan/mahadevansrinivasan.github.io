@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Budgeting App</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Basic styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        /* Hide the default file input */
+        #csvFiles {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        /* Summary styles */
+        .summary-card {
+            @apply flex items-center p-6 bg-white border border-gray-200 rounded-lg shadow-lg border-l-4 dark:bg-gray-800 dark:border-gray-700;
+        }
+
+        .summary-card .icon-container {
+            @apply p-3 rounded-full mr-4;
+        }
+
+        .summary-card .icon-container svg {
+            @apply w-6 h-6;
+        }
+
+        .summary-card .text-content {}
+
+        .summary-card .label {
+            @apply block text-sm font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400;
+        }
+
+        .summary-card .value {
+            @apply block text-3xl font-bold text-gray-900 mt-1;
+        }
+
+        .summary-card.credits {
+            @apply border-l-green-500;
+        }
+
+        .summary-card.credits .icon-container {
+            @apply bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400;
+        }
+
+        .summary-card.credits .value {
+            @apply text-green-700 dark:text-green-500;
+        }
+
+        .summary-card.debits {
+            @apply border-l-red-500;
+        }
+
+        .summary-card.debits .icon-container {
+            @apply bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400;
+        }
+
+        .summary-card.debits .value {
+            @apply text-red-700 dark:text-red-500;
+        }
+
+        .summary-card.net {
+            @apply border-l-indigo-500;
+        }
+
+        .summary-card.net .icon-container {
+            @apply bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-400;
+        }
+
+        .summary-card.net .value.net-positive {
+            @apply text-green-700 dark:text-green-500;
+        }
+
+        .summary-card.net .value.net-negative {
+            @apply text-red-700 dark:text-red-500;
+        }
+
+        .summary-card.net .value {
+            @apply text-gray-900 dark:text-white;
+        }
+
+        /* Table category cell style */
+        .category-cell select {
+            @apply block w-full p-1 border border-gray-300 rounded-md shadow-sm text-xs focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-50 hover:bg-gray-100 cursor-pointer dark:bg-gray-700 dark:border-gray-600 dark:text-white;
+        }
+
+        .category-cell-badge {
+            @apply px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium inline-block whitespace-nowrap;
+        }
+
+        /* Chart container style */
+        .chart-container {
+            position: relative;
+            height: 450px;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        /* Make chart canvas clickable */
+        #categorySpendChart {
+            cursor: pointer;
+        }
+
+        /* Flowbite Tab Styles - Active state defined by Flowbite JS */
+        #tabsContainer button[role="tab"]:not([aria-selected="true"]) {
+            @apply border-transparent text-gray-500 hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300;
+        }
+
+        #tabsContainer button[role="tab"][aria-selected="true"] {
+            @apply text-blue-600 border-blue-600 dark:text-blue-500 dark:border-blue-500 font-semibold;
+        }
+
+
+        /* Filter Input Styles */
+        .filter-input {
+            @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500;
+        }
+
+        /* Duplicates Section Styles */
+        #duplicatesSection {
+            @apply mt-8 p-4 border border-yellow-300 bg-yellow-50 rounded-lg dark:bg-gray-800 dark:border-yellow-800;
+        }
+
+        #duplicatesSection h2 {
+            @apply text-yellow-800 dark:text-yellow-300;
+        }
+
+        #duplicatesSection p {
+            @apply text-yellow-700 dark:text-yellow-300;
+        }
+
+        /* Flowbite buttons used for actions */
+
+        /* Settings Styles (Now in config tab) */
+        #configurationSection label {
+            @apply block mb-2 text-sm font-medium text-gray-900 dark:text-white;
+        }
+
+        #configurationSection input[type="text"] {
+            @apply filter-input;
+        }
+
+        /* Rules Table Styles */
+        #rulesTable th {
+            @apply px-6 py-3;
+        }
+
+        #rulesTable td {
+            @apply px-6 py-4;
+        }
+
+        #rulesTable .rule-pattern-display {
+            @apply text-gray-600 font-mono dark:text-gray-400;
+        }
+
+        #rulesTable .rule-name-display {
+            @apply text-gray-900 font-medium dark:text-white;
+        }
+
+        #rulesTable .rule-actions {
+            @apply text-right space-x-2;
+        }
+
+        #rulesTable input[type="text"] {
+            @apply text-sm p-1 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 focus:border-blue-500;
+        }
+
+        .rule-action-btn {
+            @apply p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 inline-flex items-center justify-center;
+        }
+
+        .rule-action-btn svg {
+            @apply w-4 h-4 stroke-current;
+        }
+
+        .rule-action-btn.save {
+            @apply text-green-600 hover:text-green-800 hover:bg-green-100 dark:text-green-500 dark:hover:bg-green-700 focus:ring-green-500;
+        }
+
+        .rule-action-btn.cancel {
+            @apply text-red-600 hover:text-red-800 hover:bg-red-100 dark:text-red-500 dark:hover:bg-red-700 focus:ring-red-500;
+        }
+
+        /* Ensure only active tab content is shown */
+        /* Handled by Flowbite JS based on aria-selected */
+    </style>
+</head>
+
+<body class="p-4 md:p-8 bg-gray-100 dark:bg-gray-900">
+    <div class="max-w-5xl mx-auto bg-white p-6 md:p-8 rounded-lg shadow-md dark:bg-gray-800">
+        <header class="mb-6 flex items-center justify-between">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Budget Analyzer</h1>
+        </header>
+
+
+        <section
+            class="mb-6 p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-center">
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3"> Add CSV files or load mock data to
+                analyze. New files append. Duplicates matching previous loads shown for review. </p>
+            <div class="flex flex-wrap justify-center items-center gap-4">
+                <input type="file" id="csvFiles" multiple accept=".csv" class="hidden">
+
+                <button type="button" id="chooseFilesButton"
+                    class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800 inline-flex items-center">
+                    <svg class="w-5 h-5 mr-2 -ml-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                    </svg>
+                    Add Files
+                </button>
+
+                <button type="button" id="loadMockDataButton"
+                    class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-300 focus:outline-none focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700 inline-flex items-center">
+                    <svg class="w-5 h-5 mr-2 -ml-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5-3.75c-3.86-.034-7.096.668-9.75 2.006M3.75 6.375c3.86.034 7.096-.668 9.75-2.006" />
+                    </svg>
+                    Load Mock Data
+                </button>
+
+                <button type="button" id="exportCsvButton"
+                    class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800 inline-flex items-center hidden">
+                    <svg class="w-5 h-5 mr-2 -ml-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    Export CSV
+                </button>
+                <button type="button" id="clearAllDataButton"
+                    class="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-red-600 dark:hover:bg-red-700 focus:outline-none dark:focus:ring-red-800 inline-flex items-center">
+                    <svg class="w-5 h-5 mr-2 -ml-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                    </svg>
+                    Clear All Data
+                </button>
+            </div>
+            <div id="selectedFilesInfo" class="mt-3 text-sm text-gray-600 dark:text-gray-400"></div>
+            <div id="loadingIndicator" class="mt-4 text-sm text-gray-600 dark:text-gray-400 hidden"> <span
+                    class="animate-spin inline-block mr-1 w-4 h-4 border-2 border-current border-t-transparent text-blue-600 rounded-full"
+                    role="status" aria-label="loading"></span> Processing files... </div>
+        </section>
+
+
+        <div id="toast-container" class="fixed top-5 right-5 z-50 space-y-4"></div>
+
+
+        <section id="summarySection" class="mt-6 mb-6 grid grid-cols-1 md:grid-cols-3 gap-6 hidden">
+
+            <div
+                class="summary-card credits block p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
+                <div class="flex items-center">
+                    <div class="icon-container bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="7" y1="17" x2="17" y2="7"></line>
+                            <polyline points="7 7 17 7 17 17"></polyline>
+                        </svg>
+                    </div>
+                    <div class="text-content ml-4">
+                        <span class="label">Total Credits</span>
+                        <span id="totalCredits" class="value text-green-700 dark:text-green-500">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                class="summary-card debits block p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
+                <div class="flex items-center">
+                    <div class="icon-container bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="7" y1="7" x2="17" y2="17"></line>
+                            <polyline points="17 7 17 17 7 17"></polyline>
+                        </svg>
+                    </div>
+                    <div class="text-content ml-4">
+                        <span class="label">Total Debits</span>
+                        <span id="totalDebits" class="value text-red-700 dark:text-red-500">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                class="summary-card net block p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
+                <div class="flex items-center">
+                    <div class="icon-container bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 16h3l-7 7-7-7h3V8H5l7-7 7 7h-3v8z"></path>
+                        </svg>
+                    </div>
+                    <div class="text-content ml-4">
+                        <span class="label">Net Total</span>
+                        <span id="netTotal" class="value text-gray-900 dark:text-white">$0.00</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+
+        <div id="mainContentArea" class="mt-8">
+
+
+            <div class="mb-4 border-b border-gray-200 dark:border-gray-700">
+
+                <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="tabsContainer"
+                    data-tabs-toggle="#tabContentContainer" role="tablist">
+                    <li class="me-2" role="presentation">
+
+                        <button class="inline-block p-4 border-b-2 rounded-t-lg" id="configViewTab"
+                            data-tabs-target="#configurationSection" type="button" role="tab"
+                            aria-controls="configurationSection" aria-selected="true">Configuration</button>
+                    </li>
+                    <li class="me-2 hidden" id="tableViewTabListItem" role="presentation">
+
+                        <button class="inline-block p-4 border-b-2 rounded-t-lg" id="tableViewTab"
+                            data-tabs-target="#resultsSection" type="button" role="tab" aria-controls="resultsSection"
+                            aria-selected="false">Table View</button>
+                    </li>
+                    <li class="me-2 hidden" id="chartViewTabListItem" role="presentation">
+
+                        <button class="inline-block p-4 border-b-2 rounded-t-lg" id="chartViewTab"
+                            data-tabs-target="#chartSection" type="button" role="tab" aria-controls="chartSection"
+                            aria-selected="false">Chart View</button>
+                    </li>
+                    <li class="me-2 hidden" id="monthlyTrendTabListItem" role="presentation">
+                        <button class="inline-block p-4 border-b-2 rounded-t-lg" id="monthlyTrendTab"
+                            data-tabs-target="#monthlyTrendSection" type="button" role="tab"
+                            aria-controls="monthlyTrendSection" aria-selected="false">Monthly Trend</button>
+                    </li>
+                </ul>
+            </div>
+
+
+            <div id="tabContentContainer">
+
+                <div class="hidden p-4 rounded-lg bg-gray-50 dark:bg-gray-800" id="configurationSection" role="tabpanel"
+                    aria-labelledby="configViewTab">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Category Rules (Regex)</h2>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Define rules to automatically categorize
+                        transactions based on their description. Rules are checked in order. Uses case-insensitive regex
+                        matching. Edit rules directly in the table.</p>
+
+                    <form id="addRuleForm"
+                        class="mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-100 dark:bg-gray-700">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-3">Add New Rule</h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            <div> <label for="newCategoryName"
+                                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Category
+                                    Name:</label> <input type="text" id="newCategoryName"
+                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                    required> </div>
+                            <div> <label for="newRegexPattern"
+                                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Regex
+                                    Pattern:</label> <input type="text" id="newRegexPattern"
+                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                    required placeholder="e.g., amazon|walmart"> </div>
+                            <div> <button type="submit" id="addOrUpdateRuleBtn"
+                                    class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 inline-flex justify-center items-center">
+                                    <svg class="w-4 h-4 mr-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                        fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M12 4.5v15m7.5-7.5h-15" />
+                                    </svg>
+                                    Add Rule </button> </div>
+                        </div>
+                    </form>
+
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-3">Current Rules</h3>
+                    <div
+                        class="relative overflow-x-auto shadow-md sm:rounded-lg border border-gray-200 dark:border-gray-700">
+                        <table id="rulesTable"
+                            class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                            <thead
+                                class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 w-1/3">Category Name</th>
+                                    <th scope="col" class="px-6 py-3 w-1/2">Regex Pattern</th>
+                                    <th scope="col" class="px-6 py-3 w-1/6"><span class="sr-only">Actions</span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="rulesListBody">
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <div class="hidden p-4 rounded-lg bg-gray-50 dark:bg-gray-800" id="chartSection" role="tabpanel"
+                    aria-labelledby="chartViewTab">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 sr-only">Spending by Category
+                    </h2>
+                    <div class="chart-container"> <canvas id="categorySpendChart"></canvas> </div>
+                </div>
+
+
+                <div class="hidden p-4 rounded-lg bg-gray-50 dark:bg-gray-800" id="resultsSection" role="tabpanel"
+                    aria-labelledby="tableViewTab">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 sr-only">Processed Transactions
+                        (Sorted by Date)</h2>
+                    <div id="filterControls"
+                        class="mb-4 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            <div> <label for="filterDescription"
+                                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Filter
+                                    Description:</label> <input type="text" id="filterDescription"
+                                    name="filterDescription" class="filter-input" placeholder="e.g., amazon, coffee">
+                            </div>
+                            <div> <label for="filterCategory"
+                                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Filter
+                                    Category:</label> <input type="text" id="filterCategory" name="filterCategory"
+                                    class="filter-input" placeholder="e.g., Shopping, Food"> </div>
+                            <div> <button type="button" id="clearFiltersButton"
+                                    class="w-full text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700 inline-flex justify-center items-center">
+                                    <svg class="w-4 h-4 mr-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                        fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M12 9.75L14.25 12m0 0L12 14.25m2.25-2.25L14.25 12M12 9.75L9.75 12m0 0L12 14.25m-2.25-2.25L9.75 12m-3-3l3-3m0 0l3 3m-3-3v12.75" />
+                                    </svg>
+                                    Clear Filters </button> </div>
+                        </div>
+                    </div>
+                    <div
+                        class="relative overflow-x-auto shadow-md sm:rounded-lg border border-gray-200 dark:border-gray-700">
+                        <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                            <thead
+                                class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 w-[15%]">Date</th>
+                                    <th scope="col" class="px-6 py-3 w-[35%]">Description</th>
+                                    <th scope="col" class="px-6 py-3 w-[20%]">Category</th>
+                                    <th scope="col" class="px-6 py-3 text-right w-[15%]">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsTableBody"></tbody>
+                        </table>
+                        <div id="noResultsMessage"
+                            class="hidden px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">No
+                            transactions match the current filters.</div>
+                    </div>
+                    </section>
+
+
+                    <div class="hidden p-4 rounded-lg bg-gray-50 dark:bg-gray-800" id="monthlyTrendSection"
+                        role="tabpanel" aria-labelledby="monthlyTrendTab">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Monthly Spending Trend</h2>
+                        <div class="chart-container"> <canvas id="monthlyTrendChart"></canvas> </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <section id="duplicatesSection" class="hidden">
+                <h2 class="text-xl font-semibold text-yellow-800 dark:text-yellow-300 mb-3">Potential Duplicates Found
+                </h2>
+                <p class="text-sm text-yellow-700 dark:text-yellow-300 mb-4">Review the transactions below found in the
+                    latest files. They appear to match transactions already loaded. Accept them to add them anyway, or
+                    dismiss them to ignore.</p>
+                <div class="flex justify-end gap-3 mb-4">
+                    <button id="acceptAllDuplicatesBtn" type="button"
+                        class="text-green-700 hover:text-white border border-green-700 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-xs px-3 py-1.5 text-center dark:border-green-500 dark:text-green-500 dark:hover:text-white dark:hover:bg-green-600 dark:focus:ring-green-800">Accept
+                        All</button>
+                    <button id="dismissAllDuplicatesBtn" type="button"
+                        class="text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-xs px-3 py-1.5 text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900">Dismiss
+                        All</button>
+                </div>
+                <div
+                    class="relative overflow-x-auto shadow-md sm:rounded-lg border border-yellow-300 dark:border-yellow-700">
+                    <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                        <thead
+                            class="text-xs text-yellow-700 uppercase bg-yellow-100 dark:bg-gray-700 dark:text-yellow-300">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 w-[15%]">Date</th>
+                                <th scope="col" class="px-6 py-3 w-[35%]">Description</th>
+                                <th scope="col" class="px-6 py-3 w-[20%]">Category</th>
+                                <th scope="col" class="px-6 py-3 text-right w-[15%]">Amount</th>
+                                <th scope="col" class="px-6 py-3 text-center w-[15%]">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="duplicatesTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+
+        </div>
+
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+
+        <script>
+            console.log("Script execution started."); // DEBUG: Script Start
+
+            // --- DOM References ---
+            const fileInput = document.getElementById('csvFiles');
+            const chooseFilesButton = document.getElementById('chooseFilesButton');
+            const clearAllDataButton = document.getElementById('clearAllDataButton');
+            const exportCsvButton = document.getElementById('exportCsvButton');
+            const loadMockDataButton = document.getElementById('loadMockDataButton');
+            const selectedFilesInfo = document.getElementById('selectedFilesInfo');
+            const resultsSection = document.getElementById('resultsSection');
+            const tableBody = document.getElementById('resultsTableBody');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const toastContainer = document.getElementById('toast-container');
+            const summarySection = document.getElementById('summarySection');
+            const totalCreditsEl = document.getElementById('totalCredits');
+            const totalDebitsEl = document.getElementById('totalDebits');
+            const netTotalEl = document.getElementById('netTotal');
+            const chartSection = document.getElementById('chartSection');
+            const chartCanvas = document.getElementById('categorySpendChart');
+            const mainContentArea = document.getElementById('mainContentArea');
+            const tabsContainer = document.getElementById('tabsContainer');
+            const tabContentContainer = document.getElementById('tabContentContainer');
+            const filterDescriptionInput = document.getElementById('filterDescription');
+            const filterCategoryInput = document.getElementById('filterCategory');
+            const clearFiltersButton = document.getElementById('clearFiltersButton');
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            const duplicatesSection = document.getElementById('duplicatesSection');
+            const duplicatesTableBody = document.getElementById('duplicatesTableBody');
+            const acceptAllDuplicatesBtn = document.getElementById('acceptAllDuplicatesBtn');
+            const dismissAllDuplicatesBtn = document.getElementById('dismissAllDuplicatesBtn');
+            // Settings Elements (now in config tab)
+            const configurationSection = document.getElementById('configurationSection');
+            const addRuleForm = document.getElementById('addRuleForm');
+            const newCategoryNameInput = document.getElementById('newCategoryName');
+            const newRegexPatternInput = document.getElementById('newRegexPattern');
+            const rulesListBody = document.getElementById('rulesListBody');
+            const addOrUpdateRuleBtn = document.getElementById('addOrUpdateRuleBtn');
+
+            // Tab Buttons / Links
+            const configViewTab = document.getElementById('configViewTab');
+            const tableViewTab = document.getElementById('tableViewTab');
+            const chartViewTab = document.getElementById('chartViewTab');
+            const tableViewTabListItem = document.getElementById('tableViewTabListItem');
+            const chartViewTabListItem = document.getElementById('chartViewTabListItem');
+            const monthlyTrendTabListItem = document.getElementById('monthlyTrendTabListItem'); // New Tab
+            const monthlyTrendTab = document.getElementById('monthlyTrendTab');             // New Tab
+            const monthlyTrendSection = document.getElementById('monthlyTrendSection');     // New Tab Content
+            const monthlyTrendChartCanvas = document.getElementById('monthlyTrendChart');   // New Chart Canvas
+
+
+            // --- State Variables ---
+            let selectedFiles = [];
+            let allProcessedTransactions = [];
+            let categoryChartInstance = null;
+            let monthlyTrendChartInstance = null; // New Chart Instance
+            let potentialDuplicates = [];
+            let currentFilteredTransactions = [];
+            let categoryRules = [];
+            let transactionIdCounter = 0;
+            let editingRuleIndex = -1;
+            let flowbiteTabsInstance = null; // To store the Flowbite Tabs instance
+
+            // --- Constants ---
+            const CATEGORY_RULES_STORAGE_KEY = 'budgetAppCategoryRules';
+            const UNCATEGORIZED_DEFAULT = 'Miscellaneous';
+            const CHART_EXCLUDED_CATEGORIES = ['Payment', 'Income'];
+
+            // --- Mock Data ---
+            const MOCK_CSV_DATA = `Date,Description,Category,Amount\n2023-10-26,Starbucks,Food & Drink,12.50\n2023-10-26,Amazon,Shopping,85.20\n2023-10-26,Shell,Gas & Fuel,45.75\n2023-10-27,Whole Foods,Groceries,120.00\n2023-10-27,Netflix,Entertainment,15.99\n2023-10-27,Delta Airlines,Travel,350.50\n2023-10-28,Etsy,Shopping,30.00\n2023-10-28,Local Diner,Food & Drink,25.30\n2023-10-28,Best Buy,Electronics,299.99\n2023-10-29,Target,Groceries,65.80\n2023-10-29,Spotify,Entertainment,9.99\n2023-10-29,Hotel XYZ,Travel,180.00\n2023-10-30,Home Depot,Home Improvement,150.25\n2023-10-30,eBay,Shopping,55.00\n2023-10-30,Local Cafe,Food & Drink,10.75\n2023-10-31,Costco,Groceries,210.40\n2023-10-31,Playstation Store,Entertainment,49.99\n2023-10-31,Apple Store,Electronics,1200.00\n2023-11-01,Trader Joe's,Groceries,90.50\n2023-11-01,Uber,Transportation,22.80\n2023-11-01,International Restaurant,Food & Drink,75.00\n2023-11-02,Online Clothing Store,Shopping,110.00\n2023-11-02,Local Hardware Store,Home Improvement,80.60\n2023-11-02,Local Gas Station,Gas & Fuel,60.90\n2023-11-03,Online Books,Shopping,20.30\n2023-11-03,Local Bakery,Food & Drink,15.50\n2023-11-03,Movie Theater,Entertainment,35.00\n2023-11-04,Furniture Store,Home Improvement,450.00\n2023-11-04,Local Pharmacy,Health,40.20\n2023-11-04,Large Grocery Store,Groceries,180.70`;
+
+            // --- Helper: Generate Hash ---
+            function generateTransactionHash(tx) { /* ... */ const desc = tx.description ? tx.description.trim().toLowerCase() : ''; const amount = !isNaN(tx.amount) ? tx.amount.toFixed(2) : 'NaN'; return `${tx.date}|${amount}|${desc}`; }
+
+            // --- Category Rule Management ---
+            function getDefaultRules() { /* ... */ return [{ name: 'Shopping', pattern: 'amazon|walmart|target|costco|shopping|etsy|ebay|online clothing|online books' }, { name: 'Food & Dining', pattern: 'starbucks|mcdonald|restaurant|cafe|lunch|dinner|grocery|safeway|vons|trader joe|whole foods|local diner|local bakery|large grocery' }, { name: 'Gas & Fuel', pattern: 'shell|chevron|gas |exxon|mobil|local gas' }, { name: 'Housing', pattern: 'rent|mortgage' }, { name: 'Income', pattern: 'salary|paycheck|payroll|deposit|direct dep' }, { name: 'Entertainment', pattern: 'spotify|netflix|hulu|movie|concert|entertainment|disney plus|playstation|theater' }, { name: 'Utilities', pattern: 'utility|electric|water|sdge|internet|comcast|at&t|verizon|phone|google fi' }, { name: 'Transfer/Payment', pattern: 'transfer|payment|venmo|paypal|zelle|credit card pay' }, { name: 'Insurance', pattern: 'insurance|geico|state farm' }, { name: 'Healthcare', pattern: 'pharmacy|doctor|health|cvs|walgreens' }, { name: 'Travel', pattern: 'flight|hotel|travel|airbnb|southwest|united air|delta air' }, { name: 'Cash', pattern: 'atm withdrawal|cash withdraw' }, { name: 'Electronics', pattern: 'best buy|apple store' }, { name: 'Home Improvement', pattern: 'home depot|hardware|furniture store' }, { name: 'Transportation', pattern: 'uber|lyft|taxi' }]; } // Added more defaults based on mock data
+            function loadRulesFromLocalStorage() { /* ... */ const storedRules = localStorage.getItem(CATEGORY_RULES_STORAGE_KEY); if (storedRules) { try { categoryRules = JSON.parse(storedRules); console.log("Loaded rules."); } catch (e) { console.error("Error parsing rules:", e); categoryRules = getDefaultRules(); } } else { console.log("Using default rules."); categoryRules = getDefaultRules(); } if (!Array.isArray(categoryRules)) { categoryRules = getDefaultRules(); } }
+            function saveRulesToLocalStorage() { /* ... */ try { localStorage.setItem(CATEGORY_RULES_STORAGE_KEY, JSON.stringify(categoryRules)); console.log("Saved rules."); } catch (e) { console.error("Error saving rules:", e); showMessage("Could not save rules.", "error"); } }
+
+            // --- MODIFIED: renderRulesList to use Table and handle inline edit state ---
+            function renderRulesList() {
+                rulesListBody.innerHTML = '';
+                if (!rulesListBody) { console.error("Rule list body not found!"); return; }
+
+                if (categoryRules.length === 0) {
+                    const row = rulesListBody.insertRow();
+                    const cell = row.insertCell();
+                    cell.colSpan = 3;
+                    cell.textContent = 'No rules defined. Use the form above to add one.';
+                    cell.className = 'text-center text-gray-500 dark:text-gray-400 p-4';
+                    return;
+                }
+
+                categoryRules.forEach((rule, index) => {
+                    const row = rulesListBody.insertRow();
+                    row.dataset.ruleIndex = index;
+                    row.className = "bg-white border-b dark:bg-gray-800 dark:border-gray-700";
+
+                    const nameCell = row.insertCell();
+                    nameCell.className = "px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"; // Flowbite style
+                    const patternCell = row.insertCell();
+                    patternCell.className = "px-6 py-4";
+                    const actionsCell = row.insertCell();
+                    actionsCell.className = 'rule-actions px-6 py-4 text-right space-x-2'; // Flowbite style + spacing
+
+                    if (index === editingRuleIndex) {
+                        // Render inputs for editing
+                        nameCell.innerHTML = `<input type="text" value="${rule.name}" class="inline-edit-name filter-input w-full">`;
+                        patternCell.innerHTML = `<input type="text" value="${rule.pattern}" class="inline-edit-pattern filter-input w-full">`;
+
+                        // Save Button
+                        const saveBtn = document.createElement('button');
+                        saveBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                        saveBtn.className = 'rule-action-btn save rule-save-btn';
+                        saveBtn.title = 'Save Rule';
+                        actionsCell.appendChild(saveBtn);
+
+                        // Cancel Button
+                        const cancelBtn = document.createElement('button');
+                        cancelBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+                        cancelBtn.className = 'rule-action-btn cancel rule-cancel-btn';
+                        cancelBtn.title = 'Cancel Edit';
+                        actionsCell.appendChild(cancelBtn);
+
+                    } else {
+                        // Render static text and standard buttons
+                        nameCell.textContent = rule.name;
+                        patternCell.className += ' rule-pattern-display'; // Add class for styling
+                        patternCell.textContent = rule.pattern;
+
+                        // Edit Button
+                        const editBtn = document.createElement('button');
+                        editBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>`;
+                        editBtn.className = 'rule-action-btn edit-rule-btn';
+                        editBtn.title = 'Edit Rule';
+                        editBtn.disabled = (editingRuleIndex !== -1);
+                        if (editingRuleIndex !== -1) editBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        actionsCell.appendChild(editBtn);
+
+                        // Delete Button
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
+                        deleteBtn.className = 'rule-action-btn delete-rule-btn';
+                        deleteBtn.title = 'Delete Rule';
+                        deleteBtn.disabled = (editingRuleIndex !== -1);
+                        if (editingRuleIndex !== -1) deleteBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        actionsCell.appendChild(deleteBtn);
+                    }
+                });
+            }
+
+            // --- Removed renderRulesDisplayTable ---
+
+            // --- Modified: resetRuleForm (Only for Add form now) ---
+            function resetRuleForm() {
+                addRuleForm.reset();
+                // No need to manage edit state here anymore, handled by renderRulesList
+            }
+
+            function recomputeCategoriesAndRenderAll() { /* ... */ console.log("Recomputing categories..."); if (allProcessedTransactions.length === 0 && potentialDuplicates.length === 0) { console.log("No transactions loaded."); return; } allProcessedTransactions.forEach(tx => { tx.category = inferCategory(tx.description); }); potentialDuplicates.forEach(tx => { tx.category = inferCategory(tx.description); }); applyFiltersAndRender(); if (potentialDuplicates.length > 0) { renderDuplicatesTable(potentialDuplicates); } showMessage('Categories recomputed.', 'info'); }
+
+
+            function getUniqueCategoryOptions() { /* ... */ const categories = new Set([UNCATEGORIZED_DEFAULT]); allProcessedTransactions.forEach(tx => { if (tx.category) categories.add(tx.category); }); potentialDuplicates.forEach(tx => { if (tx.category) categories.add(tx.category); }); categoryRules.forEach(rule => categories.add(rule.name)); return Array.from(categories).sort(); }
+
+            // --- Restored: Manual Tab Activation Fallback ---
+            function activateTabManually(targetContentId) {
+                console.log(`Activating tab manually for content: ${targetContentId}`);
+                const activeClasses = ['text-blue-600', 'border-blue-600', 'dark:text-blue-500', 'dark:border-blue-500', 'font-semibold'];
+                const inactiveClasses = ['border-transparent', 'text-gray-500', 'hover:text-gray-600', 'hover:border-gray-300', 'dark:text-gray-400', 'dark:hover:text-gray-300'];
+
+                tabsContainer.querySelectorAll('button[role="tab"]').forEach(tab => {
+                    const currentTargetSelector = tab.dataset.tabsTarget;
+                    const currentTargetId = currentTargetSelector ? currentTargetSelector.substring(1) : null;
+
+                    if (currentTargetId === targetContentId) {
+                        tab.setAttribute('aria-selected', 'true');
+                        tab.classList.remove(...inactiveClasses);
+                        tab.classList.add(...activeClasses);
+                    } else {
+                        tab.setAttribute('aria-selected', 'false');
+                        tab.classList.remove(...activeClasses);
+                        tab.classList.add(...inactiveClasses);
+                    }
+                });
+                tabContentContainer.querySelectorAll('[role="tabpanel"]').forEach(content => {
+                    if (content.id === targetContentId) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+            }
+
+
+            // --- Event Listeners ---
+            console.log("Attaching basic listeners..."); // DEBUG
+            chooseFilesButton.addEventListener('click', () => { if (fileInput) { try { fileInput.click(); } catch (error) { console.error("Error clicking file input:", error); showMessage("Could not open file dialog.", "error"); } } else { console.error("File input element not found!"); } });
+            fileInput.addEventListener('change', (event) => {
+                handleFileProcessing(Array.from(event.target.files)); // Pass files directly
+            });
+
+            // --- Tab Listener Removed (Handled by Flowbite) ---
+            // tabsContainer.addEventListener('click', (event) => { /* ... */ }); 
+
+            filterDescriptionInput.addEventListener('input', applyFiltersAndRender);
+            filterCategoryInput.addEventListener('input', applyFiltersAndRender);
+            clearFiltersButton.addEventListener('click', () => { filterDescriptionInput.value = ''; filterCategoryInput.value = ''; applyFiltersAndRender(); });
+            clearAllDataButton.addEventListener('click', () => { /* ... (Reload page) ... */ if (confirm('Are you sure you want to clear all loaded data?')) { window.location.reload(); } });
+
+            duplicatesTableBody.addEventListener('click', (event) => { /* ... (Duplicate actions) ... */ const targetButton = event.target.closest('button'); if (!targetButton) return; const row = targetButton.closest('tr'); const duplicateIndex = parseInt(row.dataset.duplicateIndex, 10); if (isNaN(duplicateIndex) || duplicateIndex < 0 || duplicateIndex >= potentialDuplicates.length) { console.error("Invalid duplicate index:", duplicateIndex); return; } if (targetButton.classList.contains('accept-button')) { handleAcceptDuplicate(duplicateIndex); } else if (targetButton.classList.contains('dismiss-button')) { handleDismissDuplicate(duplicateIndex); } });
+            acceptAllDuplicatesBtn.addEventListener('click', () => { /* ... (Accept all) ... */ if (potentialDuplicates.length === 0) return; const count = potentialDuplicates.length; allProcessedTransactions = allProcessedTransactions.concat(potentialDuplicates); potentialDuplicates = []; allProcessedTransactions.sort((a, b) => { const dA = a.date ? new Date(a.date) : 0, dB = b.date ? new Date(b.date) : 0; if (isNaN(dA) && isNaN(dB)) return 0; if (isNaN(dA)) return 1; if (isNaN(dB)) return -1; return dB - dA; }); applyFiltersAndRender(); duplicatesSection.classList.add('hidden'); duplicatesTableBody.innerHTML = ''; showMessage(`Accepted all ${count} duplicate transactions. Total transactions: ${allProcessedTransactions.length}.`, 'info'); });
+            dismissAllDuplicatesBtn.addEventListener('click', () => { /* ... (Dismiss all) ... */ if (potentialDuplicates.length === 0) return; const dismissedCount = potentialDuplicates.length; potentialDuplicates = []; duplicatesSection.classList.add('hidden'); duplicatesTableBody.innerHTML = ''; showMessage(`Dismissed all ${dismissedCount} potential duplicate transactions.`, 'info'); });
+            exportCsvButton.addEventListener('click', () => { /* ... (Export CSV) ... */ if (currentFilteredTransactions.length === 0 && potentialDuplicates.length === 0 && allProcessedTransactions.length === 0) { showMessage('No data available to export.', 'warning'); return; } if (currentFilteredTransactions.length === 0) { showMessage('No data matching current filters to export.', 'warning'); return; } const timestamp = new Date().toISOString().slice(0, 19).replace(/[-T:]/g, ''); const filename = `budget_export_${timestamp}.csv`; exportDataToCsv(currentFilteredTransactions, filename); showMessage(`Exported ${currentFilteredTransactions.length} rows to ${filename}`, 'success'); });
+
+            // --- Settings Modal Listeners Removed --- 
+
+            // --- Settings Form/List Listeners (Now in Config Tab) --- 
+            // Listener for ADDING new rules
+            addRuleForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                // Ensure we are NOT in edit mode when adding
+                if (editingRuleIndex !== -1) {
+                    editingRuleIndex = -1; renderRulesList(); resetRuleForm();
+                    return;
+                }
+                console.log("Add Rule form submitted"); // DEBUG
+                const name = newCategoryNameInput.value.trim();
+                const pattern = newRegexPatternInput.value.trim();
+                if (!name || !pattern) { showMessage('Please enter both name and pattern.', 'warning'); return; }
+                try { new RegExp(pattern); } catch (e) { showMessage(`Invalid Regex: ${e.message}`, 'error'); return; }
+                console.log("Attempting to add new rule"); // DEBUG
+                categoryRules.push({ name, pattern });
+                showMessage(`Rule for '${name}' added. Recomputing categories...`, 'success');
+                saveRulesToLocalStorage();
+                renderRulesList();
+                resetRuleForm();
+                recomputeCategoriesAndRenderAll();
+            });
+
+            // Listener for EDIT, SAVE, CANCEL, DELETE actions on the rules table
+            rulesListBody.addEventListener('click', (event) => {
+                const targetElement = event.target;
+                const actionButton = targetElement.closest('.rule-action-btn');
+                if (!actionButton) return;
+
+                const row = actionButton.closest('tr');
+                if (!row || row.dataset.ruleIndex === undefined) { console.warn("Could not find row or rule index for action."); return; }
+                const index = parseInt(row.dataset.ruleIndex, 10);
+
+                if (isNaN(index) || index < 0) {
+                    console.warn("Invalid index parsed:", index);
+                    editingRuleIndex = -1; renderRulesList();
+                    return;
+                }
+
+                if (actionButton.classList.contains('edit-rule-btn')) {
+                    console.log("Edit button clicked for index:", index); // DEBUG
+                    if (index >= categoryRules.length) { console.warn("Stale edit index:", index); editingRuleIndex = -1; renderRulesList(); return; }
+                    if (editingRuleIndex !== -1 && editingRuleIndex !== index) {
+                        console.log("Cancelling edit on previous row:", editingRuleIndex); // DEBUG
+                        editingRuleIndex = -1;
+                        renderRulesList();
+                    }
+                    editingRuleIndex = index;
+                    renderRulesList();
+                    const nameInput = rulesListBody.querySelector(`tr[data-rule-index="${index}"] .inline-edit-name`);
+                    nameInput?.focus();
+
+                } else if (actionButton.classList.contains('delete-rule-btn')) {
+                    console.log("Delete button clicked for index:", index); // DEBUG
+                    if (index >= categoryRules.length) { console.warn("Stale delete index:", index); editingRuleIndex = -1; renderRulesList(); return; }
+                    const ruleName = categoryRules[index].name;
+                    if (confirm(`Delete rule for '${ruleName}'?`)) {
+                        console.log("Confirmed delete for index:", index); // DEBUG
+                        categoryRules.splice(index, 1);
+                        saveRulesToLocalStorage();
+                        if (editingRuleIndex === index) { editingRuleIndex = -1; }
+                        else if (editingRuleIndex > index) { editingRuleIndex--; }
+                        renderRulesList();
+                        showMessage(`Rule for '${ruleName}' deleted. Recomputing categories...`, 'info');
+                        recomputeCategoriesAndRenderAll();
+                    } else { console.log("Delete cancelled for index:", index); } // DEBUG
+
+                } else if (actionButton.classList.contains('rule-save-btn')) {
+                    console.log("Save button clicked for index:", index); // DEBUG
+                    if (index !== editingRuleIndex) { console.warn("Save clicked on a row not in edit mode."); return; }
+                    if (index >= categoryRules.length) { console.warn("Stale save index:", index); editingRuleIndex = -1; renderRulesList(); return; }
+                    const nameInput = row.querySelector('.inline-edit-name');
+                    const patternInput = row.querySelector('.inline-edit-pattern');
+                    if (!nameInput || !patternInput) { console.error("Could not find input fields in row for saving."); editingRuleIndex = -1; renderRulesList(); return; }
+                    const newName = nameInput.value.trim();
+                    const newPattern = patternInput.value.trim();
+
+                    if (!newName || !newPattern) { showMessage('Name and pattern cannot be empty.', 'warning'); return; }
+                    try { new RegExp(newPattern); } catch (e) { showMessage(`Invalid Regex: ${e.message}`, 'error'); return; }
+
+                    categoryRules[index] = { name: newName, pattern: newPattern };
+                    saveRulesToLocalStorage();
+                    showMessage(`Rule for '${newName}' updated. Recomputing categories...`, 'success');
+                    editingRuleIndex = -1; // Exit edit mode
+                    renderRulesList(); // Re-render table
+                    recomputeCategoriesAndRenderAll();
+
+                } else if (actionButton.classList.contains('rule-cancel-btn')) {
+                    console.log("Cancel button clicked for index:", index); // DEBUG
+                    if (index !== editingRuleIndex) { console.warn("Cancel clicked on a row not in edit mode."); return; }
+                    editingRuleIndex = -1; // Exit edit mode
+                    renderRulesList(); // Re-render table to discard changes
+                }
+            });
+
+            // --- MODIFIED: Listener for Table Category Changes (Now uses delegation for buttons) --- 
+            tableBody.addEventListener('click', (event) => {
+                const targetButton = event.target.closest('.category-option-button');
+                if (targetButton) {
+                    handleCategoryChange(targetButton); // Pass the button itself
+                }
+            });
+
+
+            // --- Duplicate Action Handlers --- 
+            function handleAcceptDuplicate(index) { /* ... */ console.log("Accepting duplicate at index:", index); const duplicateToAccept = potentialDuplicates[index]; if (duplicateToAccept) { allProcessedTransactions.push(duplicateToAccept); potentialDuplicates.splice(index, 1); allProcessedTransactions.sort((a, b) => { const dA = a.date ? new Date(a.date) : 0, dB = b.date ? new Date(b.date) : 0; if (isNaN(dA) && isNaN(dB)) return 0; if (isNaN(dA)) return 1; if (isNaN(dB)) return -1; return dB - dA; }); applyFiltersAndRender(); renderDuplicatesTable(potentialDuplicates); if (potentialDuplicates.length === 0) { duplicatesSection.classList.add('hidden'); } } else { console.error("Could not find duplicate to accept at index:", index); } }
+            function handleDismissDuplicate(index) { /* ... */ console.log("Dismissing duplicate at index:", index); const duplicateToDismiss = potentialDuplicates[index]; if (duplicateToDismiss) { potentialDuplicates.splice(index, 1); renderDuplicatesTable(potentialDuplicates); if (potentialDuplicates.length === 0) { duplicatesSection.classList.add('hidden'); } } else { console.error("Could not find duplicate to dismiss at index:", index); } }
+
+            // --- MODIFIED: Handler for Category Dropdown Change --- 
+            function handleCategoryChange(optionButton) { // Takes the clicked button
+                const newCategory = optionButton.dataset.categoryValue;
+                const txId = parseInt(optionButton.dataset.txId, 10);
+
+                console.log(`Category changed for txId ${txId} to ${newCategory}`); // DEBUG
+                const transaction = allProcessedTransactions.find(tx => tx.tempId === txId);
+
+                if (transaction) {
+                    transaction.category = newCategory;
+                    applyFiltersAndRender(); // This re-renders table, updating button text
+                    showMessage(`Transaction category updated to ${newCategory}.`, 'info');
+                    // Flowbite should hide dropdown automatically on click inside
+                } else {
+                    console.error("Could not find transaction with ID:", txId);
+                    showMessage('Error updating transaction category.', 'error');
+                }
+            }
+
+            // --- New: Mock Data Handler ---
+            function handleMockDataLoad() {
+                console.log("Load Mock Data clicked"); // DEBUG
+                selectedFilesInfo.textContent = 'Processing Mock Data...';
+                filterDescriptionInput.value = ''; filterCategoryInput.value = '';
+                // hideMessage(); // Removed this call
+                potentialDuplicates = []; duplicatesSection.classList.add('hidden'); duplicatesTableBody.innerHTML = '';
+                if (categoryChartInstance) { categoryChartInstance.destroy(); categoryChartInstance = null; }
+                if (monthlyTrendChartInstance) { monthlyTrendChartInstance.destroy(); monthlyTrendChartInstance = null; } // Clear trend chart too
+
+                loadingIndicator.classList.remove('hidden');
+                fileInput.disabled = true; chooseFilesButton.disabled = true; clearAllDataButton.disabled = true; exportCsvButton.disabled = true; loadMockDataButton.disabled = true;
+
+                // Parse the mock data
+                Papa.parse(MOCK_CSV_DATA, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: async (results) => { // Make async to use await inside
+                        console.log("Mock data parsed. Rows found:", results.data.length); // DEBUG
+                        if (results.errors.length > 0) {
+                            console.error(`Mock data parsing errors:`, results.errors);
+                            showMessage(`Error parsing mock data: ${results.errors[0].message}`, 'error');
+                            console.log("Attempting to hide loading indicator (parse error)..."); // DEBUG
+                            loadingIndicator.classList.add('hidden');
+                            console.log("Loading indicator should be hidden now (parse error)."); // DEBUG
+                            fileInput.disabled = false; chooseFilesButton.disabled = false; clearAllDataButton.disabled = false; exportCsvButton.disabled = false; loadMockDataButton.disabled = false;
+                            return;
+                        }
+                        if (!results.data || results.data.length === 0) {
+                            showMessage(`Mock data is empty.`, 'warning');
+                            console.log("Attempting to hide loading indicator (empty mock data)..."); // DEBUG
+                            loadingIndicator.classList.add('hidden');
+                            console.log("Loading indicator should be hidden now (empty mock data)."); // DEBUG
+                            fileInput.disabled = false; chooseFilesButton.disabled = false; clearAllDataButton.disabled = false; exportCsvButton.disabled = false; loadMockDataButton.disabled = false;
+                            return;
+                        }
+
+                        // Use the refactored processing function
+                        console.log("Calling processAndAppendData with mock data..."); // DEBUG
+                        const processResults = await processAndAppendData([{ data: results.data, meta: results.meta, fileName: 'Mock Data' }]);
+                        console.log("processAndAppendData finished for mock data. Summary:", processResults); // DEBUG
+
+                        // Update UI based on results
+                        console.log("Attempting to hide loading indicator (mock success)..."); // DEBUG
+                        loadingIndicator.classList.add('hidden');
+                        console.log("Loading indicator should be hidden now (mock success)."); // DEBUG
+                        fileInput.disabled = false; chooseFilesButton.disabled = false; clearAllDataButton.disabled = false; exportCsvButton.disabled = (processResults.totalCount === 0); loadMockDataButton.disabled = false;
+
+                        // Display final status message
+                        if (processResults.totalCount > 0 || processResults.duplicateCount > 0) {
+                            let baseMessage = `Successfully added ${processResults.addedCount} transaction(s) from Mock Data.`;
+                            if (processResults.duplicateCount > 0) {
+                                baseMessage += ` Please review ${processResults.duplicateCount} potential duplicate(s).`;
+                            }
+                            baseMessage += ` Total transactions: ${processResults.totalCount}.`;
+                            showMessage(baseMessage, processResults.duplicateCount > 0 ? 'warning' : 'success');
+                        } else {
+                            showMessage('No valid transaction data found in mock data.', 'warning');
+                        }
+                    },
+                    error: (error) => {
+                        console.error(`PapaParse error for mock data:`, error); // DEBUG
+                        showMessage(`Failed to parse mock data: ${error.message}`, 'error');
+                        console.log("Attempting to hide loading indicator (parse error callback)..."); // DEBUG
+                        loadingIndicator.classList.add('hidden');
+                        console.log("Loading indicator should be hidden now (parse error callback)."); // DEBUG
+                        fileInput.disabled = false; chooseFilesButton.disabled = false; clearAllDataButton.disabled = false; exportCsvButton.disabled = false; loadMockDataButton.disabled = false;
+                    }
+                });
+            }
+
+            // Attach listener to mock data button
+            console.log("Attaching mock data listener..."); // DEBUG
+            if (loadMockDataButton) {
+                loadMockDataButton.addEventListener('click', handleMockDataLoad);
+                console.log("Event listener attached to Load Mock Data button."); // DEBUG
+            } else {
+                console.error("Load Mock Data button not found!"); // DEBUG
+            }
+
+
+            // --- Refactored Core Processing Logic ---
+            async function processAndAppendData(resultsArray) {
+                console.log("processAndAppendData started with results count:", resultsArray.length); // DEBUG
+                const existingHashes = new Set(allProcessedTransactions.map(generateTransactionHash));
+                let uniqueNewTransactions = [];
+                let foundDuplicatesBatch = [];
+                let fileProcessErrors = 0;
+
+                for (const result of resultsArray) {
+                    console.log(`Processing file: ${result.fileName}`); // DEBUG
+                    try {
+                        const processedData = processData(result.data, result.meta.fields, result.fileName);
+                        // Add check for processedData being an array
+                        if (!Array.isArray(processedData)) {
+                            throw new Error(`processData for ${result.fileName} did not return an array.`);
+                        }
+                        console.log(`Processed ${processedData.length} rows from ${result.fileName}`); // DEBUG
+                        processedData.forEach(tx => {
+                            tx.tempId = transactionIdCounter++;
+                            const hash = generateTransactionHash(tx);
+                            if (existingHashes.has(hash)) {
+                                foundDuplicatesBatch.push(tx);
+                            } else {
+                                uniqueNewTransactions.push(tx);
+                            }
+                        });
+                    } catch (error) {
+                        console.error(`Error processing data from ${result.fileName || 'mock'}:`, error); // Log full error
+                        showMessage(`Error processing data from ${result.fileName || 'mock'}: ${error.toString()}`, 'error'); // Use toString()
+                        fileProcessErrors++;
+                    }
+                }
+
+                allProcessedTransactions = allProcessedTransactions.concat(uniqueNewTransactions);
+                potentialDuplicates = foundDuplicatesBatch;
+                console.log(`Added ${uniqueNewTransactions.length} unique. Found ${foundDuplicatesBatch.length} duplicates.`); // DEBUG
+
+                if (allProcessedTransactions.length > 0 || potentialDuplicates.length > 0) {
+                    allProcessedTransactions.sort((a, b) => { const dA = a.date ? new Date(a.date) : 0, dB = b.date ? new Date(b.date) : 0; if (isNaN(dA) && isNaN(dB)) return 0; if (isNaN(dA)) return 1; if (isNaN(dB)) return -1; return dB - dA; });
+                    applyFiltersAndRender();
+
+                    mainContentArea.classList.remove('hidden');
+                    summarySection.classList.remove('hidden');
+                    exportCsvButton.classList.remove('hidden');
+                    tableViewTabListItem.classList.remove('hidden');
+                    chartViewTabListItem.classList.remove('hidden');
+                    monthlyTrendTabListItem.classList.remove('hidden'); // Show new tab
+
+                    // --- Initialize/Activate Flowbite Tab ---
+                    setTimeout(() => {
+                        try {
+                            const tabElements = [
+                                { id: 'config', triggerEl: configViewTab, targetEl: configurationSection },
+                                { id: 'table', triggerEl: tableViewTab, targetEl: resultsSection },
+                                { id: 'chart', triggerEl: chartViewTab, targetEl: chartSection },
+                                { id: 'trend', triggerEl: monthlyTrendTab, targetEl: monthlyTrendSection } // Add new tab
+                            ];
+                            const options = {
+                                defaultTabId: 'table',
+                                activeClasses: 'text-blue-600 hover:text-blue-600 dark:text-blue-500 dark:hover:text-blue-500 border-blue-600 dark:border-blue-500 font-semibold',
+                                inactiveClasses: 'border-transparent text-gray-500 hover:text-gray-600 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300',
+                                onShow: (tabsInstance, tab) => {
+                                    console.log(`${tab.id} tab is shown`);
+                                    // If the trend tab is shown, generate its chart
+                                    if (tab.id === 'trend') { // Corrected tab ID to match the element definition
+                                        generateMonthlyTrendChart(currentFilteredTransactions);
+                                    }
+                                }
+                            };
+                            // Assuming you have a parent element that contains all the tab triggers and content
+                            const tabsContainer = document.getElementById('tabsContainer');
+
+                            if (typeof Tabs !== 'undefined' && tabsContainer) { // Ensure tabsContainer exists
+                                if (!flowbiteTabsInstance) {
+                                    flowbiteTabsInstance = new Tabs(tabsContainer, tabElements, options);
+                                }
+                                flowbiteTabsInstance.show('table');
+                                console.log("Requested Flowbite show 'table'");
+                            } else {
+                                console.error("Flowbite Tabs constructor not found or container element missing! Using manual fallback.");
+                                activateTabManually('resultsSection');
+                            }
+                        } catch (e) {
+                            console.error("Error trying to initialize/activate tab via Flowbite:", e);
+                            activateTabManually('resultsSection');
+                        }
+                    }, 50);
+
+                    if (potentialDuplicates.length > 0) {
+                        renderDuplicatesTable(potentialDuplicates);
+                        duplicatesSection.classList.remove('hidden');
+                    } else {
+                        duplicatesSection.classList.add('hidden');
+                    }
+                }
+                console.log("processAndAppendData finished."); // DEBUG
+                return {
+                    addedCount: uniqueNewTransactions.length,
+                    duplicateCount: potentialDuplicates.length,
+                    totalCount: allProcessedTransactions.length,
+                    errors: fileProcessErrors
+                };
+            }
+
+            async function handleFileProcessing(filesToProcess) {
+                if (!filesToProcess || filesToProcess.length === 0) return;
+
+                loadingIndicator.classList.remove('hidden');
+                fileInput.disabled = true; chooseFilesButton.disabled = true; clearAllDataButton.disabled = true; exportCsvButton.disabled = true; loadMockDataButton.disabled = true;
+                // hideMessage(); // Removed
+
+                let fileErrors = 0;
+                const parsedResultsArray = [];
+
+                for (const file of filesToProcess) {
+                    try {
+                        const papaResults = await new Promise((resolve, reject) => {
+                            Papa.parse(file, { header: true, skipEmptyLines: true, complete: resolve, error: reject });
+                        });
+                        if (papaResults.errors.length > 0) { throw new Error(`Parsing error: ${papaResults.errors[0].message}`); }
+                        if (!papaResults.data || papaResults.data.length === 0) { throw new Error(`CSV file '${file.name}' is empty or has no data rows.`); }
+                        parsedResultsArray.push({ data: papaResults.data, meta: papaResults.meta, fileName: file.name });
+                    } catch (error) {
+                        console.error(`Error parsing file ${file.name}:`, error);
+                        showMessage(`Error parsing file ${file.name}: ${error.message}`, 'error');
+                        fileErrors++;
+                    }
+                }
+
+                // Process and append all parsed data
+                const summary = await processAndAppendData(parsedResultsArray);
+
+                // Update UI 
+                console.log("Attempting to hide loading indicator (file success)..."); // DEBUG
+                loadingIndicator.classList.add('hidden');
+                console.log("Loading indicator should be hidden now (file success)."); // DEBUG
+                fileInput.disabled = false; chooseFilesButton.disabled = false; clearAllDataButton.disabled = false; exportCsvButton.disabled = (summary.totalCount === 0); loadMockDataButton.disabled = false;
+
+                // Display final status message
+                if (summary.totalCount > 0 || summary.duplicateCount > 0) {
+                    let baseMessage = '';
+                    if (fileErrors === 0) {
+                        baseMessage = `Successfully added ${summary.addedCount} transaction(s) from ${filesToProcess.length} file(s).`;
+                    } else {
+                        baseMessage = `Processed ${filesToProcess.length - fileErrors} of ${filesToProcess.length} file(s) with errors. Added ${summary.addedCount} transaction(s).`;
+                    }
+                    if (summary.duplicateCount > 0) {
+                        baseMessage += ` Please review ${summary.duplicateCount} potential duplicate(s).`;
+                    }
+                    baseMessage += ` Total transactions: ${summary.totalCount}.`;
+                    showMessage(baseMessage, (fileErrors > 0 || summary.duplicateCount > 0) ? 'warning' : 'success');
+                } else {
+                    // Handle case where NO data was added at all
+                    if (fileErrors === filesToProcess.length) showMessage('Could not process the selected files.', 'error');
+                    else showMessage('No valid transaction data found in selected files.', 'warning');
+                    // Ensure data tabs/sections remain hidden if no data loaded
+                    mainContentArea.classList.remove('hidden');
+                    activateTabManually('configurationSection');
+                    summarySection.classList.add('hidden');
+                    duplicatesSection.classList.add('hidden');
+                    exportCsvButton.classList.add('hidden');
+                    tableViewTabListItem.classList.add('hidden');
+                    chartViewTabListItem.classList.add('hidden');
+                    monthlyTrendTabListItem.classList.add('hidden'); // Also hide new tab
+                }
+
+                fileInput.value = '';
+                selectedFilesInfo.textContent = '';
+            }
+
+            // --- Filter and Render Function ---
+            function applyFiltersAndRender() {
+                /* ... */
+                const descriptionFilter = filterDescriptionInput.value.trim().toLowerCase();
+                const categoryFilter = filterCategoryInput.value.trim().toLowerCase();
+                let filteredTransactions = allProcessedTransactions;
+                if (descriptionFilter) { filteredTransactions = filteredTransactions.filter(tx => tx.description && tx.description.toLowerCase().includes(descriptionFilter)); }
+                if (categoryFilter) { filteredTransactions = filteredTransactions.filter(tx => tx.category && tx.category.toLowerCase().includes(categoryFilter)); }
+                currentFilteredTransactions = filteredTransactions;
+                renderTable(filteredTransactions);
+                calculateAndDisplaySummary(filteredTransactions);
+                generateCategoryChart(filteredTransactions);
+                generateMonthlyTrendChart(filteredTransactions); // Removed call from here
+                // Check if the trend tab is currently active before generating
+                const activeTabId = flowbiteTabsInstance?.getActiveTab()?.id;
+                if (activeTabId === 'trend') {
+                    generateMonthlyTrendChart(currentFilteredTransactions);
+                }
+            }
+
+            // --- Render Duplicates Table --- 
+            function renderDuplicatesTable(duplicates) {
+                duplicatesTableBody.innerHTML = '';
+                if (duplicates.length === 0) { duplicatesSection.classList.add('hidden'); return; }
+                duplicates.forEach((tx, index) => {
+                    const row = duplicatesTableBody.insertRow(); row.dataset.duplicateIndex = index;
+                    row.className = "bg-white border-b dark:bg-gray-800 dark:border-gray-700"; // Flowbite style
+                    const c1 = row.insertCell(); c1.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-400'; c1.textContent = tx.date || 'N/A';
+                    const c2 = row.insertCell(); c2.className = 'px-6 py-4 text-sm text-gray-900 dark:text-white break-words'; c2.textContent = tx.description || 'N/A';
+                    const c3 = row.insertCell(); c3.className = 'px-6 py-4 text-sm text-gray-700 dark:text-gray-400'; const s = document.createElement('span'); s.className = 'category-cell-badge'; s.textContent = tx.category || 'Uncat.'; c3.appendChild(s);
+                    const c4 = row.insertCell(); const a = tx.amount; c4.className = `px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${isNaN(a) ? 'text-gray-500 dark:text-gray-400' : a >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`; c4.textContent = isNaN(a) ? 'N/A' : a.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+                    const actionCell = row.insertCell(); actionCell.className = 'px-6 py-4 whitespace-nowrap text-center text-sm space-x-2';
+                    const acceptBtn = document.createElement('button'); acceptBtn.type = "button"; acceptBtn.textContent = 'Accept'; acceptBtn.className = 'text-green-700 hover:text-white border border-green-700 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-xs px-3 py-1.5 text-center dark:border-green-500 dark:text-green-500 dark:hover:text-white dark:hover:bg-green-600 dark:focus:ring-green-800 accept-button'; actionCell.appendChild(acceptBtn);
+                    const dismissBtn = document.createElement('button'); dismissBtn.type = "button"; dismissBtn.textContent = 'Dismiss'; dismissBtn.className = 'text-red-700 hover:text-white border border-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-xs px-3 py-1.5 text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900 dismiss-button'; actionCell.appendChild(dismissBtn);
+                });
+                duplicatesSection.classList.remove('hidden');
+            }
+
+
+            // --- Export to CSV Function ---
+            function exportDataToCsv(data, filename) { /* ... */ const header = ['Date', 'Description', 'Category', 'Amount']; const escapeCsvCell = (cellData) => { const stringData = String(cellData == null ? '' : cellData); if (stringData.includes(',') || stringData.includes('"') || stringData.includes('\n')) { return `"${stringData.replace(/"/g, '""')}"`; } return stringData; }; const csvRows = [header.join(',')]; data.forEach(tx => { const row = [escapeCsvCell(tx.date), escapeCsvCell(tx.description), escapeCsvCell(tx.category), tx.amount !== undefined && !isNaN(tx.amount) ? tx.amount : '']; csvRows.push(row.join(',')); }); const csvString = csvRows.join('\n'); const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); if (link.download !== undefined) { const url = URL.createObjectURL(blob); link.setAttribute("href", url); link.setAttribute("download", filename); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); } else { showMessage("CSV export is not supported in this browser.", "error"); } }
+
+
+            // --- Helper Functions ---
+            function inferCategory(description) {
+                if (!description) return UNCATEGORIZED_DEFAULT;
+                const lowerDesc = description.toLowerCase();
+                for (const rule of categoryRules) {
+                    try {
+                        const regex = new RegExp(rule.pattern, 'i');
+                        if (regex.test(lowerDesc)) { return rule.name; }
+                    } catch (e) { console.error(`Invalid regex pattern for category '${rule.name}': /${rule.pattern}/i`, e); }
+                }
+                return UNCATEGORIZED_DEFAULT;
+            }
+
+            // --- renderTable (Flowbite Dropdown Logic) ---
+            function renderTable(transactions) {
+                tableBody.innerHTML = '';
+                const categoryOptions = getUniqueCategoryOptions();
+
+                transactions.forEach((tx) => {
+                    const row = tableBody.insertRow();
+                    row.className = "bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"; // Flowbite style
+
+                    const c1 = row.insertCell(); c1.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-400'; c1.textContent = tx.date || 'N/A';
+                    const c2 = row.insertCell(); c2.scope = "row"; c2.className = 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white break-words'; c2.textContent = tx.description || 'N/A';
+
+                    // Category Cell (Flowbite Dropdown)
+                    const c3 = row.insertCell(); c3.className = 'px-6 py-4 category-cell';
+                    const dropdownId = `category-dropdown-${tx.tempId}`;
+                    const buttonId = `category-dropdown-button-${tx.tempId}`;
+
+                    // Dropdown Trigger Button
+                    const button = document.createElement('button');
+                    button.id = buttonId;
+                    button.dataset.dropdownToggle = dropdownId;
+                    // Basic button styling - adjust as needed
+                    button.className = 'category-dropdown-trigger text-gray-700 bg-gray-100 border border-gray-300 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-xs px-3 py-1.5 text-center inline-flex items-center dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600 dark:focus:ring-gray-700 w-full justify-between';
+                    button.type = 'button';
+                    button.innerHTML = `
+                    <span class="truncate">${tx.category || UNCATEGORIZED_DEFAULT}</span> 
+                    <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/></svg>`;
+                    c3.appendChild(button);
+
+                    // Dropdown Menu
+                    const dropdownDiv = document.createElement('div');
+                    dropdownDiv.id = dropdownId;
+                    dropdownDiv.className = 'z-50 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 max-h-60 overflow-y-auto'; // Flowbite dropdown menu style + scroll/height limit
+
+                    const ul = document.createElement('ul');
+                    ul.className = 'py-2 text-sm text-gray-700 dark:text-gray-200';
+                    ul.setAttribute('aria-labelledby', buttonId);
+
+                    categoryOptions.forEach(optionValue => {
+                        const li = document.createElement('li');
+                        const optionButton = document.createElement('button'); // Use button for actions
+                        optionButton.type = 'button';
+                        optionButton.className = 'category-option-button block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white';
+                        optionButton.textContent = optionValue;
+                        optionButton.dataset.categoryValue = optionValue;
+                        optionButton.dataset.txId = tx.tempId;
+                        li.appendChild(optionButton);
+                        ul.appendChild(li);
+                    });
+                    dropdownDiv.appendChild(ul);
+                    c3.appendChild(dropdownDiv);
+
+                    // Amount Cell
+                    const c4 = row.insertCell(); const a = tx.amount; c4.className = `px-6 py-4 text-right font-medium ${isNaN(a) ? 'text-gray-500 dark:text-gray-400' : a >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`; c4.textContent = isNaN(a) ? 'N/A' : a.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+                });
+                // Re-initialize Flowbite dropdowns after rendering table rows
+                if (typeof initFlowbite !== 'undefined') { initFlowbite(); }
+            }
+            function parseCsvFile(file) { /* ... */ return new Promise((resolve, reject) => { Papa.parse(file, { header: true, skipEmptyLines: true, complete: (results) => { if (results.errors.length > 0) return reject(new Error(`Parsing error: ${results.errors[0].message}`)); if (!results.data || results.data.length === 0) return reject(new Error(`CSV file '${file.name}' is empty.`)); try { resolve(processData(results.data, results.meta.fields, file.name)); } catch (error) { reject(new Error(`Processing error in ${file.name}: ${error.message}`)); } }, error: (error) => reject(new Error(`Failed to parse CSV '${file.name}': ${error.message}`)) }); }); }
+
+            // --- MODIFIED: processData (Count-based inversion) ---
+            function processData(data, headers, filename) {
+                const validHeaders = Array.isArray(headers) ? headers.map(h => h || '') : [];
+                const lowerCaseHeaders = validHeaders.map(h => h.toLowerCase().trim());
+                if (lowerCaseHeaders.some(h => h === '')) console.warn(`File '${filename}' contains empty header columns.`);
+                if (validHeaders.length === 0) throw new Error("CSV file has no headers.");
+                const dateIndex = findHeaderIndex(lowerCaseHeaders, ['date', 'transaction date', 'posting date']);
+                const descriptionIndex = findHeaderIndex(lowerCaseHeaders, ['description', 'name', 'details', 'memo', 'payee']);
+                const amountIndex = findHeaderIndex(lowerCaseHeaders, ['amount', 'value', 'transaction amount', 'credit', 'debit', 'price']);
+                const categoryIndex = findHeaderIndex(lowerCaseHeaders, ['category', 'type', 'class', 'classification', 'budget category']);
+                if (dateIndex === -1) throw new Error("Could not find a 'Date' column.");
+                if (descriptionIndex === -1) throw new Error("Could not find a 'Description' or 'Name' column.");
+                if (amountIndex === -1) throw new Error("Could not find an 'Amount' column.");
+                const originalDateHeader = validHeaders[dateIndex];
+                const originalDescriptionHeader = validHeaders[descriptionIndex];
+                const originalAmountHeader = validHeaders[amountIndex];
+                const originalCategoryHeader = categoryIndex !== -1 ? validHeaders[categoryIndex] : null;
+                const transactions = [];
+                let positiveCount = 0; // Count positive amounts
+                let negativeCount = 0; // Count negative amounts
+                let processedRowCount = 0;
+
+                data.forEach((row, rowIndex) => {
+                    if (Object.values(row).every(val => val === null || String(val).trim() === '')) return;
+                    const dateStr = row[originalDateHeader];
+                    const descriptionStr = row[originalDescriptionHeader];
+                    const amountStr = row[originalAmountHeader];
+                    const categoryStr = originalCategoryHeader ? row[originalCategoryHeader] : null;
+                    if (dateStr === undefined || descriptionStr === undefined || amountStr === undefined || dateStr === null || descriptionStr === null || amountStr === null || String(dateStr).trim() === '' || String(descriptionStr).trim() === '' || String(amountStr).trim() === '') return;
+                    try {
+                        const formattedDate = normalizeDate(dateStr);
+                        const numericAmount = normalizeAmount(amountStr);
+                        const cleanDescription = String(descriptionStr).trim();
+                        let category = UNCATEGORIZED_DEFAULT;
+                        if (originalCategoryHeader && categoryStr !== null && String(categoryStr).trim() !== '') { category = String(categoryStr).trim(); }
+                        else if (cleanDescription) { category = inferCategory(cleanDescription); }
+
+                        if (formattedDate && !isNaN(numericAmount)) {
+                            transactions.push({ date: formattedDate, description: cleanDescription, amount: numericAmount, category: category });
+                            if (numericAmount > 0) positiveCount++;
+                            else if (numericAmount < 0) negativeCount++;
+                            processedRowCount++;
+                        }
+                    } catch (error) { console.warn(`Error processing row ${rowIndex + 2} in ${filename}: ${error.message}.`); }
+                });
+
+                if (processedRowCount === 0 && data.length > 0) throw new Error("Found headers but no valid rows processed.");
+                if (processedRowCount === 0) throw new Error("No processable rows found.");
+
+                // Invert signs based on COUNT comparison
+                if (positiveCount > negativeCount) {
+                    console.log(`File '${filename}': Pos count (${positiveCount}) > Neg count (${negativeCount}). Inverting signs.`);
+                    showMessage(`Inverting signs for file: ${filename}`, 'info');
+                    transactions.forEach(tx => { tx.amount *= -1; });
+                }
+                return transactions;
+            }
+            function findHeaderIndex(headers, possibleNames) { /* ... */ for (const name of possibleNames) { let i = headers.findIndex(h => h === name); if (i !== -1) return i; i = headers.findIndex(h => h.includes(name)); if (i !== -1) return i; } return -1; }
+            function normalizeDate(dateString) { /* ... */ try { if (!isNaN(dateString) && Number(dateString) > 25569 && Number(dateString) < 60000) { const excelEpoch = new Date(1899, 11, 30); const date = new Date(excelEpoch.getTime() + Number(dateString) * 86400000); if (!isNaN(date.getTime())) { const y = date.getUTCFullYear(), m = String(date.getUTCMonth() + 1).padStart(2, '0'), d = String(date.getUTCDate()).padStart(2, '0'); return `${y}-${m}-${d}`; } } const cleaned = String(dateString).trim().replace(/[/.]/g, '-'); let date = new Date(cleaned); if (isNaN(date.getTime())) { const p = cleaned.split('-'); if (p.length === 3) { let M = parseInt(p[0]), D = parseInt(p[1]), Y = parseInt(p[2]); if (Y >= 1900 && Y < 2100 && M >= 1 && M <= 12 && D >= 1 && D <= 31) { const t = new Date(Date.UTC(Y, M - 1, D)); if (!isNaN(t.getTime()) && t.getUTCDate() === D) date = t; } if (isNaN(date.getTime())) { D = parseInt(p[0]); M = parseInt(p[1]); Y = parseInt(p[2]); if (Y >= 1900 && Y < 2100 && M >= 1 && M <= 12 && D >= 1 && D <= 31) { const t = new Date(Date.UTC(Y, M - 1, D)); if (!isNaN(t.getTime()) && t.getUTCDate() === D) date = t; } } } } if (isNaN(date.getTime())) { /* console.warn(`Bad date: ${dateString}`); */ return null; } const y = date.getUTCFullYear(), m = String(date.getUTCMonth() + 1).padStart(2, '0'), d = String(date.getUTCDate()).padStart(2, '0'); return `${y}-${m}-${d}`; } catch (e) { console.error(`Date norm error "${dateString}":`, e); return null; } }
+            function normalizeAmount(amountString) { /* ... */ if (amountString == null) return NaN; let s = String(amountString).trim(); if (s === '') return NaN; if (!isNaN(s)) return parseFloat(s); if (s.startsWith('(') && s.endsWith(')')) s = '-' + s.substring(1, s.length - 1); const c = s.replace(/[$,€£¥₹\s]/g, '').replace(/,(?=\d)/g, ''); const v = parseFloat(c); return isNaN(v) ? NaN : v; }
+            function calculateAndDisplaySummary(transactions) { /* ... */ let cr = 0, db = 0; transactions.forEach(tx => { if (!isNaN(tx.amount)) { if (tx.amount > 0) cr += tx.amount; else if (tx.amount < 0) db += tx.amount; } }); const net = cr + db; const fmt = (v) => isNaN(v) ? '$0.00' : v.toLocaleString('en-US', { style: 'currency', currency: 'USD' }); totalCreditsEl.textContent = fmt(cr); totalDebitsEl.textContent = fmt(Math.abs(db)); netTotalEl.textContent = fmt(net); netTotalEl.className = 'value'; if (net > 0) netTotalEl.classList.add('net-positive'); else if (net < 0) netTotalEl.classList.add('net-negative'); else netTotalEl.classList.add('text-gray-900'); /* Updated default net color */ }
+
+            // --- MODIFIED: showMessage to use Flowbite Toasts ---
+            function showMessage(message, type = 'info', duration = 5000) {
+                if (!toastContainer) { console.error("Toast container not found!"); return; }
+
+                const toastId = `toast-${Date.now()}`;
+                let iconSvg = '';
+                let containerClasses = 'flex items-center w-full max-w-xs p-4 mb-4 text-gray-500 bg-white rounded-lg shadow dark:text-gray-400 dark:bg-gray-800'; // Base classes
+                let iconContainerClasses = 'inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg';
+                let textClasses = 'ms-3 text-sm font-normal';
+
+                switch (type) {
+                    case 'success':
+                        iconSvg = `<svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20"><path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z"/></svg>`;
+                        iconContainerClasses += ' text-green-500 bg-green-100 dark:bg-green-800 dark:text-green-200';
+                        break;
+                    case 'error':
+                        iconSvg = `<svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20"><path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM10 15a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm1-4a1 1 0 0 1-2 0V6a1 1 0 0 1 2 0v5Z"/></svg>`;
+                        iconContainerClasses += ' text-red-500 bg-red-100 dark:bg-red-800 dark:text-red-200';
+                        break;
+                    case 'warning':
+                        iconSvg = `<svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20"><path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/></svg>`;
+                        iconContainerClasses += ' text-orange-500 bg-orange-100 dark:bg-orange-700 dark:text-orange-200';
+                        break;
+                    default: // info
+                        iconSvg = `<svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20"><path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/></svg>`;
+                        iconContainerClasses += ' text-blue-500 bg-blue-100 dark:bg-blue-800 dark:text-blue-200';
+                        break;
+                }
+
+                const toastElement = document.createElement('div');
+                toastElement.id = toastId;
+                toastElement.className = containerClasses;
+                toastElement.setAttribute('role', 'alert');
+
+                toastElement.innerHTML = `
+                <div class="${iconContainerClasses}">
+                    ${iconSvg}
+                    <span class="sr-only">${type} icon</span>
+                </div>
+                <div class="${textClasses}">${message}</div>
+                <button type="button" class="ms-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex items-center justify-center h-8 w-8 dark:text-gray-500 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700" data-dismiss-target="#${toastId}" aria-label="Close">
+                    <span class="sr-only">Close</span>
+                    <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                    </svg>
+                </button>
+            `;
+
+                toastContainer.appendChild(toastElement);
+
+                // Initialize the dismiss behavior
+                const dismissButton = toastElement.querySelector(`[data-dismiss-target="#${toastId}"]`);
+                // Check if Dismiss class is available
+                if (typeof Dismiss === 'undefined') {
+                    console.error('Flowbite Dismiss component not loaded.');
+                    // Fallback auto-hide without transition
+                    setTimeout(() => { toastElement.remove(); }, duration);
+                    return;
+                }
+                if (dismissButton) {
+                    try {
+                        // Correct constructor: Dismiss(targetEl, triggerEl, options)
+                        const dismissInstance = new Dismiss(toastElement, dismissButton);
+                        // Auto-hide
+                        setTimeout(() => {
+                            // Check if the element still exists before trying to hide
+                            if (document.getElementById(toastId)) {
+                                dismissInstance.hide();
+                            }
+                        }, duration);
+                    } catch (e) {
+                        console.error("Error initializing Flowbite Dismiss:", e);
+                        // Fallback auto-hide without transition
+                        setTimeout(() => { toastElement.remove(); }, duration);
+                    }
+                } else {
+                    console.error("Dismiss button not found for toast:", toastId);
+                    // Fallback auto-hide without transition
+                    setTimeout(() => { toastElement.remove(); }, duration);
+                }
+            }
+
+            // --- Removed hideMessage function ---
+
+            // --- MODIFIED: generateCategoryChart ---
+            function generateCategoryChart(transactions) {
+                const categoryTotals = {};
+                const lowerCaseExclusions = CHART_EXCLUDED_CATEGORIES.map(c => c.toLowerCase());
+
+                transactions.forEach(tx => {
+                    if (!isNaN(tx.amount) && tx.amount < 0) {
+                        const category = tx.category || UNCATEGORIZED_DEFAULT;
+                        if (!lowerCaseExclusions.includes(category.toLowerCase())) {
+                            categoryTotals[category] = (categoryTotals[category] || 0) + Math.abs(tx.amount);
+                        }
+                    }
+                });
+
+                console.log('Aggregated Chart Totals:', categoryTotals); // DEBUG
+
+                const sortedCategories = Object.entries(categoryTotals).sort(([, a], [, b]) => b - a);
+                const labels = sortedCategories.map(([category]) => category);
+                const data = sortedCategories.map(([, total]) => total);
+                const ctx = chartCanvas.getContext('2d');
+                if (categoryChartInstance) { categoryChartInstance.destroy(); }
+                const colors = ['#4f46e5', '#7c3aed', '#a855f7', '#ec4899', '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1'];
+                const backgroundColors = labels.map((_, i) => colors[i % colors.length] + 'BF');
+                const borderColors = labels.map((_, i) => colors[i % colors.length]);
+                console.log('Category Canvas dimensions:', chartCanvas.offsetWidth, chartCanvas.offsetHeight); // DEBUG
+                categoryChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: labels, datasets: [{ label: 'Spending', data: data, backgroundColor: backgroundColors, borderColor: borderColors, borderWidth: 1 }] },
+                    options: {
+                        // indexAxis: 'y', // REMOVED for vertical bars
+                        scales: {
+                            // x: { // Now the category axis }, 
+                            y: { // Now the value axis
+                                beginAtZero: true,
+                                ticks: { callback: function (value) { return '$' + value.toLocaleString(); } }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: function (context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += context.parsed.y.toLocaleString('en-US', { style: 'currency', currency: 'USD' }); } return label; } } }
+                        },
+                        responsive: true, maintainAspectRatio: false,
+                        // --- MODIFIED: onClick handler to use programmatic click ---
+                        onClick: (event, elements, chart) => {
+                            if (elements.length > 0) {
+                                const elementIndex = elements[0].index;
+                                const clickedCategory = chart.data.labels[elementIndex];
+                                console.log('Chart bar clicked:', clickedCategory);
+
+                                if (clickedCategory) {
+                                    // Set filter input
+                                    filterCategoryInput.value = clickedCategory;
+                                    filterDescriptionInput.value = ''; // Clear other filter
+
+                                    // Apply filters and update view
+                                    applyFiltersAndRender();
+
+                                    // Switch to table view tab using programmatic click
+                                    setTimeout(() => {
+                                        console.log("Programmatically clicking Table View tab from chart click");
+                                        tableViewTab.click(); // Trigger Flowbite's listener
+                                    }, 50);
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // --- New: generateMonthlyTrendChart ---
+            function generateMonthlyTrendChart(transactions) {
+                if (!monthlyTrendChartCanvas) { console.warn("Monthly trend chart canvas not found."); return; }
+                console.log('Inside generateMonthlyTrendChart');
+                const monthlyCategoryTotals = {}; // { "YYYY-MM": { "Category": total, ... }, ... }
+                const allMonths = new Set();
+                const allCategories = new Set();
+                const lowerCaseExclusions = CHART_EXCLUDED_CATEGORIES.map(c => c.toLowerCase());
+
+                // Aggregate data
+                transactions.forEach(tx => {
+                    if (tx.date && !isNaN(tx.amount) && tx.amount < 0) {
+                        const category = tx.category || UNCATEGORIZED_DEFAULT;
+                        if (!lowerCaseExclusions.includes(category.toLowerCase())) {
+                            try {
+                                const yearMonth = tx.date.substring(0, 7); // "YYYY-MM"
+                                allMonths.add(yearMonth);
+                                allCategories.add(category);
+
+                                if (!monthlyCategoryTotals[yearMonth]) {
+                                    monthlyCategoryTotals[yearMonth] = {};
+                                }
+                                monthlyCategoryTotals[yearMonth][category] = (monthlyCategoryTotals[yearMonth][category] || 0) + Math.abs(tx.amount);
+                            } catch (e) {
+                                console.warn("Error processing date for trend chart:", tx.date, e);
+                            }
+                        }
+                    }
+                });
+
+                const sortedMonths = Array.from(allMonths).sort();
+                const sortedCategories = Array.from(allCategories).sort();
+                const colors = ['#4f46e5', '#7c3aed', '#a855f7', '#ec4899', '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1'];
+
+                const datasets = sortedCategories.map((category, index) => {
+                    const data = sortedMonths.map(month => monthlyCategoryTotals[month]?.[category] || 0);
+                    return {
+                        label: category,
+                        data: data,
+                        borderColor: colors[index % colors.length],
+                        backgroundColor: colors[index % colors.length] + '30', // Optional fill with transparency
+                        fill: false,
+                        tension: 0.1 // Slight curve
+                    };
+                });
+
+                console.log('Trend Chart Labels (Months):', sortedMonths); // DEBUG
+                console.log('Trend Chart Datasets:', JSON.stringify(datasets.map(d => ({ label: d.label, data: d.data })))); // DEBUG (Log data only)
+
+                console.log('Trend Canvas dimensions:', monthlyTrendChartCanvas.offsetWidth, monthlyTrendChartCanvas.offsetHeight); // DEBUG
+                const ctx = monthlyTrendChartCanvas.getContext('2d');
+                if (!ctx) {
+                    console.error("Failed to get 2D context for monthly trend chart.");
+                    return;
+                }
+
+                if (monthlyTrendChartInstance) { monthlyTrendChartInstance.destroy(); }
+
+                console.log("Creating Monthly Trend Chart instance..."); // DEBUG
+                monthlyTrendChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: sortedMonths,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { callback: function (value) { return '$' + value.toLocaleString(); } }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                display: sortedCategories.length < 15
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function (context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) { label += ': '; }
+                                        if (context.parsed.y !== null) {
+                                            label += context.parsed.y.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                    }
+                });
+                console.log("Monthly Trend Chart instance created."); // DEBUG
+            }
+
+            // --- Initial Load ---
+            document.addEventListener('DOMContentLoaded', () => {
+                loadRulesFromLocalStorage();
+                renderRulesList();
+                // Initial view setup 
+                mainContentArea.classList.remove('hidden');
+                // Manually set config as active initially
+                activateTabManually('configurationSection');
+
+                // Hide data tabs initially
+                tableViewTabListItem.classList.add('hidden');
+                chartViewTabListItem.classList.add('hidden');
+                monthlyTrendTabListItem.classList.add('hidden'); // Hide new tab LI too
+                // Hide data sections initially
+                summarySection.classList.add('hidden');
+                exportCsvButton.classList.add('hidden');
+                duplicatesSection.classList.add('hidden');
+
+                // Initialize Flowbite components AFTER initial setup
+                if (typeof initFlowbite !== 'undefined') {
+                    initFlowbite();
+                } else {
+                    console.warn("Flowbite init function not found.");
+                }
+            });
+
+
+        </script>
+</body>
+
+</html>
