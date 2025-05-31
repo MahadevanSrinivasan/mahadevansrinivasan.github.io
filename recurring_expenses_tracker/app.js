@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const classesPerPaymentInput = document.getElementById('classes-per-payment');
     const startDateInput = document.getElementById('start-date');
     const classTimeInput = document.getElementById('class-time');
+    const appScriptURLInput = document.getElementById('appScriptURLInput'); // Added
 
     const expenseStatusName = document.getElementById('expense-status-name');
     const expenseStatusDetails = document.getElementById('expense-status-details');
@@ -101,8 +102,8 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (config) { console.warn("State missing, re-initializing."); calculateNextClassCheckDate(); }
     }
 
- function backupDataToGoogleSheets() {
-        const appScriptURL = 'https://script.google.com/macros/s/AKfycbzLZO054xv7_yzznrjF3aaKLQjgZ95rZgLGN0k06E4Zi8lKRg_nn54M5b7MNz5N3jx1/exec';
+ async function backupDataToGoogleSheets() {
+        const appScriptURL = config.appScriptURL; // Use URL from config
         // Prepare data for sending - ensuring dates are strings
         const dataToSend = history.map(item => ({
             date: item.date.toISOString(),
@@ -110,20 +111,23 @@ document.addEventListener('DOMContentLoaded', () => {
             paymentMade: item.paymentMade,
             note: item.note
         }));
-
-        fetch(appScriptURL, {
-            method: 'POST',
-            mode: 'cors',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(dataToSend)
-        })
-        .then(response => response.text())
-        .then(result => console.log('Backup successful:', result))
-        .catch(error => console.error('Backup failed:', error));
+         if (!appScriptURL) {
+            console.log('App Script URL not configured. Skipping backup.');
+             return;
+         }
+        try {
+             const response = await fetch(appScriptURL, {
+                 method: 'POST',
+                 mode: 'cors',
+                 headers: {
+                     'Content-Type': 'application/json',
+                 },
+                 body: JSON.stringify(dataToSend)
+             });
+             if (response.ok) { console.log('Backup successful!'); } else { console.error('Backup failed:', response.status, response.statusText); }
+         } catch (error) { console.error('Backup failed:', error); }
     }
- function saveData() { /* Added skippedDates check */ if (config && config.daysOfWeek) { delete config.daysOfWeek; } if (config && !config.skippedDates) { config.skippedDates = []; } localStorage.setItem(CONFIG_KEY, JSON.stringify(config)); localStorage.setItem(HISTORY_KEY, JSON.stringify(history.map(item => ({ ...item, date: item.date.toISOString() })))); saveState(); backupDataToGoogleSheets(); }
+ function saveData() { /* Added skippedDates check */ if (config && config.daysOfWeek) { delete config.daysOfWeek; } if (config && !config.skippedDates) { config.skippedDates = []; } localStorage.setItem(CONFIG_KEY, JSON.stringify(config)); localStorage.setItem(HISTORY_KEY, JSON.stringify(history.map(item => ({ ...item, date: item.date.toISOString() })))); saveState(); if (config && config.appScriptURL) { backupDataToGoogleSheets(); } }
     function saveState() { /* No changes needed */ const stateToSave = { ...state, nextClassCheckDate: state.nextClassCheckDate?.toISOString() || null, pendingConfirmationDate: state.pendingConfirmationDate?.toISOString() || null, pendingPaymentConfirmationDate: state.pendingPaymentConfirmationDate?.toISOString() || null }; delete stateToSave.paymentNotificationTriggerDateTime; localStorage.setItem(STATE_KEY, JSON.stringify(stateToSave)); }
     function clearData() { /* No changes needed */ localStorage.removeItem(CONFIG_KEY); localStorage.removeItem(HISTORY_KEY); localStorage.removeItem(STATE_KEY); config = null; history = []; state = { remainingClasses: 0, currentPage: 1, nextClassCheckDate: null, pendingConfirmationDate: null, pendingPaymentConfirmationDate: null, isTestMode: false, simulatedDateTime: null, nextClassIsPayment: false }; confirmationArea.classList.add('hidden'); paymentConfirmationArea.classList.add('hidden'); updateTestModeUI(); }
 
