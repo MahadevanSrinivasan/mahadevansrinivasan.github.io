@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
  function backupDataToGoogleSheets() {
-        const appScriptURL = 'https://script.google.com/macros/s/AKfycbxZKMg2_x5ODuJfNLSyq40Lr8BaaAFjDnmt92G0lJQUpVZt7USpcpyJ6kQGy-H7frw/exec';
+        const appScriptURL = 'https://script.google.com/macros/s/AKfycbzLZO054xv7_yzznrjF3aaKLQjgZ95rZgLGN0k06E4Zi8lKRg_nn54M5b7MNz5N3jx1/exec';
         // Prepare data for sending - ensuring dates are strings
         const dataToSend = history.map(item => ({
             date: item.date.toISOString(),
