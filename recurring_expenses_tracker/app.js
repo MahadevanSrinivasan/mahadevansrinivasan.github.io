@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const classesPerPaymentInput = document.getElementById('classes-per-payment');
     const startDateInput = document.getElementById('start-date');
     const classTimeInput = document.getElementById('class-time');
-    const appScriptURLInput = document.getElementById('appScriptURLInput'); // Added
 
     const expenseStatusName = document.getElementById('expense-status-name');
     const expenseStatusDetails = document.getElementById('expense-status-details');
@@ -127,7 +126,9 @@ document.addEventListener('DOMContentLoaded', () => {
              if (response.ok) { console.log('Backup successful!'); } else { console.error('Backup failed:', response.status, response.statusText); }
          } catch (error) { console.error('Backup failed:', error); }
     }
- function saveData() { /* Added skippedDates check */ if (config && config.daysOfWeek) { delete config.daysOfWeek; } if (config && !config.skippedDates) { config.skippedDates = []; } localStorage.setItem(CONFIG_KEY, JSON.stringify(config)); localStorage.setItem(HISTORY_KEY, JSON.stringify(history.map(item => ({ ...item, date: item.date.toISOString() })))); saveState(); if (config && config.appScriptURL) { backupDataToGoogleSheets(); } }
+ function saveData() { /* Added skippedDates check */ if (config && config.daysOfWeek) { delete config.daysOfWeek; } if (config && !config.skippedDates) { config.skippedDates = []; }
+        config.appScriptURL = document.getElementById('app-script-url').value.trim(); // Get and save App Script URL
+ localStorage.setItem(CONFIG_KEY, JSON.stringify(config)); localStorage.setItem(HISTORY_KEY, JSON.stringify(history.map(item => ({ ...item, date: item.date.toISOString() })))); saveState(); if (config && config.appScriptURL) { backupDataToGoogleSheets(); } }
     function saveState() { /* No changes needed */ const stateToSave = { ...state, nextClassCheckDate: state.nextClassCheckDate?.toISOString() || null, pendingConfirmationDate: state.pendingConfirmationDate?.toISOString() || null, pendingPaymentConfirmationDate: state.pendingPaymentConfirmationDate?.toISOString() || null }; delete stateToSave.paymentNotificationTriggerDateTime; localStorage.setItem(STATE_KEY, JSON.stringify(stateToSave)); }
     function clearData() { /* No changes needed */ localStorage.removeItem(CONFIG_KEY); localStorage.removeItem(HISTORY_KEY); localStorage.removeItem(STATE_KEY); config = null; history = []; state = { remainingClasses: 0, currentPage: 1, nextClassCheckDate: null, pendingConfirmationDate: null, pendingPaymentConfirmationDate: null, isTestMode: false, simulatedDateTime: null, nextClassIsPayment: false }; confirmationArea.classList.add('hidden'); paymentConfirmationArea.classList.add('hidden'); updateTestModeUI(); }
 
