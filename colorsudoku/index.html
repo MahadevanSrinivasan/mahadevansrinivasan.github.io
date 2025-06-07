@@ -149,6 +149,22 @@
         let selectedCell = null;
         let hintCount = 0;
         const MAX_HINTS = 5;
+
+        // Pre-defined puzzles (simple to slightly more challenging)
+        // Source: Example Sudoku puzzles
+        const problems = [
+            // Easy Puzzle
+            [[5,3,0,0,7,0,0,0,0],[6,0,0,1,9,5,0,0,0],[0,9,8,0,0,0,0,6,0],[8,0,0,0,6,0,0,0,3],[4,0,0,8,0,3,0,0,1],[7,0,0,0,2,0,0,0,6],[0,6,0,0,0,0,2,8,0],[0,0,0,4,1,9,0,0,5],[0,0,0,0,8,0,0,7,9]],
+            // Medium Puzzle
+            [[0,2,0,6,0,8,0,0,0],[5,8,0,0,0,9,7,0,0],[0,0,0,0,4,0,0,0,0],[3,0,0,0,1,0,0,8,0],[9,0,0,8,6,3,0,0,5],[0,5,0,0,9,0,6,0,0],[1,3,0,0,0,0,2,5,0],[0,0,0,0,0,0,0,7,4],[0,0,5,2,0,6,3,0,0]],
+            // Another Easy Puzzle
+            [[2,9,0,0,0,0,0,7,0],[0,0,0,0,0,0,0,0,0],[0,0,3,0,0,0,4,0,0],[0,0,0,0,0,0,0,0,0],[0,1,0,8,0,2,0,4,0],[0,0,0,0,0,0,0,0,0],[0,0,4,0,0,0,6,0,0],[0,0,0,0,0,0,0,0,0],[0,6,0,0,0,0,0,3,1]],
+            // Simple Puzzle
+            [[0,0,0,2,6,0,7,0,1],[6,8,0,0,7,0,0,9,0],[1,9,0,0,0,4,5,0,0],[8,2,0,1,0,0,0,4,0],[0,0,4,6,0,2,9,0,0],[0,5,0,0,0,3,0,2,8],[0,0,9,3,0,0,0,7,4],[0,4,0,0,5,0,0,3,6],[7,0,3,0,1,8,0,0,0]],
+            // Slightly Harder
+            [[0,0,0,6,0,0,4,0,0],[7,0,0,0,0,3,6,0,0],[0,0,0,1,9,5,0,8,0],[0,0,5,7,0,0,0,0,0],[0,0,4,0,0,0,1,0,0],[0,9,0,0,0,0,0,0,0],[3,0,0,4,1,8,0,0,0],[0,0,9,0,0,0,0,7,0],[0,0,6,0,0,2,9,0,0]],
+        ];
+
         // isToddlerModeActive: true means simplified UI (helper buttons hidden)
         // This is active when the toggle is CHECKED (green)
         let isToddlerModeActive = true; 
@@ -218,27 +234,11 @@
             }
         }
 
-        function generateNewPuzzle() { /* ... (no change from previous version) ... */ 
+        function generateNewPuzzle() {
             console.log("Attempting to generate new puzzle...");
-            let puzzleAttempts = 0; let numSolutions;
-            do {
-                let tempBoard = Array(N).fill(null).map(() => Array(N).fill(0));
-                solveSudoku(tempBoard); solution = tempBoard.map(r => [...r]);
-                board = solution.map(r => [...r]); prefilledCells = [];
-                let cellsToRemove = 45; let removableCells = [];
-                for(let r=0; r<N; r++) for(let c=0; c<N; c++) removableCells.push({r,c});
-                shuffleArray(removableCells); let removedCount = 0;
-                for (let i = 0; i < removableCells.length && removedCount < cellsToRemove; i++) {
-                    const { r, c } = removableCells[i];
-                    if (board[r][c] !== 0) {
-                        let tempVal = board[r][c]; board[r][c] = 0;
-                        if (countSolutions(board, 1) === 0) { board[r][c] = tempVal; } else { removedCount++; }
-                    }
-                }
-                numSolutions = countSolutions(board, 2); puzzleAttempts++;
-                console.log(`Attempt ${puzzleAttempts}: ${numSolutions} solution(s) found.`);
-            } while (numSolutions !== 1 && puzzleAttempts < MAX_PUZZLE_ATTEMPTS);
-            if (numSolutions !== 1) console.warn(`Failed to generate a unique puzzle. Using last attempt.`);
+            const selectedPuzzle = problems[Math.floor(Math.random() * problems.length)];
+            board = selectedPuzzle.map(r => [...r]); // Deep copy
+            solveSudoku(board.map(r => [...r]), (solvedBoard) => { solution = solvedBoard; }); // Solve a copy to get the solution
             prefilledCells = [];
             for (let r=0; r<N; r++) for (let c=0; c<N; c++) if (board[r][c] !== 0) prefilledCells.push({row:r,col:c});
             console.log("Puzzle generated.");
