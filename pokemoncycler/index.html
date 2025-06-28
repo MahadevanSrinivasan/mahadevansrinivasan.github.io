@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,33 +11,24 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-
         /* Hide scrollbars but allow scrolling if content overflows */
         body::-webkit-scrollbar {
             display: none;
         }
-
         body {
-            -ms-overflow-style: none;
-            /* IE and Edge */
-            scrollbar-width: none;
-            /* Firefox */
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
         }
     </style>
 </head>
-
 <body class="bg-gradient-to-br from-indigo-500 to-purple-600 min-h-screen flex items-center justify-center p-4">
-    <div
-        class="container bg-white bg-opacity-90 rounded-2xl shadow-xl p-6 md:p-8 max-w-sm w-full flex flex-col items-center space-y-6">
+    <div class="container bg-white bg-opacity-90 rounded-2xl shadow-xl p-6 md:p-8 max-w-sm w-full flex flex-col items-center space-y-6">
         <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800 text-center mb-4">Pokémon Card Cycler</h1>
 
         <!-- Card display area, now with cursor-pointer for clickability -->
-        <div id="card-display"
-            class="w-full flex justify-center items-center h-80 bg-gray-100 rounded-xl shadow-inner p-2 cursor-pointer">
+        <div id="card-display" class="w-full flex justify-center items-center h-80 bg-gray-100 rounded-xl shadow-inner p-2 cursor-pointer">
             <p id="loading-text" class="text-gray-600 text-lg">Loading cards...</p>
-            <img id="pokemon-card-image" src="" alt="Pokémon Card"
-                class="hidden max-w-full max-h-full object-contain rounded-lg shadow-md"
-                onerror="this.onerror=null; this.src='https://placehold.co/300x420/DDDDDD/666666?text=Image+Not+Found';" />
+            <img id="pokemon-card-image" src="" alt="Pokémon Card" class="hidden max-w-full max-h-full object-contain rounded-lg shadow-md" onerror="this.onerror=null; this.src='https://placehold.co/300x420/DDDDDD/666666?text=Image+Not+Found';" />
         </div>
 
         <!-- Display card name and status -->
@@ -46,37 +36,27 @@
         <p id="card-status" class="text-sm text-gray-500 text-center -mt-4 mb-2 hidden"></p>
 
         <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 w-full">
-            <button id="prev-button"
-                class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
+            <button id="prev-button" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
                 Previous
             </button>
-            <button id="next-button"
-                class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
+            <button id="next-button" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
                 Next
             </button>
         </div>
         <!-- "Have it" button -->
-        <button id="have-it-button"
-            class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
+        <button id="have-it-button" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
             Have it
         </button>
     </div>
 
     <!-- Image Overlay Structure -->
-    <div id="image-overlay"
-        class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+    <div id="image-overlay" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
         <div class="relative max-w-4xl max-h-full">
-            <img id="overlay-image" src="" alt="High Resolution Pokémon Card"
-                class="max-w-full max-h-full object-contain rounded-lg shadow-xl" />
+            <img id="overlay-image" src="" alt="High Resolution Pokémon Card" class="max-w-full max-h-full object-contain rounded-lg shadow-xl" />
             <!-- Close button for the overlay -->
-            <button id="close-overlay-button"
-                class="absolute top-4 right-4 bg-white text-gray-800 rounded-full p-2 shadow-lg hover:bg-gray-200 transition duration-200">
+            <button id="close-overlay-button" class="absolute top-4 right-4 bg-white text-gray-800 rounded-full p-2 shadow-lg hover:bg-gray-200 transition duration-200">
                 <!-- SVG for a close icon (X) -->
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                    </path>
-                </svg>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
     </div>
@@ -131,26 +111,42 @@
         }
 
         /**
-         * Filters the initially fetched cards to exclude those marked as "owned".
+         * Shuffles an array using the Fisher-Yates (Knuth) algorithm.
+         * @param {Array} array - The array to shuffle.
+         * @returns {Array} The shuffled array.
+         */
+        function shuffleArray(array) {
+            let currentIndex = array.length, randomIndex;
+
+            // While there remain elements to shuffle.
+            while (currentIndex !== 0) {
+                // Pick a remaining element.
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+
+                // And swap it with the current element.
+                [array[currentIndex], array[randomIndex]] = [
+                    array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        /**
+         * Filters the initially fetched cards to exclude those marked as "owned" and then shuffles them.
          * Then, updates the current index to ensure it points to a valid card
          * in the new filtered list, and displays the card.
-         * @param {boolean} adjustIndex - If true, adjusts currentIndex to be valid in the new displayableCards array.
          */
-        function filterAndDisplayCards(adjustIndex = true) {
+        function filterAndShuffleAndDisplayCards() {
             // Filter out cards that are in the ownedCardIds set
             displayableCards = fetchedAllCards.filter(card => !ownedCardIds.has(card.id));
 
-            if (adjustIndex) {
-                // Adjust currentIndex if it's out of bounds for the new displayableCards array
-                if (displayableCards.length === 0) {
-                    currentIndex = 0; // No cards left to display
-                } else if (currentIndex >= displayableCards.length) {
-                    currentIndex = displayableCards.length - 1; // Go to the last available card
-                } else if (currentIndex < 0) {
-                    currentIndex = 0; // Ensure index is not negative
-                }
-            }
-            displayCard(currentIndex); // Display the card at the (adjusted) current index
+            // Shuffle the displayable cards
+            shuffleArray(displayableCards);
+
+            // Reset current index to 0 after filtering and shuffling
+            currentIndex = 0;
+
+            displayCard(currentIndex); // Display the card at the new current index
         }
 
         /**
@@ -175,7 +171,8 @@
                 fetchedAllCards = data.data; // Store all raw cards from the API
 
                 loadOwnedCards(); // Load owned cards from localStorage
-                filterAndDisplayCards(true); // Filter and display the initial set of unowned cards
+                // Call the new function to filter, shuffle, and display
+                filterAndShuffleAndDisplayCards();
             } catch (error) {
                 console.error('Error fetching Pokémon cards:', error);
                 cardName.textContent = 'Failed to load cards. Please try again later.';
@@ -221,7 +218,7 @@
 
                 // Update "Have it" button text and card status
                 const isOwned = ownedCardIds.has(card.id);
-                haveItButton.textContent = isOwned ? 'Remove it' : 'Have it'; // Updated button text
+                haveItButton.textContent = isOwned ? 'Remove it' : 'Have it';
                 cardStatus.textContent = isOwned ? '(Owned)' : '';
                 cardStatus.classList.toggle('hidden', !isOwned); // Show/hide status text
                 haveItButton.disabled = false; // Enable "Have it" button
@@ -241,7 +238,7 @@
         /**
          * Toggles the ownership status of the currently displayed card.
          * Adds or removes the card ID from the ownedCardIds set and localStorage.
-         * Then, re-filters and re-displays the cards to reflect the change.
+         * Then, re-filters, shuffles, and re-displays the cards to reflect the change.
          */
         function toggleHaveIt() {
             if (displayableCards.length === 0) return; // No cards to mark/unmark
@@ -259,10 +256,8 @@
             }
             saveOwnedCards(); // Save the updated set to localStorage
 
-            // After toggling ownership, re-filter the list.
-            // We pass true for adjustIndex to ensure a valid card is displayed
-            // even if the current card was removed from the displayable list.
-            filterAndDisplayCards(true);
+            // After toggling ownership, re-filter and shuffle the list.
+            filterAndShuffleAndDisplayCards();
         }
 
         // Event listeners for navigation buttons
@@ -312,5 +307,4 @@
         window.onload = fetchPokemonCards;
     </script>
 </body>
-
 </html>
