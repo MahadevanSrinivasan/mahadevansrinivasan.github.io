@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon Card Cycler</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the "Inter" font, as specified */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Hide scrollbars but allow scrolling if content overflows */
+        body::-webkit-scrollbar {
+            display: none;
+        }
+
+        body {
+            -ms-overflow-style: none;
+            /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-indigo-500 to-purple-600 min-h-screen flex items-center justify-center p-4">
+    <div
+        class="container bg-white bg-opacity-90 rounded-2xl shadow-xl p-6 md:p-8 max-w-sm w-full flex flex-col items-center space-y-6">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800 text-center mb-4">Pokémon Card Cycler</h1>
+
+        <!-- Card display area, now with cursor-pointer for clickability -->
+        <div id="card-display"
+            class="w-full flex justify-center items-center h-80 bg-gray-100 rounded-xl shadow-inner p-2 cursor-pointer">
+            <p id="loading-text" class="text-gray-600 text-lg">Loading cards...</p>
+            <img id="pokemon-card-image" src="" alt="Pokémon Card"
+                class="hidden max-w-full max-h-full object-contain rounded-lg shadow-md"
+                onerror="this.onerror=null; this.src='https://placehold.co/300x420/DDDDDD/666666?text=Image+Not+Found';" />
+        </div>
+
+        <!-- Display card name and status -->
+        <p id="card-name" class="text-xl md:text-2xl font-bold text-gray-800 text-center"></p>
+        <p id="card-status" class="text-sm text-gray-500 text-center -mt-4 mb-2 hidden"></p>
+
+        <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 w-full">
+            <button id="prev-button"
+                class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
+                Previous
+            </button>
+            <button id="next-button"
+                class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
+                Next
+            </button>
+        </div>
+        <!-- "Have it" button -->
+        <button id="have-it-button"
+            class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
+            Have it
+        </button>
+    </div>
+
+    <!-- Image Overlay Structure -->
+    <div id="image-overlay"
+        class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+        <div class="relative max-w-4xl max-h-full">
+            <img id="overlay-image" src="" alt="High Resolution Pokémon Card"
+                class="max-w-full max-h-full object-contain rounded-lg shadow-xl" />
+            <!-- Close button for the overlay -->
+            <button id="close-overlay-button"
+                class="absolute top-4 right-4 bg-white text-gray-800 rounded-full p-2 shadow-lg hover:bg-gray-200 transition duration-200">
+                <!-- SVG for a close icon (X) -->
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Get references to HTML elements
+        const cardImage = document.getElementById('pokemon-card-image');
+        const cardName = document.getElementById('card-name');
+        const cardStatus = document.getElementById('card-status');
+        const loadingText = document.getElementById('loading-text');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const haveItButton = document.getElementById('have-it-button');
+
+        // New elements for the image overlay
+        const imageOverlay = document.getElementById('image-overlay');
+        const overlayImage = document.getElementById('overlay-image');
+        const closeOverlayButton = document.getElementById('close-overlay-button');
+
+        // Base API URL for Pokémon TCG cards
+        const API_URL = 'https://api.pokemontcg.io/v2/cards';
+
+        let fetchedAllCards = []; // Array to store all fetched Pokémon cards (raw from API)
+        let displayableCards = []; // Array to store cards after filtering owned ones
+        let ownedCardIds = new Set(); // Set to store IDs of cards the user owns, for quick lookups
+        let currentIndex = 0; // Index within the 'displayableCards' array
+
+        /**
+         * Loads owned card IDs from localStorage.
+         * The IDs are stored as a JSON string array and converted to a Set for efficient lookup.
+         */
+        function loadOwnedCards() {
+            const storedCards = localStorage.getItem('ownedPokemonCards');
+            if (storedCards) {
+                try {
+                    ownedCardIds = new Set(JSON.parse(storedCards));
+                } catch (e) {
+                    console.error("Error parsing owned cards from localStorage:", e);
+                    ownedCardIds = new Set(); // Reset if corrupted
+                }
+            } else {
+                ownedCardIds = new Set();
+            }
+        }
+
+        /**
+         * Saves owned card IDs to localStorage.
+         * The Set is converted to an array before stringifying for storage.
+         */
+        function saveOwnedCards() {
+            localStorage.setItem('ownedPokemonCards', JSON.stringify(Array.from(ownedCardIds)));
+        }
+
+        /**
+         * Filters the initially fetched cards to exclude those marked as "owned".
+         * Then, updates the current index to ensure it points to a valid card
+         * in the new filtered list, and displays the card.
+         * @param {boolean} adjustIndex - If true, adjusts currentIndex to be valid in the new displayableCards array.
+         */
+        function filterAndDisplayCards(adjustIndex = true) {
+            // Filter out cards that are in the ownedCardIds set
+            displayableCards = fetchedAllCards.filter(card => !ownedCardIds.has(card.id));
+
+            if (adjustIndex) {
+                // Adjust currentIndex if it's out of bounds for the new displayableCards array
+                if (displayableCards.length === 0) {
+                    currentIndex = 0; // No cards left to display
+                } else if (currentIndex >= displayableCards.length) {
+                    currentIndex = displayableCards.length - 1; // Go to the last available card
+                } else if (currentIndex < 0) {
+                    currentIndex = 0; // Ensure index is not negative
+                }
+            }
+            displayCard(currentIndex); // Display the card at the (adjusted) current index
+        }
+
+        /**
+         * Fetches all Pokémon cards from the API.
+         * Displays a loading message, handles errors, and then processes the cards.
+         */
+        async function fetchPokemonCards() {
+            loadingText.classList.remove('hidden'); // Show loading text
+            cardImage.classList.add('hidden');     // Hide card image
+            cardName.textContent = '';             // Clear card name
+            cardStatus.classList.add('hidden');    // Hide status initially
+            prevButton.disabled = true;            // Disable buttons while loading
+            nextButton.disabled = true;
+            haveItButton.disabled = true;
+
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                fetchedAllCards = data.data; // Store all raw cards from the API
+
+                loadOwnedCards(); // Load owned cards from localStorage
+                filterAndDisplayCards(true); // Filter and display the initial set of unowned cards
+            } catch (error) {
+                console.error('Error fetching Pokémon cards:', error);
+                cardName.textContent = 'Failed to load cards. Please try again later.';
+            } finally {
+                loadingText.classList.add('hidden'); // Hide loading text
+            }
+        }
+
+        /**
+         * Displays a specific Pokémon card based on its index within the 'displayableCards' array.
+         * Updates card image, name, "Have it" button text, and navigation button states.
+         * @param {number} index - The index of the card to display in displayableCards.
+         */
+        function displayCard(index) {
+            cardImage.classList.add('hidden'); // Hide image before displaying new one
+            cardName.textContent = '';         // Clear previous name
+            cardStatus.classList.add('hidden'); // Hide status initially
+
+            if (displayableCards.length === 0) {
+                cardName.textContent = 'No unowned Pokémon cards left! You have collected them all.';
+                prevButton.disabled = true;
+                nextButton.disabled = true;
+                haveItButton.disabled = true;
+                haveItButton.textContent = 'No cards to mark';
+                return;
+            }
+
+            // Ensure index is within valid bounds for displayableCards
+            if (index < 0) {
+                index = 0;
+            } else if (index >= displayableCards.length) {
+                index = displayableCards.length - 1;
+            }
+
+            currentIndex = index; // Update the global current index to the validated index
+            const card = displayableCards[currentIndex];
+
+            if (card) {
+                cardImage.src = card.images.large;      // Set the image source
+                cardImage.alt = card.name;              // Set alt text for accessibility
+                cardName.textContent = card.name;       // Display the card name
+                cardImage.classList.remove('hidden');   // Show the image
+
+                // Update "Have it" button text and card status
+                const isOwned = ownedCardIds.has(card.id);
+                haveItButton.textContent = isOwned ? 'Remove it' : 'Have it'; // Updated button text
+                cardStatus.textContent = isOwned ? '(Owned)' : '';
+                cardStatus.classList.toggle('hidden', !isOwned); // Show/hide status text
+                haveItButton.disabled = false; // Enable "Have it" button
+
+                // Update navigation button states
+                prevButton.disabled = (currentIndex === 0);
+                nextButton.disabled = (currentIndex === displayableCards.length - 1);
+            } else {
+                // Fallback if somehow a card is not found at the index (shouldn't happen with proper index management)
+                cardName.textContent = 'Card not found.';
+                haveItButton.disabled = true;
+                prevButton.disabled = true;
+                nextButton.disabled = true;
+            }
+        }
+
+        /**
+         * Toggles the ownership status of the currently displayed card.
+         * Adds or removes the card ID from the ownedCardIds set and localStorage.
+         * Then, re-filters and re-displays the cards to reflect the change.
+         */
+        function toggleHaveIt() {
+            if (displayableCards.length === 0) return; // No cards to mark/unmark
+
+            const currentCard = displayableCards[currentIndex];
+            if (!currentCard) {
+                console.error("No current card to toggle ownership for.");
+                return;
+            }
+
+            if (ownedCardIds.has(currentCard.id)) {
+                ownedCardIds.delete(currentCard.id);
+            } else {
+                ownedCardIds.add(currentCard.id);
+            }
+            saveOwnedCards(); // Save the updated set to localStorage
+
+            // After toggling ownership, re-filter the list.
+            // We pass true for adjustIndex to ensure a valid card is displayed
+            // even if the current card was removed from the displayable list.
+            filterAndDisplayCards(true);
+        }
+
+        // Event listeners for navigation buttons
+        prevButton.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                displayCard(currentIndex);
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentIndex < displayableCards.length - 1) {
+                currentIndex++;
+                displayCard(currentIndex);
+            }
+        });
+
+        // Event listener for the "Have it" button
+        haveItButton.addEventListener('click', toggleHaveIt);
+
+        // Event listener for clicking the card image to open overlay
+        cardImage.addEventListener('click', () => {
+            const currentCard = displayableCards[currentIndex];
+            if (currentCard && currentCard.images && currentCard.images.large) {
+                overlayImage.src = currentCard.images.large;
+                overlayImage.alt = `High Resolution ${currentCard.name} Card`;
+                imageOverlay.classList.remove('hidden'); // Show the overlay
+            }
+        });
+
+        // Event listener for closing the overlay by clicking the close button
+        closeOverlayButton.addEventListener('click', () => {
+            imageOverlay.classList.add('hidden'); // Hide the overlay
+            overlayImage.src = ''; // Clear image source to free up memory
+        });
+
+        // Event listener for closing the overlay by clicking outside the image
+        imageOverlay.addEventListener('click', (event) => {
+            // Check if the click occurred directly on the overlay background, not on the image itself or the close button
+            if (event.target === imageOverlay) {
+                imageOverlay.classList.add('hidden'); // Hide the overlay
+                overlayImage.src = ''; // Clear image source
+            }
+        });
+
+        // Initial fetch and display when the page loads
+        window.onload = fetchPokemonCards;
+    </script>
+</body>
+
+</html>
