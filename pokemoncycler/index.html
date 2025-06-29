@@ -19,11 +19,30 @@
             -ms-overflow-style: none;  /* IE and Edge */
             scrollbar-width: none;  /* Firefox */
         }
+        /* Styles for active view button */
+        .active-view-btn {
+            background-color: #4f46e5; /* Tailwind indigo-600 */
+            color: white;
+        }
+        /* Styles for inactive view button */
+        .inactive-view-btn {
+            background-color: #d1d5db; /* Tailwind gray-300 */
+            color: #4b5563; /* Tailwind gray-700 */
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-indigo-500 to-purple-600 min-h-screen flex items-center justify-center p-4">
-    <div class="container bg-white bg-opacity-90 rounded-2xl shadow-xl p-6 md:p-8 max-w-sm w-full flex flex-col items-center space-y-6">
+
+    <!-- Main App Container -->
+    <div id="main-app" class="container bg-white bg-opacity-90 rounded-2xl shadow-xl p-6 md:p-8 max-w-sm w-full flex flex-col items-center space-y-6">
         <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800 text-center mb-4">Pokémon Card Cycler</h1>
+
+        <!-- View Mode Buttons -->
+        <div class="flex justify-center space-x-2 mb-4 w-full text-sm">
+            <button id="view-all-btn" class="px-4 py-2 rounded-lg font-semibold shadow-md active-view-btn transition duration-200">All Cards</button>
+            <button id="view-have-btn" class="px-4 py-2 rounded-lg font-semibold shadow-md inactive-view-btn transition duration-200">Have It</button>
+            <button id="view-want-btn" class="px-4 py-2 rounded-lg font-semibold shadow-md inactive-view-btn transition duration-200">Want It</button>
+        </div>
 
         <!-- Card display area, now with cursor-pointer for clickability -->
         <div id="card-display" class="w-full flex justify-center items-center h-80 bg-gray-100 rounded-xl shadow-inner p-2 cursor-pointer">
@@ -43,9 +62,19 @@
                 Next
             </button>
         </div>
-        <!-- "Have it" button -->
-        <button id="have-it-button" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
-            Have it
+        <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 w-full">
+            <!-- "Have it" button -->
+            <button id="have-it-button" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
+                Have it
+            </button>
+            <!-- "Want it" button -->
+            <button id="want-it-button" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
+                Want it
+            </button>
+        </div>
+        <!-- New Grown-Up Settings Button -->
+        <button id="grown-up-settings-btn" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-75 mt-6">
+            Grown-Up Settings
         </button>
     </div>
 
@@ -61,8 +90,53 @@
         </div>
     </div>
 
+    <!-- Parental Control Setup Modal (Used for initial setup and Grown-Up Settings) -->
+    <div id="parental-control-setup" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg p-6 max-w-sm w-full shadow-lg text-center space-y-4">
+            <h2 class="text-2xl font-bold text-gray-800">Grown-Up Setup</h2>
+            <p class="text-gray-600">Please set limits for today's usage.</p>
+            <form id="pc-setup-form" class="space-y-4">
+                <div>
+                    <label for="cardLimit" class="block text-left text-sm font-medium text-gray-700">Max Cards to View:</label>
+                    <input type="number" id="cardLimit" min="1" value="50" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2">
+                </div>
+                <div>
+                    <label for="timeLimit" class="block text-left text-sm font-medium text-gray-700">Max Minutes on Site:</label>
+                    <input type="number" id="timeLimit" min="1" value="30" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2">
+                </div>
+                <div>
+                    <label for="resetHours" class="block text-left text-sm font-medium text-gray-700">Reset usage after (hours):</label>
+                    <input type="number" id="resetHours" min="1" value="24" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2">
+                </div>
+                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition">Set Limits</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Grown-Up Verification Modal -->
+    <div id="grown-up-verification-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg p-6 max-w-sm w-full shadow-lg text-center space-y-4">
+            <h2 class="text-2xl font-bold text-gray-800">Grown-Up Verification</h2>
+            <p id="grown-up-question" class="text-gray-700 text-lg font-medium">Loading question...</p>
+            <input type="text" id="grown-up-answer-input" placeholder="Your answer" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-2 text-center">
+            <p id="grown-up-verification-error" class="text-red-500 text-sm h-4"></p>
+            <button id="grown-up-verify-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed">Verify</button>
+        </div>
+    </div>
+
+    <!-- Lockout Screen -->
+    <div id="lockout-screen" class="fixed inset-0 bg-red-800 bg-opacity-90 flex flex-col items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full shadow-lg text-center space-y-6">
+            <h2 class="text-3xl font-bold text-red-700">Site Locked!</h2>
+            <p class="text-gray-700 text-lg">Daily usage limits reached.</p>
+            <p id="lockout-message" class="text-gray-600 text-sm"></p>
+            <p class="text-sm text-gray-500">Please ask a grown-up for help if you need to access it sooner.</p>
+        </div>
+    </div>
+
     <script>
-        // Get references to HTML elements
+        // --- DOM Element References ---
+        const mainApp = document.getElementById('main-app');
         const cardImage = document.getElementById('pokemon-card-image');
         const cardName = document.getElementById('card-name');
         const cardStatus = document.getElementById('card-status');
@@ -70,45 +144,103 @@
         const prevButton = document.getElementById('prev-button');
         const nextButton = document.getElementById('next-button');
         const haveItButton = document.getElementById('have-it-button');
+        const wantItButton = document.getElementById('want-it-button');
 
-        // New elements for the image overlay
+        // View mode buttons
+        const viewAllBtn = document.getElementById('view-all-btn');
+        const viewHaveBtn = document.getElementById('view-have-btn');
+        const viewWantBtn = document.getElementById('view-want-btn');
+
+        // Image overlay elements
         const imageOverlay = document.getElementById('image-overlay');
         const overlayImage = document.getElementById('overlay-image');
         const closeOverlayButton = document.getElementById('close-overlay-button');
 
-        // Base API URL for Pokémon TCG cards
+        // Parental control elements
+        const parentalControlSetup = document.getElementById('parental-control-setup');
+        const pcSetupForm = document.getElementById('pc-setup-form');
+        const cardLimitInput = document.getElementById('cardLimit');
+        const timeLimitInput = document.getElementById('timeLimit');
+        const resetHoursInput = document.getElementById('resetHours');
+        const lockoutScreen = document.getElementById('lockout-screen');
+        const lockoutMessage = document.getElementById('lockout-message');
+
+        // Grown-up verification elements
+        const grownUpSettingsBtn = document.getElementById('grown-up-settings-btn');
+        const grownUpVerificationModal = document.getElementById('grown-up-verification-modal');
+        const grownUpQuestionText = document.getElementById('grown-up-question');
+        const grownUpAnswerInput = document.getElementById('grown-up-answer-input');
+        const grownUpVerifyBtn = document.getElementById('grown-up-verify-btn');
+        const grownUpVerificationError = document.getElementById('grown-up-verification-error');
+
+        // --- API URLs ---
         const API_URL = 'https://api.pokemontcg.io/v2/cards';
+        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=`; // API key provided at runtime
 
-        let fetchedAllCards = []; // Array to store all fetched Pokémon cards (raw from API)
-        let displayableCards = []; // Array to store cards after filtering owned ones
-        let ownedCardIds = new Set(); // Set to store IDs of cards the user owns, for quick lookups
-        let currentIndex = 0; // Index within the 'displayableCards' array
+        // --- Local Storage Keys ---
+        const ALL_CARDS_CACHE_KEY = 'allPokemonCardsCache';
 
-        /**
-         * Loads owned card IDs from localStorage.
-         * The IDs are stored as a JSON string array and converted to a Set for efficient lookup.
-         */
-        function loadOwnedCards() {
-            const storedCards = localStorage.getItem('ownedPokemonCards');
-            if (storedCards) {
+        // --- Global State Variables ---
+        let fetchedAllCards = []; // Stores all cards fetched from the API
+        let displayableCards = []; // Cards currently shown based on view mode and filters
+        let ownedCardIds = new Set(); // IDs of cards the user "has"
+        let wantedCardIds = new Set(); // IDs of cards the user "wants"
+        let currentIndex = 0; // Current index within 'displayableCards'
+        let currentViewMode = 'all'; // 'all', 'have', 'want'
+
+        // Parental Control State Variables (stored in localStorage)
+        let pcState = {
+            isSet: false,
+            cardLimit: 0,
+            timeLimit: 0, // in minutes
+            resetHours: 24,
+            lastAccess: 0, // timestamp of last page access/activity
+            cardsViewed: 0,
+            timeSpent: 0, // in milliseconds
+            lockedUntil: 0 // timestamp when lock expires
+        };
+        let usageTrackingInterval = null; // Interval ID for time tracking
+
+        // Global variables for the generated question/answer
+        let currentGrownUpQuestion = '';
+        let currentGrownUpAnswer = '';
+
+        // --- Local Storage Functions ---
+
+        function loadCardCollections() {
+            const storedOwned = localStorage.getItem('ownedPokemonCards');
+            if (storedOwned) {
                 try {
-                    ownedCardIds = new Set(JSON.parse(storedCards));
-                } catch (e) {
-                    console.error("Error parsing owned cards from localStorage:", e);
-                    ownedCardIds = new Set(); // Reset if corrupted
-                }
-            } else {
-                ownedCardIds = new Set();
+                    ownedCardIds = new Set(JSON.parse(storedOwned));
+                } catch (e) { console.error("Error parsing owned cards:", e); ownedCardIds = new Set(); }
+            }
+            const storedWanted = localStorage.getItem('wantedPokemonCards');
+            if (storedWanted) {
+                try {
+                    wantedCardIds = new Set(JSON.parse(storedWanted));
+                } catch (e) { console.error("Error parsing wanted cards:", e); wantedCardIds = new Set(); }
             }
         }
 
-        /**
-         * Saves owned card IDs to localStorage.
-         * The Set is converted to an array before stringifying for storage.
-         */
-        function saveOwnedCards() {
+        function saveCardCollections() {
             localStorage.setItem('ownedPokemonCards', JSON.stringify(Array.from(ownedCardIds)));
+            localStorage.setItem('wantedPokemonCards', JSON.stringify(Array.from(wantedCardIds)));
         }
+
+        function loadParentalControlState() {
+            const storedPcState = localStorage.getItem('parentalControlState');
+            if (storedPcState) {
+                try {
+                    Object.assign(pcState, JSON.parse(storedPcState));
+                } catch (e) { console.error("Error parsing PC state:", e); }
+            }
+        }
+
+        function saveParentalControlState() {
+            localStorage.setItem('parentalControlState', JSON.stringify(pcState));
+        }
+
+        // --- Utility Functions ---
 
         /**
          * Shuffles an array using the Fisher-Yates (Knuth) algorithm.
@@ -117,40 +249,206 @@
          */
         function shuffleArray(array) {
             let currentIndex = array.length, randomIndex;
-
-            // While there remain elements to shuffle.
             while (currentIndex !== 0) {
-                // Pick a remaining element.
                 randomIndex = Math.floor(Math.random() * currentIndex);
                 currentIndex--;
-
-                // And swap it with the current element.
-                [array[currentIndex], array[randomIndex]] = [
-                    array[randomIndex], array[currentIndex]];
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
             }
             return array;
         }
 
+        // --- Parental Control Logic ---
+
+        function initializeParentalControl() {
+            loadParentalControlState();
+
+            // Check if limits need to be set
+            if (!pcState.isSet) {
+                mainApp.classList.add('hidden');
+                parentalControlSetup.classList.remove('hidden');
+                return; // Stop here, wait for setup
+            }
+
+            const now = Date.now();
+            const resetDuration = pcState.resetHours * 3600 * 1000; // Convert hours to milliseconds
+
+            // Check if reset period has passed since last access
+            if (now - pcState.lastAccess > resetDuration) {
+                pcState.cardsViewed = 0;
+                pcState.timeSpent = 0;
+                pcState.lockedUntil = 0; // Ensure it's unlocked if reset time passed
+                saveParentalControlState();
+            }
+
+            // Check if currently locked
+            if (pcState.lockedUntil > now) {
+                showLockoutScreen(`The site will unlock in ${formatTimeRemaining(pcState.lockedUntil - now)}.`);
+                return;
+            }
+
+            // If not locked and setup, start tracking and show app
+            startUsageTracking();
+            mainApp.classList.remove('hidden');
+            parentalControlSetup.classList.add('hidden');
+            lockoutScreen.classList.add('hidden');
+        }
+
+        function startUsageTracking() {
+            if (usageTrackingInterval) {
+                clearInterval(usageTrackingInterval);
+            }
+
+            // Track time every second
+            usageTrackingInterval = setInterval(() => {
+                pcState.timeSpent += 1000; // Add 1 second
+                pcState.lastAccess = Date.now();
+                saveParentalControlState(); // Save state frequently
+
+                // Check time limit
+                if (pcState.timeSpent / (1000 * 60) >= pcState.timeLimit) {
+                    lockoutApp("You've reached your daily time limit!");
+                }
+            }, 1000); // Check every second
+
+            // Also update lastAccess on user interaction (less frequent saves, mainly for "reset after last access")
+            document.addEventListener('mousemove', updateLastAccessTimestamp);
+            document.addEventListener('keydown', updateLastAccessTimestamp);
+            document.addEventListener('click', updateLastAccessTimestamp);
+        }
+
+        function updateLastAccessTimestamp() {
+            pcState.lastAccess = Date.now();
+        }
+
+        function incrementCardViewCount() {
+            if (!pcState.isSet || pcState.lockedUntil > Date.now()) return; // Don't track if not set or locked
+
+            pcState.cardsViewed++;
+            saveParentalControlState();
+
+            if (pcState.cardsViewed >= pcState.cardLimit) {
+                lockoutApp("You've viewed your maximum number of cards for today!");
+            }
+        }
+
+        function lockoutApp(message) {
+            if (usageTrackingInterval) {
+                clearInterval(usageTrackingInterval);
+            }
+            document.removeEventListener('mousemove', updateLastAccessTimestamp);
+            document.removeEventListener('keydown', updateLastAccessTimestamp);
+            document.removeEventListener('click', updateLastAccessTimestamp);
+
+            pcState.lockedUntil = Date.now() + (pcState.resetHours * 3600 * 1000); // Lock for resetHours
+            saveParentalControlState();
+
+            showLockoutScreen(message + `<br>The site will unlock in ${formatTimeRemaining(pcState.lockedUntil - Date.now())}.`);
+        }
+
+        function showLockoutScreen(message) {
+            mainApp.classList.add('hidden');
+            parentalControlSetup.classList.add('hidden');
+            grownUpVerificationModal.classList.add('hidden'); // Ensure verification modal is hidden
+            imageOverlay.classList.add('hidden'); // Hide overlay if open
+            lockoutScreen.classList.remove('hidden');
+            lockoutMessage.innerHTML = message;
+        }
+
+        function formatTimeRemaining(ms) {
+            const hours = Math.floor(ms / (1000 * 60 * 60));
+            const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((ms % (1000 * 60)) / 1000);
+            if (hours > 0) return `${hours}h ${minutes}m`;
+            if (minutes > 0) return `${minutes}m ${seconds}s`;
+            return `${seconds}s`;
+        }
+
+        // --- Grown-Up Verification Logic ---
+
         /**
-         * Filters the initially fetched cards to exclude those marked as "owned" and then shuffles them.
-         * Then, updates the current index to ensure it points to a valid card
-         * in the new filtered list, and displays the card.
+         * Fetches a general knowledge question from Gemini for grown-up verification.
          */
-        function filterAndShuffleAndDisplayCards() {
-            // Filter out cards that are in the ownedCardIds set
-            displayableCards = fetchedAllCards.filter(card => !ownedCardIds.has(card.id));
+        async function fetchGrownUpQuestion() {
+            grownUpQuestionText.textContent = 'Loading a question...';
+            grownUpAnswerInput.value = '';
+            grownUpVerificationError.textContent = '';
+            grownUpVerifyBtn.disabled = true;
 
-            // Shuffle the displayable cards
-            shuffleArray(displayableCards);
+            try {
+                // Prompt Gemini for a general knowledge question with a simple answer
+                const prompt = "Generate a simple general knowledge question suitable for a grown-up, with a clear, single-word or short numerical answer. Provide the question and the answer in a JSON format: {\"question\": \"...\", \"answer\": \"...\"}. The answer should be case-insensitive for text, or a number.";
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = {
+                    contents: chatHistory,
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                "question": { "type": "STRING" },
+                                "answer": { "type": "STRING" } // Store answer as string for flexibility
+                            },
+                            "propertyOrdering": ["question", "answer"]
+                        }
+                    }
+                };
 
-            // Reset current index to 0 after filtering and shuffling
-            currentIndex = 0;
+                const apiKey = ""; // If you want to use models other than gemini-2.5-flash-preview-04-17 or imagen-3.0-generate-002, provide an API key here. Otherwise, leave this as-is.
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${apiKey}`;
 
-            displayCard(currentIndex); // Display the card at the new current index
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const json = result.candidates[0].content.parts[0].text;
+                    const parsedJson = JSON.parse(json);
+                    currentGrownUpQuestion = parsedJson.question;
+                    // Store answer in lowercase for case-insensitive comparison, trim whitespace
+                    currentGrownUpAnswer = String(parsedJson.answer).trim().toLowerCase();
+                    grownUpQuestionText.textContent = currentGrownUpQuestion;
+                    grownUpVerifyBtn.disabled = false;
+                } else {
+                    grownUpQuestionText.textContent = 'Could not load question. Please try again.';
+                    console.error("Gemini API response did not contain expected content:", result);
+                }
+            } catch (error) {
+                console.error('Error fetching grown-up question:', error);
+                grownUpQuestionText.textContent = 'Error loading question. Please try again.';
+            }
         }
 
         /**
-         * Fetches all Pokémon cards from the API.
+         * Verifies the grown-up's answer to the general knowledge question.
+         * If correct, opens the parental control setup modal.
+         */
+        function verifyGrownUpAnswer() {
+            const userAnswer = grownUpAnswerInput.value.trim().toLowerCase();
+            if (userAnswer === currentGrownUpAnswer) {
+                grownUpVerificationModal.classList.add('hidden');
+                parentalControlSetup.classList.remove('hidden'); // Show PC setup modal
+
+                // Pre-fill current settings in the setup form
+                cardLimitInput.value = pcState.cardLimit;
+                timeLimitInput.value = pcState.timeLimit; // Corrected: use pcState.timeLimit
+                resetHoursInput.value = pcState.resetHours;
+                grownUpVerificationError.textContent = ''; // Clear any previous errors
+            } else {
+                grownUpVerificationError.textContent = 'Incorrect answer. Please try again.';
+                grownUpAnswerInput.value = ''; // Clear input for next attempt
+            }
+        }
+
+        // --- Card Display & Logic ---
+
+        /**
+         * Fetches all Pokémon cards from the API or loads from local storage.
          * Displays a loading message, handles errors, and then processes the cards.
          */
         async function fetchPokemonCards() {
@@ -161,7 +459,26 @@
             prevButton.disabled = true;            // Disable buttons while loading
             nextButton.disabled = true;
             haveItButton.disabled = true;
+            wantItButton.disabled = true; // Also disable wantIt button
 
+            // Try to load cards from local storage first
+            const cachedCards = localStorage.getItem(ALL_CARDS_CACHE_KEY);
+            if (cachedCards) {
+                try {
+                    fetchedAllCards = JSON.parse(cachedCards);
+                    console.log('Loaded cards from cache.');
+                    loadCardCollections(); // Load owned and wanted cards from localStorage
+                    updateDisplayableCards(); // Filter and display the initial set of cards
+                    loadingText.classList.add('hidden'); // Hide loading text
+                    return; // Exit if cards were loaded from cache
+                } catch (e) {
+                    console.error("Error parsing cached cards, fetching from API instead:", e);
+                    localStorage.removeItem(ALL_CARDS_CACHE_KEY); // Clear corrupt cache
+                }
+            }
+
+            // If no cached cards or cache was corrupt, fetch from API
+            console.log('Fetching cards from API...');
             try {
                 const response = await fetch(API_URL);
                 if (!response.ok) {
@@ -170,9 +487,12 @@
                 const data = await response.json();
                 fetchedAllCards = data.data; // Store all raw cards from the API
 
-                loadOwnedCards(); // Load owned cards from localStorage
-                // Call the new function to filter, shuffle, and display
-                filterAndShuffleAndDisplayCards();
+                // Save fetched cards to local storage for future visits
+                localStorage.setItem(ALL_CARDS_CACHE_KEY, JSON.stringify(fetchedAllCards));
+                console.log('Cards fetched from API and saved to cache.');
+
+                loadCardCollections(); // Load owned and wanted cards from localStorage
+                updateDisplayableCards(); // Filter and display the initial set of cards
             } catch (error) {
                 console.error('Error fetching Pokémon cards:', error);
                 cardName.textContent = 'Failed to load cards. Please try again later.';
@@ -182,9 +502,49 @@
         }
 
         /**
+         * Filters cards based on the current view mode, shuffles if 'all' view, and displays the appropriate card.
+         */
+        function updateDisplayableCards() {
+            let filtered = [];
+            switch (currentViewMode) {
+                case 'all':
+                    // Show all cards not marked as 'Have it'
+                    filtered = fetchedAllCards.filter(card => !ownedCardIds.has(card.id));
+                    shuffleArray(filtered); // Shuffle only in 'All Cards' view
+                    break;
+                case 'have':
+                    // Show only cards marked as 'Have it'
+                    filtered = fetchedAllCards.filter(card => ownedCardIds.has(card.id));
+                    break;
+                case 'want':
+                    // Show only cards marked as 'Want it' AND NOT 'Have it' (as you wouldn't want it if you have it)
+                    filtered = fetchedAllCards.filter(card => wantedCardIds.has(card.id) && !ownedCardIds.has(card.id));
+                    break;
+            }
+            displayableCards = filtered;
+            currentIndex = 0; // Always start from the first card in the new list
+            displayCard(currentIndex);
+            updateViewModeButtons();
+        }
+
+        /**
+         * Updates the visual state of the view mode buttons.
+         */
+        function updateViewModeButtons() {
+            [viewAllBtn, viewHaveBtn, viewWantBtn].forEach(btn => {
+                btn.classList.remove('active-view-btn', 'inactive-view-btn');
+                if (btn.id === `view-${currentViewMode}-btn`) {
+                    btn.classList.add('active-view-btn');
+                } else {
+                    btn.classList.add('inactive-view-btn');
+                }
+            });
+        }
+
+        /**
          * Displays a specific Pokémon card based on its index within the 'displayableCards' array.
-         * Updates card image, name, "Have it" button text, and navigation button states.
-         * @param {number} index - The index of the card to display in displayableCards.
+         * Updates card image, name, "Have it"/"Want it" button texts, and navigation button states.
+         * Also increments card view count for parental controls.
          */
         function displayCard(index) {
             cardImage.classList.add('hidden'); // Hide image before displaying new one
@@ -192,11 +552,14 @@
             cardStatus.classList.add('hidden'); // Hide status initially
 
             if (displayableCards.length === 0) {
-                cardName.textContent = 'No unowned Pokémon cards left! You have collected them all.';
+                cardName.textContent = `No cards in "${currentViewMode}" list.`;
+                if (currentViewMode === 'all') cardName.textContent = 'No unowned Pokémon cards left! You have collected them all.';
                 prevButton.disabled = true;
                 nextButton.disabled = true;
                 haveItButton.disabled = true;
-                haveItButton.textContent = 'No cards to mark';
+                wantItButton.disabled = true;
+                haveItButton.textContent = 'Have it';
+                wantItButton.textContent = 'Want it';
                 return;
             }
 
@@ -207,60 +570,114 @@
                 index = displayableCards.length - 1;
             }
 
-            currentIndex = index; // Update the global current index to the validated index
+            currentIndex = index; // Update the global current index
             const card = displayableCards[currentIndex];
 
             if (card) {
-                cardImage.src = card.images.large;      // Set the image source
-                cardImage.alt = card.name;              // Set alt text for accessibility
-                cardName.textContent = card.name;       // Display the card name
-                cardImage.classList.remove('hidden');   // Show the image
+                cardImage.src = card.images.large;
+                cardImage.alt = card.name;
+                cardName.textContent = card.name;
+                cardImage.classList.remove('hidden');
 
-                // Update "Have it" button text and card status
+                // Update "Have it" button and status
                 const isOwned = ownedCardIds.has(card.id);
                 haveItButton.textContent = isOwned ? 'Remove it' : 'Have it';
-                cardStatus.textContent = isOwned ? '(Owned)' : '';
-                cardStatus.classList.toggle('hidden', !isOwned); // Show/hide status text
-                haveItButton.disabled = false; // Enable "Have it" button
+                haveItButton.disabled = false;
+
+                // Update "Want it" button and status
+                const isWanted = wantedCardIds.has(card.id);
+                wantItButton.textContent = isWanted ? 'Unwant it' : 'Want it';
+                wantItButton.disabled = false;
+
+                // Determine and display status (Owned takes precedence if both)
+                if (isOwned) {
+                    cardStatus.textContent = '(Owned)';
+                    cardStatus.classList.remove('hidden');
+                } else if (isWanted) {
+                    cardStatus.textContent = '(Wanted)';
+                    cardStatus.classList.remove('hidden');
+                } else {
+                    cardStatus.classList.add('hidden');
+                }
 
                 // Update navigation button states
                 prevButton.disabled = (currentIndex === 0);
                 nextButton.disabled = (currentIndex === displayableCards.length - 1);
+
+                incrementCardViewCount(); // Increment view count for parental controls
             } else {
-                // Fallback if somehow a card is not found at the index (shouldn't happen with proper index management)
                 cardName.textContent = 'Card not found.';
                 haveItButton.disabled = true;
+                wantItButton.disabled = true;
                 prevButton.disabled = true;
                 nextButton.disabled = true;
             }
         }
 
         /**
-         * Toggles the ownership status of the currently displayed card.
-         * Adds or removes the card ID from the ownedCardIds set and localStorage.
-         * Then, re-filters, shuffles, and re-displays the cards to reflect the change.
+         * Toggles the "Have it" status of the current card.
          */
         function toggleHaveIt() {
-            if (displayableCards.length === 0) return; // No cards to mark/unmark
-
+            if (displayableCards.length === 0) return;
             const currentCard = displayableCards[currentIndex];
-            if (!currentCard) {
-                console.error("No current card to toggle ownership for.");
-                return;
-            }
+            if (!currentCard) return;
 
             if (ownedCardIds.has(currentCard.id)) {
                 ownedCardIds.delete(currentCard.id);
             } else {
                 ownedCardIds.add(currentCard.id);
+                wantedCardIds.delete(currentCard.id); // If you have it, you no longer want it
             }
-            saveOwnedCards(); // Save the updated set to localStorage
-
-            // After toggling ownership, re-filter and shuffle the list.
-            filterAndShuffleAndDisplayCards();
+            saveCardCollections();
+            updateDisplayableCards(); // Re-filter, shuffle (if all), and display
         }
 
-        // Event listeners for navigation buttons
+        /**
+         * Toggles the "Want it" status of the current card.
+         */
+        function toggleWantIt() {
+            if (displayableCards.length === 0) return;
+            const currentCard = displayableCards[currentIndex];
+            if (!currentCard) return;
+
+            // Cannot want a card you already have
+            if (ownedCardIds.has(currentCard.id)) {
+                // Using an alert for simplicity as per previous conversation, but a custom modal is recommended
+                alert("You already have this card!");
+                return;
+            }
+
+            if (wantedCardIds.has(currentCard.id)) {
+                wantedCardIds.delete(currentCard.id);
+            } else {
+                wantedCardIds.add(currentCard.id);
+            }
+            saveCardCollections();
+            updateDisplayableCards(); // Re-filter, shuffle (if all), and display
+        }
+
+        // --- Event Listeners ---
+
+        // Parental Control Setup Form Submission
+        pcSetupForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            pcState.cardLimit = parseInt(cardLimitInput.value);
+            pcState.timeLimit = parseInt(timeLimitInput.value);
+            pcState.resetHours = parseInt(resetHoursInput.value);
+            pcState.isSet = true;
+            pcState.lastAccess = Date.now(); // Set initial last access time
+            pcState.cardsViewed = 0;
+            pcState.timeSpent = 0;
+            pcState.lockedUntil = 0; // Ensure it's not locked on setup
+            saveParentalControlState();
+            initializeParentalControl(); // Re-run PC init to start app
+            // Only fetch cards if not already fetched and PC setup is completed successfully
+            if (fetchedAllCards.length === 0) { // Check if cards are already loaded from cache or previous fetch
+                fetchPokemonCards();
+            }
+        });
+
+        // Navigation Buttons
         prevButton.addEventListener('click', () => {
             if (currentIndex > 0) {
                 currentIndex--;
@@ -275,36 +692,75 @@
             }
         });
 
-        // Event listener for the "Have it" button
+        // Have It / Want It Buttons
         haveItButton.addEventListener('click', toggleHaveIt);
+        wantItButton.addEventListener('click', toggleWantIt);
 
-        // Event listener for clicking the card image to open overlay
+        // View Mode Buttons
+        viewAllBtn.addEventListener('click', () => {
+            currentViewMode = 'all';
+            updateDisplayableCards();
+        });
+        viewHaveBtn.addEventListener('click', () => {
+            currentViewMode = 'have';
+            updateDisplayableCards();
+        });
+        viewWantBtn.addEventListener('click', () => {
+            currentViewMode = 'want';
+            updateDisplayableCards();
+        });
+
+        // Image Overlay
         cardImage.addEventListener('click', () => {
             const currentCard = displayableCards[currentIndex];
             if (currentCard && currentCard.images && currentCard.images.large) {
                 overlayImage.src = currentCard.images.large;
                 overlayImage.alt = `High Resolution ${currentCard.name} Card`;
-                imageOverlay.classList.remove('hidden'); // Show the overlay
+                imageOverlay.classList.remove('hidden');
             }
         });
 
-        // Event listener for closing the overlay by clicking the close button
         closeOverlayButton.addEventListener('click', () => {
-            imageOverlay.classList.add('hidden'); // Hide the overlay
-            overlayImage.src = ''; // Clear image source to free up memory
+            imageOverlay.classList.add('hidden');
+            overlayImage.src = '';
         });
 
-        // Event listener for closing the overlay by clicking outside the image
         imageOverlay.addEventListener('click', (event) => {
-            // Check if the click occurred directly on the overlay background, not on the image itself or the close button
             if (event.target === imageOverlay) {
-                imageOverlay.classList.add('hidden'); // Hide the overlay
-                overlayImage.src = ''; // Clear image source
+                imageOverlay.classList.add('hidden');
+                overlayImage.src = '';
             }
         });
 
-        // Initial fetch and display when the page loads
-        window.onload = fetchPokemonCards;
+        // Grown-Up Settings Button
+        grownUpSettingsBtn.addEventListener('click', () => {
+            mainApp.classList.add('hidden'); // Hide main app
+            grownUpVerificationModal.classList.remove('hidden'); // Show verification modal
+            fetchGrownUpQuestion(); // Fetch a new question each time
+        });
+
+        // Grown-Up Verification Modal Submit
+        grownUpVerifyBtn.addEventListener('click', verifyGrownUpAnswer);
+        grownUpAnswerInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevent form submission
+                verifyGrownUpAnswer();
+            }
+        });
+
+        // --- Initial App Load ---
+        window.onload = () => {
+            initializeParentalControl();
+            // Fetch cards only if not locked and parental control is set.
+            // If pcState.isSet is false, the PC setup modal will be shown first.
+            // If locked, the lockout screen will be shown.
+            // Otherwise (PC is set and not locked), fetch and display cards.
+            if (pcState.isSet && pcState.lockedUntil <= Date.now()) {
+                fetchPokemonCards();
+            }
+            // Ensure verification modal is hidden on initial load
+            grownUpVerificationModal.classList.add('hidden');
+        };
     </script>
 </body>
 </html>
