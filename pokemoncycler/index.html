@@ -72,11 +72,12 @@
                 Want it
             </button>
         </div>
-        <!-- New Grown-Up Settings Button -->
-        <button id="grown-up-settings-btn" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-75 mt-6">
-            Grown-Up Settings
-        </button>
     </div>
+
+    <!-- Grown-Up Settings Button - Now outside main-app to be always visible -->
+    <button id="grown-up-settings-btn" class="fixed bottom-4 right-4 bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-75 z-40">
+        Grown-Up Settings
+    </button>
 
     <!-- Image Overlay Structure -->
     <div id="image-overlay" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
@@ -125,12 +126,12 @@
     </div>
 
     <!-- Lockout Screen -->
-    <div id="lockout-screen" class="fixed inset-0 bg-red-800 bg-opacity-90 flex flex-col items-center justify-center p-4 z-50 hidden">
+    <div id="lockout-screen" class="fixed inset-0 bg-sky-400 bg-opacity-90 flex flex-col items-center justify-center p-4 z-50 hidden">
         <div class="bg-white rounded-lg p-8 max-w-md w-full shadow-lg text-center space-y-6">
-            <h2 class="text-3xl font-bold text-red-700">Site Locked!</h2>
-            <p class="text-gray-700 text-lg">Daily usage limits reached.</p>
+            <h2 class="text-3xl font-bold text-blue-800">Time for a break!</h2>
+            <p class="text-gray-700 text-lg">You've enjoyed lots of Pokémon cards today!</p>
             <p id="lockout-message" class="text-gray-600 text-sm"></p>
-            <p class="text-sm text-gray-500">Please ask a grown-up for help if you need to access it sooner.</p>
+            <p class="text-sm text-gray-500">Come back soon, or ask a grown-up to help set new limits if you like!</p>
         </div>
     </div>
 
@@ -266,7 +267,10 @@
             if (!pcState.isSet) {
                 mainApp.classList.add('hidden');
                 parentalControlSetup.classList.remove('hidden');
+                grownUpSettingsBtn.classList.add('hidden'); // Hide grown up settings until initial setup
                 return; // Stop here, wait for setup
+            } else {
+                grownUpSettingsBtn.classList.remove('hidden'); // Show button after initial setup
             }
 
             const now = Date.now();
@@ -342,7 +346,12 @@
             pcState.lockedUntil = Date.now() + (pcState.resetHours * 3600 * 1000); // Lock for resetHours
             saveParentalControlState();
 
-            showLockoutScreen(message + `<br>The site will unlock in ${formatTimeRemaining(pcState.lockedUntil - Date.now())}.`);
+            // Custom kid-friendly message for lockout
+            let friendlyMessage = "You've viewed all the cards for now!";
+            if (message.includes("time limit")) {
+                friendlyMessage = "You've had lots of fun card time today!";
+            }
+            showLockoutScreen(`${friendlyMessage}<br>The site will be ready for more fun in ${formatTimeRemaining(pcState.lockedUntil - Date.now())}.`);
         }
 
         function showLockoutScreen(message) {
@@ -436,7 +445,7 @@
 
                 // Pre-fill current settings in the setup form
                 cardLimitInput.value = pcState.cardLimit;
-                timeLimitInput.value = pcState.timeLimit; // Corrected: use pcState.timeLimit
+                timeLimitInput.value = pcState.timeLimit;
                 resetHoursInput.value = pcState.resetHours;
                 grownUpVerificationError.textContent = ''; // Clear any previous errors
             } else {
@@ -735,6 +744,8 @@
         // Grown-Up Settings Button
         grownUpSettingsBtn.addEventListener('click', () => {
             mainApp.classList.add('hidden'); // Hide main app
+            lockoutScreen.classList.add('hidden'); // Ensure lockout screen is hidden if it was active
+            parentalControlSetup.classList.add('hidden'); // Ensure setup modal is hidden
             grownUpVerificationModal.classList.remove('hidden'); // Show verification modal
             fetchGrownUpQuestion(); // Fetch a new question each time
         });
