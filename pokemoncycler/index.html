@@ -19,65 +19,102 @@
             -ms-overflow-style: none;  /* IE and Edge */
             scrollbar-width: none;  /* Firefox */
         }
-        /* Styles for active view button */
-        .active-view-btn {
-            background-color: #4f46e5; /* Tailwind indigo-600 */
-            color: white;
+        /* Styles for active view button in bottom nav */
+        .bottom-nav-active {
+            color: #4f46e5; /* Tailwind indigo-600 */
+            font-weight: bold;
         }
-        /* Styles for inactive view button */
-        .inactive-view-btn {
-            background-color: #d1d5db; /* Tailwind gray-300 */
-            color: #4b5563; /* Tailwind gray-700 */
+        /* Styles for inactive view button in bottom nav */
+        .bottom-nav-inactive {
+            color: #6b7280; /* Tailwind gray-500 */
+        }
+
+        /* Styles for the navigation drawer */
+        #nav-drawer {
+            transition: transform 0.3s ease-in-out;
+        }
+        #nav-drawer.open {
+            transform: translateX(0);
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-indigo-500 to-purple-600 min-h-screen flex items-center justify-center p-4">
+<body class="bg-gradient-to-br from-indigo-500 to-purple-600 min-h-screen flex flex-col">
 
-    <!-- Main App Container -->
-    <div id="main-app" class="container bg-white bg-opacity-90 rounded-2xl shadow-xl p-6 md:p-8 max-w-sm w-full flex flex-col items-center space-y-6">
-        <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800 text-center mb-4">Pokémon Card Cycler</h1>
+    <!-- Top Bar - Z-INDEX INCREASED -->
+    <header class="flex items-center justify-between p-4 bg-white shadow-md z-70">
+        <!-- Hamburger Menu Toggle -->
+        <button id="menu-toggle-btn" class="text-gray-600 hover:text-blue-700 transition duration-200 p-2 rounded-full hover:bg-gray-100">
+            <!-- Hamburger icon (SVG) -->
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+        </button>
+        <h1 class="text-2xl font-extrabold text-gray-800">Pokémon Cards</h1>
+        <!-- Placeholder for symmetry, or could add another icon -->
+        <div class="w-8 h-8"></div>
+    </header>
 
-        <!-- View Mode Buttons -->
-        <div class="flex justify-center space-x-2 mb-4 w-full text-sm">
-            <button id="view-all-btn" class="px-4 py-2 rounded-lg font-semibold shadow-md active-view-btn transition duration-200">All Cards</button>
-            <button id="view-have-btn" class="px-4 py-2 rounded-lg font-semibold shadow-md inactive-view-btn transition duration-200">Have It</button>
-            <button id="view-want-btn" class="px-4 py-2 rounded-lg font-semibold shadow-md inactive-view-btn transition duration-200">Want It</button>
-        </div>
-
-        <!-- Card display area, now with cursor-pointer for clickability -->
-        <div id="card-display" class="w-full flex justify-center items-center h-80 bg-gray-100 rounded-xl shadow-inner p-2 cursor-pointer">
-            <p id="loading-text" class="text-gray-600 text-lg">Loading cards...</p>
-            <img id="pokemon-card-image" src="" alt="Pokémon Card" class="hidden max-w-full max-h-full object-contain rounded-lg shadow-md" onerror="this.onerror=null; this.src='https://placehold.co/300x420/DDDDDD/666666?text=Image+Not+Found';" />
-        </div>
-
-        <!-- Display card name and status -->
-        <p id="card-name" class="text-xl md:text-2xl font-bold text-gray-800 text-center"></p>
-        <p id="card-status" class="text-sm text-gray-500 text-center -mt-4 mb-2 hidden"></p>
-
-        <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 w-full">
-            <button id="prev-button" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
-                Previous
+    <!-- Navigation Drawer -->
+    <div id="nav-drawer" class="fixed inset-y-0 left-0 w-64 bg-gray-800 text-white z-40 transform -translate-x-full shadow-lg flex flex-col pt-16">
+        <button id="close-drawer-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white transition duration-200 p-2 rounded-full hover:bg-gray-700">
+            <!-- Close icon (X) -->
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+        <nav class="flex-grow p-4 space-y-4">
+            <button id="grown-up-settings-link" class="w-full text-left text-lg py-2 px-4 rounded-md hover:bg-gray-700 transition duration-200">
+                Grown-Up Settings
             </button>
-            <button id="next-button" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
-                Next
-            </button>
-        </div>
-        <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 w-full">
-            <!-- "Have it" button -->
-            <button id="have-it-button" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
-                Have it
-            </button>
-            <!-- "Want it" button -->
-            <button id="want-it-button" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
-                Want it
-            </button>
+            <!-- Add more navigation links here if needed in the future -->
+        </nav>
+    </div>
+
+    <!-- Drawer Overlay -->
+    <div id="drawer-overlay" class="fixed inset-0 bg-black opacity-50 z-30 hidden"></div>
+
+    <!-- Main App Content Area -->
+    <div id="main-app-content" class="flex-grow flex flex-col items-center justify-center p-4 pb-20 relative">
+        <!-- This div now acts as the primary content container, dynamically shown/hidden -->
+        <div class="container bg-white bg-opacity-90 rounded-2xl shadow-xl p-6 md:p-8 max-w-sm w-full flex flex-col items-center space-y-6">
+            <!-- Card display area, now with cursor-pointer for clickability -->
+            <div id="card-display" class="w-full flex justify-center items-center h-80 bg-gray-100 rounded-xl shadow-inner p-2 cursor-pointer touch-action-pan-y">
+                <p id="loading-text" class="text-gray-600 text-lg">Loading cards...</p>
+                <img id="pokemon-card-image" src="" alt="Pokémon Card" class="hidden max-w-full max-h-full object-contain rounded-lg shadow-md" onerror="this.onerror=null; this.src='https://placehold.co/300x420/DDDDDD/666666?text=Image+Not+Found';" />
+            </div>
+
+            <!-- Display card name and status -->
+            <p id="card-name" class="text-xl md:text-2xl font-bold text-gray-800 text-center"></p>
+            <p id="card-status" class="text-sm text-gray-500 text-center -mt-4 mb-2 hidden"></p>
+
+            <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 w-full">
+                <!-- "Have it" button -->
+                <button id="have-it-button" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Have it
+                </button>
+                <!-- "Want it" button -->
+                <button id="want-it-button" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Want it
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- Grown-Up Settings Button - Now outside main-app to be always visible -->
-    <button id="grown-up-settings-btn" class="fixed bottom-4 right-4 bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-75 z-40">
-        Grown-Up Settings
-    </button>
+    <!-- Bottom Navigation Bar -->
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white shadow-lg flex justify-around items-center h-16 z-20">
+        <button id="view-all-btn" class="flex flex-col items-center justify-center flex-1 px-2 py-1 text-sm bottom-nav-active">
+            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+            <span>All Cards</span>
+        </button>
+        <button id="view-have-btn" class="flex flex-col items-center justify-center flex-1 px-2 py-1 text-sm bottom-nav-inactive">
+            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>Have It</span>
+        </button>
+        <button id="view-want-btn" class="flex flex-col items-center justify-center flex-1 px-2 py-1 text-sm bottom-nav-inactive">
+            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.143L2.247 10.945a1 1 0 00-.232.758c.03.271.163.53.354.721l6.05 6.05a1 1 0 00.721.354c.228.026.444-.067.618-.232l8.802-8.802a1 1 0 00.232-.758c-.03-.271-.163-.53-.354-.721l-6.05-6.05a1 1 0 00-.721-.354c-.228-.026-.444.067-.618.232zM13.5 13.5L10 17l-3.5-3.5L10 10l3.5 3.5z"></path></svg>
+            <span>Want It</span>
+        </button>
+    </nav>
 
     <!-- Image Overlay Structure -->
     <div id="image-overlay" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
@@ -92,7 +129,7 @@
     </div>
 
     <!-- Parental Control Setup Modal (Used for initial setup and Grown-Up Settings) -->
-    <div id="parental-control-setup" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+    <div id="parental-control-setup" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-55 hidden">
         <div class="bg-white rounded-lg p-6 max-w-sm w-full shadow-lg text-center space-y-4">
             <h2 class="text-2xl font-bold text-gray-800">Grown-Up Setup</h2>
             <p class="text-gray-600">Please set limits for today's usage.</p>
@@ -115,7 +152,7 @@
     </div>
 
     <!-- Grown-Up Verification Modal -->
-    <div id="grown-up-verification-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+    <div id="grown-up-verification-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-60 hidden">
         <div class="bg-white rounded-lg p-6 max-w-sm w-full shadow-lg text-center space-y-4">
             <h2 class="text-2xl font-bold text-gray-800">Grown-Up Verification</h2>
             <p id="grown-up-question" class="text-gray-700 text-lg font-medium">Loading question...</p>
@@ -136,18 +173,23 @@
     </div>
 
     <script>
+        // --- DEVELOPMENT MODE FLAG ---
+        // Set to true for using dummy data (no API calls, faster loading)
+        // Set to false to fetch real data from the Pokémon TCG API
+        const DEV_MODE = false;
+
         // --- DOM Element References ---
-        const mainApp = document.getElementById('main-app');
+        const mainAppContent = document.getElementById('main-app-content'); // Main app content area
+        const cardDisplay = document.getElementById('card-display');
         const cardImage = document.getElementById('pokemon-card-image');
         const cardName = document.getElementById('card-name');
         const cardStatus = document.getElementById('card-status');
         const loadingText = document.getElementById('loading-text');
-        const prevButton = document.getElementById('prev-button');
-        const nextButton = document.getElementById('next-button');
+
         const haveItButton = document.getElementById('have-it-button');
         const wantItButton = document.getElementById('want-it-button');
 
-        // View mode buttons
+        // View mode buttons (now in bottom nav)
         const viewAllBtn = document.getElementById('view-all-btn');
         const viewHaveBtn = document.getElementById('view-have-btn');
         const viewWantBtn = document.getElementById('view-want-btn');
@@ -166,8 +208,13 @@
         const lockoutScreen = document.getElementById('lockout-screen');
         const lockoutMessage = document.getElementById('lockout-message');
 
-        // Grown-up verification elements
-        const grownUpSettingsBtn = document.getElementById('grown-up-settings-btn');
+        // Grown-up verification elements and new navigation drawer elements
+        const menuToggleBtn = document.getElementById('menu-toggle-btn');
+        const navDrawer = document.getElementById('nav-drawer');
+        const closeDrawerBtn = document.getElementById('close-drawer-btn');
+        const drawerOverlay = document.getElementById('drawer-overlay');
+        const grownUpSettingsLink = document.getElementById('grown-up-settings-link'); // Link inside drawer
+
         const grownUpVerificationModal = document.getElementById('grown-up-verification-modal');
         const grownUpQuestionText = document.getElementById('grown-up-question');
         const grownUpAnswerInput = document.getElementById('grown-up-answer-input');
@@ -181,8 +228,75 @@
         // --- Local Storage Keys ---
         const ALL_CARDS_CACHE_KEY = 'allPokemonCardsCache';
 
+        // --- Dummy Data for Dev Mode ---
+        const dummyPokemonCards = [
+            {
+                id: 'dummy1',
+                name: 'Pikachu (Dev)',
+                images: {
+                    large: 'https://placehold.co/300x420/FFD700/000000?text=Pikachu+Dev'
+                }
+            },
+            {
+                id: 'dummy2',
+                name: 'Charmander (Dev)',
+                images: {
+                    large: 'https://placehold.co/300x420/FF4500/FFFFFF?text=Charmander+Dev'
+                }
+            },
+            {
+                id: 'dummy3',
+                name: 'Squirtle (Dev)',
+                images: {
+                    large: 'https://placehold.co/300x420/4169E1/FFFFFF?text=Squirtle+Dev'
+                }
+            },
+            {
+                id: 'dummy4',
+                name: 'Bulbasaur (Dev)',
+                images: {
+                    large: 'https://placehold.co/300x420/7CFC00/000000?text=Bulbasaur+Dev'
+                }
+            },
+            {
+                id: 'dummy5',
+                name: 'Jigglypuff (Dev)',
+                images: {
+                    large: 'https://placehold.co/300x420/FF69B4/FFFFFF?text=Jigglypuff+Dev'
+                }
+            },
+            {
+                id: 'dummy6',
+                name: 'Meowth (Dev)',
+                images: {
+                    large: 'https://placehold.co/300x420/A9A9A9/000000?text=Meowth+Dev'
+                }
+            },
+            {
+                id: 'dummy7',
+                name: 'Psyduck (Dev)',
+                images: {
+                    large: 'https://placehold.co/300x420/FFFF00/000000?text=Psyduck+Dev'
+                }
+            },
+            {
+                id: 'dummy8',
+                name: 'Snorlax (Dev)',
+                images: {
+                    large: 'https://placehold.co/300x420/808080/FFFFFF?text=Snorlax+Dev'
+                }
+            },
+            {
+                id: 'dummy9',
+                name: 'Eevee (Dev)',
+                images: {
+                    large: 'https://placehold.co/300x420/CD853F/FFFFFF?text=Eevee+Dev'
+                }
+            },
+        ];
+
         // --- Global State Variables ---
-        let fetchedAllCards = []; // Stores all cards fetched from the API
+        let fetchedAllCards = []; // Stores all cards fetched from the API (or dummy data)
         let displayableCards = []; // Cards currently shown based on view mode and filters
         let ownedCardIds = new Set(); // IDs of cards the user "has"
         let wantedCardIds = new Set(); // IDs of cards the user "wants"
@@ -205,6 +319,10 @@
         // Global variables for the generated question/answer
         let currentGrownUpQuestion = '';
         let currentGrownUpAnswer = '';
+
+        // --- Swipe Variables ---
+        let touchStartX = 0;
+        const SWIPE_THRESHOLD = 50; // Minimum pixels for a swipe to register
 
         // --- Local Storage Functions ---
 
@@ -258,6 +376,17 @@
             return array;
         }
 
+        // --- Navigation Drawer Logic ---
+        function openDrawer() {
+            navDrawer.classList.add('open');
+            drawerOverlay.classList.remove('hidden');
+        }
+
+        function closeDrawer() {
+            navDrawer.classList.remove('open');
+            drawerOverlay.classList.add('hidden');
+        }
+
         // --- Parental Control Logic ---
 
         function initializeParentalControl() {
@@ -265,12 +394,9 @@
 
             // Check if limits need to be set
             if (!pcState.isSet) {
-                mainApp.classList.add('hidden');
-                parentalControlSetup.classList.remove('hidden');
-                grownUpSettingsBtn.classList.add('hidden'); // Hide grown up settings until initial setup
+                mainAppContent.classList.add('hidden'); // Hide main app content
+                parentalControlSetup.classList.remove('hidden'); // Show setup modal
                 return; // Stop here, wait for setup
-            } else {
-                grownUpSettingsBtn.classList.remove('hidden'); // Show button after initial setup
             }
 
             const now = Date.now();
@@ -292,7 +418,7 @@
 
             // If not locked and setup, start tracking and show app
             startUsageTracking();
-            mainApp.classList.remove('hidden');
+            mainAppContent.classList.remove('hidden'); // Show main app content
             parentalControlSetup.classList.add('hidden');
             lockoutScreen.classList.add('hidden');
         }
@@ -355,10 +481,11 @@
         }
 
         function showLockoutScreen(message) {
-            mainApp.classList.add('hidden');
+            mainAppContent.classList.add('hidden'); // Hide main content
             parentalControlSetup.classList.add('hidden');
             grownUpVerificationModal.classList.add('hidden'); // Ensure verification modal is hidden
             imageOverlay.classList.add('hidden'); // Hide overlay if open
+            closeDrawer(); // Close drawer if open
             lockoutScreen.classList.remove('hidden');
             lockoutMessage.innerHTML = message;
         }
@@ -465,10 +592,17 @@
             cardImage.classList.add('hidden');     // Hide card image
             cardName.textContent = '';             // Clear card name
             cardStatus.classList.add('hidden');    // Hide status initially
-            prevButton.disabled = true;            // Disable buttons while loading
-            nextButton.disabled = true;
             haveItButton.disabled = true;
-            wantItButton.disabled = true; // Also disable wantIt button
+            wantItButton.disabled = true;
+
+            if (DEV_MODE) {
+                fetchedAllCards = dummyPokemonCards;
+                console.log('DEV_MODE: Loaded dummy cards.');
+                loadCardCollections(); // Still load owned/wanted IDs even in dev mode
+                updateDisplayableCards();
+                loadingText.classList.add('hidden');
+                return;
+            }
 
             // Try to load cards from local storage first
             const cachedCards = localStorage.getItem(ALL_CARDS_CACHE_KEY);
@@ -541,11 +675,11 @@
          */
         function updateViewModeButtons() {
             [viewAllBtn, viewHaveBtn, viewWantBtn].forEach(btn => {
-                btn.classList.remove('active-view-btn', 'inactive-view-btn');
+                btn.classList.remove('bottom-nav-active', 'bottom-nav-inactive');
                 if (btn.id === `view-${currentViewMode}-btn`) {
-                    btn.classList.add('active-view-btn');
+                    btn.classList.add('bottom-nav-active');
                 } else {
-                    btn.classList.add('inactive-view-btn');
+                    btn.classList.add('bottom-nav-inactive');
                 }
             });
         }
@@ -563,8 +697,6 @@
             if (displayableCards.length === 0) {
                 cardName.textContent = `No cards in "${currentViewMode}" list.`;
                 if (currentViewMode === 'all') cardName.textContent = 'No unowned Pokémon cards left! You have collected them all.';
-                prevButton.disabled = true;
-                nextButton.disabled = true;
                 haveItButton.disabled = true;
                 wantItButton.disabled = true;
                 haveItButton.textContent = 'Have it';
@@ -574,9 +706,9 @@
 
             // Ensure index is within valid bounds for displayableCards
             if (index < 0) {
-                index = 0;
+                index = 0; // Clamp to first card
             } else if (index >= displayableCards.length) {
-                index = displayableCards.length - 1;
+                index = displayableCards.length - 1; // Clamp to last card
             }
 
             currentIndex = index; // Update the global current index
@@ -609,17 +741,11 @@
                     cardStatus.classList.add('hidden');
                 }
 
-                // Update navigation button states
-                prevButton.disabled = (currentIndex === 0);
-                nextButton.disabled = (currentIndex === displayableCards.length - 1);
-
                 incrementCardViewCount(); // Increment view count for parental controls
             } else {
                 cardName.textContent = 'Card not found.';
                 haveItButton.disabled = true;
                 wantItButton.disabled = true;
-                prevButton.disabled = true;
-                nextButton.disabled = true;
             }
         }
 
@@ -651,8 +777,7 @@
 
             // Cannot want a card you already have
             if (ownedCardIds.has(currentCard.id)) {
-                // Using an alert for simplicity as per previous conversation, but a custom modal is recommended
-                alert("You already have this card!");
+                alert("You already have this card!"); // Keep alert as per previous instruction
                 return;
             }
 
@@ -679,33 +804,16 @@
             pcState.timeSpent = 0;
             pcState.lockedUntil = 0; // Ensure it's not locked on setup
             saveParentalControlState();
-            initializeParentalControl(); // Re-run PC init to start app
-            // Only fetch cards if not already fetched and PC setup is completed successfully
-            if (fetchedAllCards.length === 0) { // Check if cards are already loaded from cache or previous fetch
-                fetchPokemonCards();
-            }
-        });
-
-        // Navigation Buttons
-        prevButton.addEventListener('click', () => {
-            if (currentIndex > 0) {
-                currentIndex--;
-                displayCard(currentIndex);
-            }
-        });
-
-        nextButton.addEventListener('click', () => {
-            if (currentIndex < displayableCards.length - 1) {
-                currentIndex++;
-                displayCard(currentIndex);
-            }
+            initializeParentalControl(); // Re-run PC init to start app and set visibility
+            // Ensure cards are fetched immediately after initial setup or settings update
+            fetchPokemonCards();
         });
 
         // Have It / Want It Buttons
         haveItButton.addEventListener('click', toggleHaveIt);
         wantItButton.addEventListener('click', toggleWantIt);
 
-        // View Mode Buttons
+        // View Mode Buttons (Bottom Nav)
         viewAllBtn.addEventListener('click', () => {
             currentViewMode = 'all';
             updateDisplayableCards();
@@ -741,9 +849,10 @@
             }
         });
 
-        // Grown-Up Settings Button
-        grownUpSettingsBtn.addEventListener('click', () => {
-            mainApp.classList.add('hidden'); // Hide main app
+        // Grown-Up Settings Link (inside drawer)
+        grownUpSettingsLink.addEventListener('click', () => {
+            closeDrawer(); // Close the drawer first
+            mainAppContent.classList.add('hidden'); // Hide main app content
             lockoutScreen.classList.add('hidden'); // Ensure lockout screen is hidden if it was active
             parentalControlSetup.classList.add('hidden'); // Ensure setup modal is hidden
             grownUpVerificationModal.classList.remove('hidden'); // Show verification modal
@@ -756,6 +865,55 @@
             if (event.key === 'Enter') {
                 event.preventDefault(); // Prevent form submission
                 verifyGrownUpAnswer();
+            }
+        });
+
+        // --- Navigation Drawer Event Listeners ---
+        menuToggleBtn.addEventListener('click', openDrawer);
+        closeDrawerBtn.addEventListener('click', closeDrawer);
+        drawerOverlay.addEventListener('click', closeDrawer);
+
+
+        // --- Swipe Gestures ---
+        cardDisplay.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+        }, { passive: true }); // passive: true for performance, we don't preventDefault here
+
+        cardDisplay.addEventListener('touchmove', (e) => {
+            // Prevent default vertical scrolling if a horizontal swipe is initiated
+            // This is important for smooth horizontal swiping without browser scroll interference
+            if (Math.abs(e.touches[0].clientX - touchStartX) > 10) { // Small threshold to allow slight vertical movement
+                e.preventDefault();
+            }
+        }, { passive: false }); // Use { passive: false } to allow preventDefault inside touchmove
+
+        cardDisplay.addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].clientX;
+            const swipeDistance = touchEndX - touchStartX;
+
+            if (swipeDistance > SWIPE_THRESHOLD) {
+                // Swiped right (previous card)
+                if (currentIndex > 0) {
+                    displayCard(currentIndex - 1);
+                }
+            } else if (swipeDistance < -SWIPE_THRESHOLD) {
+                // Swiped left (next card)
+                if (currentIndex < displayableCards.length - 1) {
+                    displayCard(currentIndex + 1);
+                }
+            }
+        });
+
+        // --- Keyboard Navigation (for desktop) ---
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                if (currentIndex > 0) {
+                    displayCard(currentIndex - 1);
+                }
+            } else if (e.key === 'ArrowRight') {
+                if (currentIndex < displayableCards.length - 1) {
+                    displayCard(currentIndex + 1);
+                }
             }
         });
 
