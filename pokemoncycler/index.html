@@ -40,8 +40,8 @@
 </head>
 <body class="bg-gradient-to-br from-indigo-500 to-purple-600 min-h-screen flex flex-col">
 
-    <!-- Top Bar - Z-INDEX INCREASED -->
-    <header class="flex items-center justify-between p-4 bg-white shadow-md z-70">
+    <!-- Top Bar - Z-INDEX INCREASED SIGNIFICANTLY -->
+    <header class="flex items-center justify-between p-4 bg-white shadow-md z-[999]">
         <!-- Hamburger Menu Toggle -->
         <button id="menu-toggle-btn" class="text-gray-600 hover:text-blue-700 transition duration-200 p-2 rounded-full hover:bg-gray-100">
             <!-- Hamburger icon (SVG) -->
@@ -55,7 +55,7 @@
     </header>
 
     <!-- Navigation Drawer -->
-    <div id="nav-drawer" class="fixed inset-y-0 left-0 w-64 bg-gray-800 text-white z-40 transform -translate-x-full shadow-lg flex flex-col pt-16">
+    <div id="nav-drawer" class="fixed inset-y-0 left-0 w-64 bg-gray-800 text-white z-[998] transform -translate-x-full shadow-lg flex flex-col pt-16">
         <button id="close-drawer-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white transition duration-200 p-2 rounded-full hover:bg-gray-700">
             <!-- Close icon (X) -->
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -71,16 +71,33 @@
     </div>
 
     <!-- Drawer Overlay -->
-    <div id="drawer-overlay" class="fixed inset-0 bg-black opacity-50 z-30 hidden"></div>
+    <div id="drawer-overlay" class="fixed inset-0 bg-black opacity-50 z-[997] hidden"></div>
 
     <!-- Main App Content Area -->
     <div id="main-app-content" class="flex-grow flex flex-col items-center justify-center p-4 pb-20 relative">
         <!-- This div now acts as the primary content container, dynamically shown/hidden -->
         <div class="container bg-white bg-opacity-90 rounded-2xl shadow-xl p-6 md:p-8 max-w-sm w-full flex flex-col items-center space-y-6">
-            <!-- Card display area, now with cursor-pointer for clickability -->
-            <div id="card-display" class="w-full flex justify-center items-center h-80 bg-gray-100 rounded-xl shadow-inner p-2 cursor-pointer touch-action-pan-y">
-                <p id="loading-text" class="text-gray-600 text-lg">Loading cards...</p>
-                <img id="pokemon-card-image" src="" alt="Pokémon Card" class="hidden max-w-full max-h-full object-contain rounded-lg shadow-md" onerror="this.onerror=null; this.src='https://placehold.co/300x420/DDDDDD/666666?text=Image+Not+Found';" />
+            <!-- New flex container for arrows and card display -->
+            <div class="flex items-center justify-between w-full space-x-2">
+                <!-- Left Arrow Button -->
+                <button id="prev-card-btn" class="p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+
+                <!-- Card display area -->
+                <div id="card-display" class="flex-grow flex justify-center items-center h-80 bg-gray-100 rounded-xl shadow-inner p-2 cursor-pointer touch-action-pan-y">
+                    <p id="loading-text" class="text-gray-600 text-lg">Loading cards...</p>
+                    <img id="pokemon-card-image" src="" alt="Pokémon Card" class="hidden max-w-full max-h-full object-contain rounded-lg shadow-md" onerror="this.onerror=null; this.src='https://placehold.co/300x420/DDDDDD/666666?text=Image+Not+Found';" />
+                </div>
+
+                <!-- Right Arrow Button -->
+                <button id="next-card-btn" class="p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
             </div>
 
             <!-- Display card name and status -->
@@ -117,7 +134,7 @@
     </nav>
 
     <!-- Image Overlay Structure -->
-    <div id="image-overlay" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+    <div id="image-overlay" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-[996] hidden">
         <div class="relative max-w-4xl max-h-full">
             <img id="overlay-image" src="" alt="High Resolution Pokémon Card" class="max-w-full max-h-full object-contain rounded-lg shadow-xl" />
             <!-- Close button for the overlay -->
@@ -129,7 +146,7 @@
     </div>
 
     <!-- Parental Control Setup Modal (Used for initial setup and Grown-Up Settings) -->
-    <div id="parental-control-setup" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-55 hidden">
+    <div id="parental-control-setup" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-[995] hidden">
         <div class="bg-white rounded-lg p-6 max-w-sm w-full shadow-lg text-center space-y-4">
             <h2 class="text-2xl font-bold text-gray-800">Grown-Up Setup</h2>
             <p class="text-gray-600">Please set limits for today's usage.</p>
@@ -152,7 +169,7 @@
     </div>
 
     <!-- Grown-Up Verification Modal -->
-    <div id="grown-up-verification-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-60 hidden">
+    <div id="grown-up-verification-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-[994] hidden">
         <div class="bg-white rounded-lg p-6 max-w-sm w-full shadow-lg text-center space-y-4">
             <h2 class="text-2xl font-bold text-gray-800">Grown-Up Verification</h2>
             <p id="grown-up-question" class="text-gray-700 text-lg font-medium">Loading question...</p>
@@ -163,7 +180,7 @@
     </div>
 
     <!-- Lockout Screen -->
-    <div id="lockout-screen" class="fixed inset-0 bg-sky-400 bg-opacity-90 flex flex-col items-center justify-center p-4 z-50 hidden">
+    <div id="lockout-screen" class="fixed inset-0 bg-sky-400 bg-opacity-90 flex flex-col items-center justify-center p-4 z-40 hidden">
         <div class="bg-white rounded-lg p-8 max-w-md w-full shadow-lg text-center space-y-6">
             <h2 class="text-3xl font-bold text-blue-800">Time for a break!</h2>
             <p class="text-gray-700 text-lg">You've enjoyed lots of Pokémon cards today!</p>
@@ -221,9 +238,14 @@
         const grownUpVerifyBtn = document.getElementById('grown-up-verify-btn');
         const grownUpVerificationError = document.getElementById('grown-up-verification-error');
 
+        // New arrow navigation buttons
+        const prevCardBtn = document.getElementById('prev-card-btn');
+        const nextCardBtn = document.getElementById('next-card-btn');
+
+
         // --- API URLs ---
         const API_URL = 'https://api.pokemontcg.io/v2/cards';
-        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=`; // API key provided at runtime
+        // const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=`; // API key provided at runtime
 
         // --- Local Storage Keys ---
         const ALL_CARDS_CACHE_KEY = 'allPokemonCardsCache';
@@ -502,60 +524,26 @@
         // --- Grown-Up Verification Logic ---
 
         /**
-         * Fetches a general knowledge question from Gemini for grown-up verification.
+         * Generates a random multiplication question for grown-up verification.
          */
-        async function fetchGrownUpQuestion() {
+        function fetchGrownUpQuestion() {
             grownUpQuestionText.textContent = 'Loading a question...';
             grownUpAnswerInput.value = '';
             grownUpVerificationError.textContent = '';
             grownUpVerifyBtn.disabled = true;
 
             try {
-                // Prompt Gemini for a general knowledge question with a simple answer
-                const prompt = "Generate a simple general knowledge question suitable for a grown-up, with a clear, single-word or short numerical answer. Provide the question and the answer in a JSON format: {\"question\": \"...\", \"answer\": \"...\"}. The answer should be case-insensitive for text, or a number.";
-                let chatHistory = [];
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                const payload = {
-                    contents: chatHistory,
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: "OBJECT",
-                            properties: {
-                                "question": { "type": "STRING" },
-                                "answer": { "type": "STRING" } // Store answer as string for flexibility
-                            },
-                            "propertyOrdering": ["question", "answer"]
-                        }
-                    }
-                };
+                const num1 = Math.floor(Math.random() * 90) + 10; // Random 2-digit number (10-99)
+                const num2 = Math.floor(Math.random() * 90) + 10; // Random 2-digit number (10-99)
+                const correctAnswer = num1 * num2;
 
-                const apiKey = ""; // If you want to use models other than gemini-2.5-flash-preview-04-17 or imagen-3.0-generate-002, provide an API key here. Otherwise, leave this as-is.
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${apiKey}`;
+                currentGrownUpQuestion = `What is ${num1} multiplied by ${num2}?`;
+                currentGrownUpAnswer = String(correctAnswer); // Store as string for comparison
 
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const result = await response.json();
-
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    const json = result.candidates[0].content.parts[0].text;
-                    const parsedJson = JSON.parse(json);
-                    currentGrownUpQuestion = parsedJson.question;
-                    // Store answer in lowercase for case-insensitive comparison, trim whitespace
-                    currentGrownUpAnswer = String(parsedJson.answer).trim().toLowerCase();
-                    grownUpQuestionText.textContent = currentGrownUpQuestion;
-                    grownUpVerifyBtn.disabled = false;
-                } else {
-                    grownUpQuestionText.textContent = 'Could not load question. Please try again.';
-                    console.error("Gemini API response did not contain expected content:", result);
-                }
+                grownUpQuestionText.textContent = currentGrownUpQuestion;
+                grownUpVerifyBtn.disabled = false;
             } catch (error) {
-                console.error('Error fetching grown-up question:', error);
+                console.error('Error generating grown-up question:', error);
                 grownUpQuestionText.textContent = 'Error loading question. Please try again.';
             }
         }
@@ -565,8 +553,8 @@
          * If correct, opens the parental control setup modal.
          */
         function verifyGrownUpAnswer() {
-            const userAnswer = grownUpAnswerInput.value.trim().toLowerCase();
-            if (userAnswer === currentGrownUpAnswer) {
+            const userAnswer = parseInt(grownUpAnswerInput.value.trim()); // Parse user input as integer
+            if (!isNaN(userAnswer) && userAnswer === parseInt(currentGrownUpAnswer)) { // Compare integers
                 grownUpVerificationModal.classList.add('hidden');
                 parentalControlSetup.classList.remove('hidden'); // Show PC setup modal
 
@@ -575,6 +563,7 @@
                 timeLimitInput.value = pcState.timeLimit;
                 resetHoursInput.value = pcState.resetHours;
                 grownUpVerificationError.textContent = ''; // Clear any previous errors
+                grownUpAnswerInput.value = ''; // Clear input
             } else {
                 grownUpVerificationError.textContent = 'Incorrect answer. Please try again.';
                 grownUpAnswerInput.value = ''; // Clear input for next attempt
@@ -594,6 +583,8 @@
             cardStatus.classList.add('hidden');    // Hide status initially
             haveItButton.disabled = true;
             wantItButton.disabled = true;
+            prevCardBtn.disabled = true; // Disable navigation buttons during load
+            nextCardBtn.disabled = true;
 
             if (DEV_MODE) {
                 fetchedAllCards = dummyPokemonCards;
@@ -699,6 +690,8 @@
                 if (currentViewMode === 'all') cardName.textContent = 'No unowned Pokémon cards left! You have collected them all.';
                 haveItButton.disabled = true;
                 wantItButton.disabled = true;
+                prevCardBtn.disabled = true; // Disable arrow buttons
+                nextCardBtn.disabled = true;
                 haveItButton.textContent = 'Have it';
                 wantItButton.textContent = 'Want it';
                 return;
@@ -730,6 +723,10 @@
                 wantItButton.textContent = isWanted ? 'Unwant it' : 'Want it';
                 wantItButton.disabled = false;
 
+                // Update arrow button states
+                prevCardBtn.disabled = currentIndex === 0;
+                nextCardBtn.disabled = currentIndex === displayableCards.length - 1;
+
                 // Determine and display status (Owned takes precedence if both)
                 if (isOwned) {
                     cardStatus.textContent = '(Owned)';
@@ -746,6 +743,8 @@
                 cardName.textContent = 'Card not found.';
                 haveItButton.disabled = true;
                 wantItButton.disabled = true;
+                prevCardBtn.disabled = true; // Disable arrow buttons
+                nextCardBtn.disabled = true;
             }
         }
 
@@ -916,6 +915,20 @@
                 }
             }
         });
+
+        // --- New Arrow Button Navigation ---
+        prevCardBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                displayCard(currentIndex - 1);
+            }
+        });
+
+        nextCardBtn.addEventListener('click', () => {
+            if (currentIndex < displayableCards.length - 1) {
+                displayCard(currentIndex + 1);
+            }
+        });
+
 
         // --- Initial App Load ---
         window.onload = () => {
