@@ -103,28 +103,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function backupDataToGoogleSheets() {
         const appScriptURL = config.appScriptURL; // Use URL from config
+        if (!appScriptURL) {
+            console.log('App Script URL not configured. Skipping backup.');
+            return;
+        }
+
         // Prepare data for sending - ensuring dates are strings
         const dataToSend = history.map(item => ({
             date: item.date.toISOString(),
             status: item.status,
             paymentMade: item.paymentMade,
-            note: item.note
+            note: item.note || '' // Ensure note is not null/undefined
         }));
-        if (!appScriptURL) {
-            console.log('App Script URL not configured. Skipping backup.');
-            return;
-        }
+
         try {
+            // Using 'text/plain' for Content-Type can help avoid CORS preflight issues with Google Apps Script.
+            // The Apps Script will receive the JSON string as plain text and needs to parse it.
             const response = await fetch(appScriptURL, {
                 method: 'POST',
                 mode: 'cors',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'text/plain',
                 },
-                body: JSON.stringify(dataToSend)
+                body: JSON.stringify(dataToSend),
+                redirect: 'follow'
             });
-            if (response.ok) { console.log('Backup successful!'); } else { console.error('Backup failed:', response.status, response.statusText); }
-        } catch (error) { console.error('Backup failed:', error); }
+
+            if (response.ok) {
+                // It's good practice to check the content type of the response
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    const result = await response.json();
+                    console.log('Backup successful!', result);
+                } else {
+                    const textResult = await response.text();
+                    console.log('Backup successful with non-JSON response:', textResult);
+                }
+            } else {
+                // Log more details on failure
+                console.error('Backup failed. Status:', response.status, response.statusText);
+                const errorText = await response.text();
+                console.error('Error response body:', errorText);
+                showToast(`Backup failed: ${response.statusText}`, 'error');
+            }
+        } catch (error) {
+            console.error('An error occurred during the backup fetch call:', error);
+            showToast('Backup failed due to a network or CORS error.', 'error');
+        }
     }
     function saveData() { /* Added skippedDates check */ if (config && config.daysOfWeek) { delete config.daysOfWeek; } if (config && !config.skippedDates) { config.skippedDates = []; } if (!config) { config = {}; } // Initialize config if null
         const appScriptURLInput = document.getElementById('appScriptURLInput'); // Get and save App Script URL
