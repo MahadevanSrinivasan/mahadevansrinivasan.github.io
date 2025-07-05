@@ -1,8 +1,43 @@
-// This function handles GET requests. It's good practice to have it.
 function doGet(e) {
-  return ContentService
-    .createTextOutput(JSON.stringify({"status": "error", "message": "This script only accepts POST requests."}))
-    .setMimeType(ContentService.MimeType.JSON);
+  try {
+    var lock = LockService.getScriptLock();
+    lock.waitLock(30000); // Wait 30 seconds for the lock to be available.
+
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    
+    // Check if the sheet is empty or just has headers
+    if (sheet.getLastRow() <= 1) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ "status": "success", "data": [] }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Get all data from the sheet, excluding the header row
+    var range = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn());
+    var values = range.getValues();
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    
+    var data = values.map(function(row) {
+      var obj = {};
+      headers.forEach(function(header, index) {
+        obj[header] = row[index];
+      });
+      return obj;
+    });
+
+    lock.releaseLock();
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ "status": "success", "data": data }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    // Log the error for debugging
+    console.error("doGet Error: " + error.toString());
+    return ContentService
+      .createTextOutput(JSON.stringify({ "status": "error", "message": error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
 function doPost(e) {

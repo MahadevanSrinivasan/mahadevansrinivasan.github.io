@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Initialization ---
     loadData();
-    // Notifications Removed
+    syncWithGoogleSheets(); // This will run if config has URL, otherwise does nothing.
     setupEventListeners();
     updateUI();
     if (manualLogModal) { manualLogModalInstance = new Modal(manualLogModal); }
@@ -89,16 +89,143 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Functions ---
 
+    async function syncWithGoogleSheets() {
+        if (!config || !config.appScriptURL) {
+            console.log("Sync skipped: App Script URL not configured.");
+            updateUI(); // Still update UI in case of local-only mode
+            return;
+        }
+
+        showToast("Syncing with Google Sheets...", "info");
+
+        try {
+            // Use a GET request to fetch the current state from the spreadsheet.
+            const response = await fetch(config.appScriptURL, { method: 'GET', mode: 'cors' });
+
+            if (!response.ok) {
+                throw new Error(`Network response was not ok: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+
+            if (result.status !== 'success') {
+                throw new Error(`Google Apps Script returned an error: ${result.message}`);
+            }
+
+            if (result.data && result.data.length > 0) {
+                // --- SPREADSHEET HAS DATA --- 
+                console.log("Spreadsheet has data. Loading from cloud.");
+
+                // Load history from the spreadsheet
+                history = result.data.map(item => ({
+                    date: new Date(item.Date), // Ensure correct mapping from sheet headers
+                    status: item.Status,
+                    paymentMade: item['Payment Made'] === true || item['Payment Made'] === 'TRUE',
+                    note: item.Note || ''
+                }));
+
+                // Recalculate the current state based on the authoritative history
+                recalculateStateFromHistory();
+
+                saveData(); // Save the synced data to localStorage
+                showToast("Successfully synced from Google Sheets.", "success");
+
+            } else {
+                // --- SPREADSHEET IS EMPTY --- 
+                console.log("Spreadsheet is empty. Initializing with first entry.");
+
+                // This is the only place where we create the initial history entry.
+                const initialDate = new Date(config.startDate + 'T00:00:00');
+                history = [{
+                    date: initialDate,
+                    status: 'Happened',
+                    paymentMade: true, // The first entry is always a payment
+                    note: 'Initial payment'
+                }];
+
+                state.remainingClasses = config.classesPerPayment > 0 ? config.classesPerPayment - 1 : 0;
+                state.nextClassIsPayment = false;
+
+                saveData(); // Save the new initial state locally
+
+                // Now, push this initial state to the cloud.
+                await backupDataToGoogleSheets();
+                showToast("Initialized new sheet successfully.", "success");
+            }
+
+        } catch (error) {
+            console.error('An error occurred during the sync process:', error);
+            showToast(`Sync failed: ${error.message}`, 'error');
+        }
+
+        // Always update the UI and calculate the next check date after any sync attempt
+        calculateNextClassCheckDate();
+        updateUI();
+    }
+
+    // New helper function to derive state from history
+    function recalculateStateFromHistory() {
+        if (!config || history.length === 0) {
+            state.remainingClasses = 0;
+            return;
+        }
+
+        // Sort history to be sure: oldest to newest
+        history.sort((a, b) => a.date - b.date);
+
+        const lastPaymentEntry = history.slice().reverse().find(h => h.paymentMade);
+
+        if (!lastPaymentEntry) {
+            // This case shouldn't happen if history is initialized correctly
+            state.remainingClasses = config.classesPerPayment;
+            console.error("Could not find a payment entry in history.");
+            return;
+        }
+
+        const classesSincePayment = history.filter(h => 
+            h.date >= lastPaymentEntry.date && 
+            (h.status === 'Happened' || h.status === 'Manual Log (Happened)')
+        ).length;
+
+        state.remainingClasses = config.classesPerPayment - classesSincePayment;
+        console.log(`Recalculated state: ${state.remainingClasses} classes remaining.`);
+    }
+
     function getCurrentTime() { /* No changes */ if (state.isTestMode && state.simulatedDateTime) { try { return new Date(state.simulatedDateTime); } catch (e) { console.error("Error parsing simulatedDateTime:", e); state.isTestMode = false; state.simulatedDateTime = null; saveState(); updateTestModeUI(); showToast("Error using simulated time.", "error"); return new Date(); } } return new Date(); }
+""
 
     function loadData() {
         const storedConfig = localStorage.getItem(CONFIG_KEY);
         const storedHistory = localStorage.getItem(HISTORY_KEY);
         const storedState = localStorage.getItem(STATE_KEY);
-        if (storedConfig) { config = JSON.parse(storedConfig); if (config.daysOfWeek) delete config.daysOfWeek; if (!config.startDate) { config.startDate = new Date().toISOString().split('T')[0]; } if (!config.skippedDates) { config.skippedDates = []; } }
-        if (storedHistory) { history = JSON.parse(storedHistory).map(item => ({ ...item, date: new Date(item.date), paymentMade: item.paymentMade || false, note: item.note || '' })); }
-        if (storedState) { const parsedState = JSON.parse(storedState); state = { ...state, ...parsedState, nextClassCheckDate: parsedState.nextClassCheckDate ? new Date(parsedState.nextClassCheckDate) : null, pendingConfirmationDate: parsedState.pendingConfirmationDate ? new Date(parsedState.pendingConfirmationDate) : null, pendingPaymentConfirmationDate: parsedState.pendingPaymentConfirmationDate ? new Date(parsedState.pendingPaymentConfirmationDate) : null, simulatedDateTime: parsedState.simulatedDateTime || null, isTestMode: parsedState.isTestMode || false, nextClassIsPayment: parsedState.nextClassIsPayment || false }; delete state.paymentNotificationTriggerDateTime; }
-        else if (config) { console.warn("State missing, re-initializing."); calculateNextClassCheckDate(); }
+
+        if (storedConfig) {
+            config = JSON.parse(storedConfig);
+            // Basic config validation and cleanup
+            if (config.daysOfWeek) delete config.daysOfWeek;
+            if (!config.skippedDates) config.skippedDates = [];
+
+            // If a script URL exists, we prioritize syncing from the cloud.
+            if (config.appScriptURL) {
+                // We call syncWithGoogleSheets and let it handle populating history and state.
+                // We don't load local history/state here to prevent conflicts.
+                return; // The sync function will call updateUI() when it's done.
+            } else {
+                // No cloud sync, so load from local storage as fallback.
+                if (storedHistory) {
+                    history = JSON.parse(storedHistory).map(item => ({ ...item, date: new Date(item.date), paymentMade: item.paymentMade || false, note: item.note || '' }));
+                }
+                if (storedState) {
+                    const parsedState = JSON.parse(storedState);
+                    state = { ...state, ...parsedState, nextClassCheckDate: parsedState.nextClassCheckDate ? new Date(parsedState.nextClassCheckDate) : null, pendingConfirmationDate: parsedState.pendingConfirmationDate ? new Date(parsedState.pendingConfirmationDate) : null, pendingPaymentConfirmationDate: parsedState.pendingPaymentConfirmationDate ? new Date(parsedState.pendingPaymentConfirmationDate) : null, simulatedDateTime: parsedState.simulatedDateTime || null, isTestMode: parsedState.isTestMode || false, nextClassIsPayment: parsedState.nextClassIsPayment || false };
+                } else if (config) {
+                    console.warn("State missing, re-initializing from history.");
+                    recalculateStateFromHistory();
+                }
+            }
+        }
+        // If no config, the app will just show the config screen.
+        // No need for an else block.
     }
 
     async function backupDataToGoogleSheets() {
@@ -153,8 +280,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function saveData() { /* Added skippedDates check */ if (config && config.daysOfWeek) { delete config.daysOfWeek; } if (config && !config.skippedDates) { config.skippedDates = []; } if (!config) { config = {}; } // Initialize config if null
         const appScriptURLInput = document.getElementById('appScriptURLInput'); // Get and save App Script URL
-        if (appScriptURLInput) { config.appScriptURL = appScriptURLInput.value.trim(); } // Only set if element exists
-        localStorage.setItem(CONFIG_KEY, JSON.stringify(config)); localStorage.setItem(HISTORY_KEY, JSON.stringify(history.map(item => ({ ...item, date: item.date.toISOString() })))); saveState(); if (config && config.appScriptURL) { backupDataToGoogleSheets(); }
+        if (appScriptURLInput && appScriptURLInput.value.trim()) { config.appScriptURL = appScriptURLInput.value.trim(); }
+        localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history.map(item => ({ ...item, date: item.date.toISOString() }))));
+        saveState();
     }
     function saveState() { /* No changes needed */ const stateToSave = { ...state, nextClassCheckDate: state.nextClassCheckDate?.toISOString() || null, pendingConfirmationDate: state.pendingConfirmationDate?.toISOString() || null, pendingPaymentConfirmationDate: state.pendingPaymentConfirmationDate?.toISOString() || null }; delete stateToSave.paymentNotificationTriggerDateTime; localStorage.setItem(STATE_KEY, JSON.stringify(stateToSave)); }
     function clearData() { /* No changes needed */ localStorage.removeItem(CONFIG_KEY); localStorage.removeItem(HISTORY_KEY); localStorage.removeItem(STATE_KEY); config = null; history = []; state = { remainingClasses: 0, currentPage: 1, nextClassCheckDate: null, pendingConfirmationDate: null, pendingPaymentConfirmationDate: null, isTestMode: false, simulatedDateTime: null, nextClassIsPayment: false }; confirmationArea.classList.add('hidden'); paymentConfirmationArea.classList.add('hidden'); updateTestModeUI(); }
@@ -201,7 +330,63 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleSetSimulatedTime() { /* No changes needed */ const dateStr = simulatedDateInput.value; const timeStr = simulatedTimeInput.value; if (dateStr && timeStr) { try { const combinedDateTime = new Date(`${dateStr}T${timeStr}:00`); if (isNaN(combinedDateTime.getTime())) { throw new Error("Invalid date/time value created."); } state.simulatedDateTime = combinedDateTime.toISOString(); saveState(); showToast(`Simulated time set to: ${combinedDateTime.toLocaleString()}`, 'success'); calculateNextClassCheckDate(); updateUI(); } catch (e) { console.error("Error setting simulated time:", e); showToast("Invalid date or time entered.", "error"); state.simulatedDateTime = null; saveState(); } } else { showToast("Please select both a date and time.", "warning"); } }
-    function handleConfigSubmit(event) { /* Added skippedDates init */ event.preventDefault(); const startDateValue = startDateInput.value; if (!startDateValue || !classTimeInput.value) { showToast("Please select Start Date and Class Time.", 'error'); return; } let userStartDate; let configStartDateString; try { if (startDateValue.includes('/')) { const parts = startDateValue.split('/'); if (parts.length === 3) { const month = parts[0].padStart(2, '0'); const day = parts[1].padStart(2, '0'); const year = parts[2]; if (year.length === 4 && !isNaN(parseInt(month)) && !isNaN(parseInt(day)) && !isNaN(parseInt(year))) { configStartDateString = `${year}-${month}-${day}`; userStartDate = new Date(configStartDateString + 'T00:00:00'); } } } if (!userStartDate || isNaN(userStartDate.getTime())) { if (startDateValue.includes('-')) { const parts = startDateValue.split('-'); if (parts.length === 3 && parts[0].length === 4) { configStartDateString = startDateValue; userStartDate = new Date(configStartDateString + 'T00:00:00'); } } } if (!userStartDate || isNaN(userStartDate.getTime())) { throw new Error("Could not parse datepicker value: " + startDateValue); } } catch (e) { console.error("Date parsing error:", e); showToast("Invalid Start Date format. Use MM/DD/YYYY or YYYY-MM-DD.", "error"); return; } const existingSkippedDates = config?.skippedDates || []; config = { name: expenseNameInput.value, frequency: paymentFrequencySelect.value, classesPerPayment: parseInt(classesPerPaymentInput.value), startDate: configStartDateString, classTime: classTimeInput.value, skippedDates: existingSkippedDates }; history = []; const initialDate = userStartDate; const initialClassesTotal = config.classesPerPayment; history.push({ date: initialDate, status: 'Happened', paymentMade: true }); state.remainingClasses = initialClassesTotal > 0 ? initialClassesTotal - 1 : 0; state.nextClassIsPayment = false; state.currentPage = 1; state.pendingConfirmationDate = null; state.pendingPaymentConfirmationDate = null; console.log(`Config saved. Start Date: ${initialDate.toLocaleDateString()}. Initial class counted. Remaining: ${state.remainingClasses}`); calculateNextClassCheckDate(); saveData(); updateUI(); showToast('Configuration saved successfully!', 'success'); }
+    function handleConfigSubmit(event) {
+        event.preventDefault();
+        const startDateValue = startDateInput.value;
+        if (!startDateValue || !classTimeInput.value) {
+            showToast("Please select Start Date and Class Time.", 'error');
+            return;
+        }
+
+        let userStartDate;
+        let configStartDateString;
+        try {
+            let dateStr = startDateValue.trim();
+
+            // Handle MM/DD/YYYY format by converting to YYYY-MM-DD
+            if (/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.test(dateStr)) {
+                const parts = dateStr.split('/');
+                dateStr = `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+            }
+
+            // Now, we should have a YYYY-MM-DD string, which is reliably parsed.
+            // Appending T00:00:00 ensures it's parsed in the user's local timezone.
+            userStartDate = new Date(dateStr + 'T00:00:00');
+
+            if (isNaN(userStartDate.getTime())) {
+                throw new Error('Date is invalid after parsing attempts.');
+            }
+            
+            configStartDateString = userStartDate.toISOString().split('T')[0];
+
+        } catch (e) {
+            console.error("Date parsing error:", e);
+            showToast("Invalid Start Date format. Please use MM/DD/YYYY or YYYY-MM-DD.", "error");
+            return;
+        }
+
+        // Save the essential configuration.
+        config = {
+            name: expenseNameInput.value,
+            frequency: paymentFrequencySelect.value,
+            classesPerPayment: parseInt(classesPerPaymentInput.value),
+            startDate: configStartDateString,
+            classTime: classTimeInput.value,
+            skippedDates: config?.skippedDates || [], // Preserve skipped dates if editing
+            appScriptURL: document.getElementById('appScriptURLInput').value.trim()
+        };
+
+        // Clear previous state and history before syncing
+        history = [];
+        state = { ...state, remainingClasses: 0, nextClassCheckDate: null, pendingConfirmationDate: null, pendingPaymentConfirmationDate: null };
+
+        saveData(); // Save the new configuration to localStorage
+
+        showToast('Configuration saved. Attempting to sync with Google Sheets...', 'info');
+
+        // The sync function will now be responsible for populating history and state
+        syncWithGoogleSheets();
+    }
     function handleResetConfig() { /* No changes needed */ if (confirm('Are you sure you want to reset?')) { clearData(); updateUI(); showToast('Configuration reset.', 'info'); } }
 
     // --- History & Pagination ---

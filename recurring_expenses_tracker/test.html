@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker Logic Tests</title>
+    <link rel="stylesheet" href="https://unpkg.com/mocha/mocha.css" />
+    <style>
+        body { font-family: sans-serif; }
+        #mocha-stats .passes, #mocha-stats .failures { font-size: 1.2em; }
+        #mocha .suite h1 { font-size: 1.5em; }
+        #mocha .suite .test.pass::before { font-size: 1.2em; }
+        #mocha .suite .test.fail::before { font-size: 1.2em; }
+    </style>
+</head>
+<body>
+    <div id="mocha"></div>
+
+    <!-- 1. Load testing libraries -->
+    <script src="https://unpkg.com/mocha/mocha.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chai/4.3.10/chai.min.js"></script>
+
+    <!-- 2. Initialize Mocha and Chai -->
+    <script>
+        mocha.setup('bdd');
+        const expect = chai.expect;
+    </script>
+
+    <!-- 3. Include the core logic to be tested -->
+    <script>
+        // --- Core Logic to be Tested (Copied from app.js for isolation) ---
+        let config = {};
+        let history = [];
+        let state = {};
+
+        function recalculateStateFromHistory() {
+            if (!config || history.length === 0) {
+                state.remainingClasses = 0;
+                return;
+            }
+            history.sort((a, b) => a.date - b.date);
+            const lastPaymentEntry = history.slice().reverse().find(h => h.paymentMade);
+            if (!lastPaymentEntry) {
+                state.remainingClasses = config.classesPerPayment;
+                return;
+            }
+            const classesSincePayment = history.filter(h => 
+                h.date >= lastPaymentEntry.date && 
+                (h.status === 'Happened' || h.status === 'Manual Log (Happened)')
+            ).length;
+            state.remainingClasses = config.classesPerPayment - classesSincePayment;
+        }
+    </script>
+
+    <!-- 4. Define and run the test suite -->
+    <script>
+        describe('recalculateStateFromHistory Logic', function() {
+
+            beforeEach(function() {
+                // Reset state before each test
+                config = {};
+                history = [];
+                state = { remainingClasses: 0 };
+            });
+
+            it('should be 0 remaining classes when exactly the cycle number of classes have happened', function() {
+                config = { classesPerPayment: 4 };
+                history = [
+                    { date: new Date('2023-01-01'), status: 'Happened', paymentMade: true },
+                    { date: new Date('2023-01-08'), status: 'Happened', paymentMade: false },
+                    { date: new Date('2023-01-15'), status: 'Happened', paymentMade: false },
+                    { date: new Date('2023-01-22'), status: 'Happened', paymentMade: false },
+                ];
+                recalculateStateFromHistory();
+                expect(state.remainingClasses).to.equal(0);
+            });
+
+            it('should be -1 remaining classes (overdue) when one extra class has happened', function() {
+                config = { classesPerPayment: 4 };
+                history = [
+                    { date: new Date('2023-01-01'), status: 'Happened', paymentMade: true },
+                    { date: new Date('2023-01-08'), status: 'Happened', paymentMade: false },
+                    { date: new Date('2023-01-15'), status: 'Happened', paymentMade: false },
+                    { date: new Date('2023-01-22'), status: 'Happened', paymentMade: false },
+                    { date: new Date('2023-01-29'), status: 'Happened', paymentMade: false },
+                ];
+                recalculateStateFromHistory();
+                expect(state.remainingClasses).to.equal(-1);
+            });
+
+            it('should correctly calculate remaining classes after a new payment cycle starts', function() {
+                config = { classesPerPayment: 4 };
+                history = [
+                    { date: new Date('2023-01-01'), status: 'Happened', paymentMade: true }, // Cycle 1
+                    { date: new Date('2023-01-08'), status: 'Happened', paymentMade: false },
+                    { date: new Date('2023-01-15'), status: 'Happened', paymentMade: false },
+                    { date: new Date('2023-01-22'), status: 'Happened', paymentMade: false },
+                    { date: new Date('2023-01-29'), status: 'Happened', paymentMade: true }, // Cycle 2
+                    { date: new Date('2023-02-05'), status: 'Happened', paymentMade: false },
+                ];
+                recalculateStateFromHistory();
+                expect(state.remainingClasses).to.equal(2); // 4 - 2 = 2
+            });
+
+            it('should not count "Cancelled" classes', function() {
+                config = { classesPerPayment: 4 };
+                history = [
+                    { date: new Date('2023-01-01'), status: 'Happened', paymentMade: true },
+                    { date: new Date('2023-01-08'), status: 'Cancelled', paymentMade: false },
+                    { date: new Date('2023-01-15'), status: 'Happened', paymentMade: false },
+                ];
+                recalculateStateFromHistory();
+                expect(state.remainingClasses).to.equal(2); // 4 - 2 = 2
+            });
+
+            it('should handle manual logs correctly', function() {
+                config = { classesPerPayment: 4 };
+                history = [
+                    { date: new Date('2023-01-01'), status: 'Happened', paymentMade: true },
+                    { date: new Date('2023-01-10'), status: 'Manual Log (Happened)', paymentMade: false },
+                ];
+                recalculateStateFromHistory();
+                expect(state.remainingClasses).to.equal(2);
+            });
+
+            it('should be correct when the only entry is the first payment', function() {
+                config = { classesPerPayment: 8 };
+                history = [
+                    { date: new Date('2023-01-01'), status: 'Happened', paymentMade: true },
+                ];
+                recalculateStateFromHistory();
+                expect(state.remainingClasses).to.equal(7);
+            });
+
+            it('should return the full number of classes if there are no payment entries (edge case)', function() {
+                config = { classesPerPayment: 5 };
+                history = [
+                    { date: new Date('2023-01-01'), status: 'Happened', paymentMade: false },
+                ];
+                recalculateStateFromHistory();
+                expect(state.remainingClasses).to.equal(5);
+            });
+
+        });
+
+        // 5. Run Mocha
+        mocha.run();
+    </script>
+</body>
+</html>
