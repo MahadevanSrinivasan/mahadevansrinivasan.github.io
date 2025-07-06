@@ -11,9 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const expenseStatusName = document.getElementById('expense-status-name');
     const expenseStatusDetails = document.getElementById('expense-status-details');
     const paymentOverdueIndicator = document.getElementById('payment-overdue-indicator');
-    const logClassButton = document.getElementById('log-class-button');
-    const logPaymentButton = document.getElementById('log-payment-button');
-    const resetConfigButton = document.getElementById('reset-config-button');
 
     const manualLogModal = document.getElementById('manual-log-modal');
     const manualLogDateInput = document.getElementById('manual-log-date');
@@ -33,6 +30,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const toastFeedback = document.getElementById('toast-feedback');
     const toastMessage = document.getElementById('toast-message');
+    const toastIcon = document.getElementById('toast-icon');
+
+    // FAB elements
+    const fabMainButton = document.getElementById('fab-main-button');
+    const fabActions = document.getElementById('fab-actions');
+    const logClassButton = document.getElementById('log-class-button');
+    const logPaymentButton = document.getElementById('log-payment-button');
+    const logManualClassButton = document.getElementById('log-manual-class-button');
 
     // --- Constants ---
     const ITEMS_PER_PAGE = 12;
@@ -70,8 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 if (storedState) {
                     state = { ...state, ...JSON.parse(storedState) };
-                } else {
-                    recalculateStateFromHistory();
                 }
                 updateUI();
             }
@@ -128,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newEntry = {
             date: today,
             status: 'Happened',
-            paymentMade: false, // Classes never mark payment directly now
+            paymentMade: false,
             note: ''
         };
 
@@ -252,10 +255,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupEventListeners() {
         configForm.addEventListener('submit', handleConfigSubmit);
-        resetConfigButton.addEventListener('click', () => {
+        document.getElementById('reset-config-button').addEventListener('click', () => {
             if (confirm('Are you sure you want to reset?')) clearData();
         });
-        logClassButton.addEventListener('click', logTodaysClass);
+
+        // FAB button listeners
+        fabMainButton.addEventListener('click', () => {
+            fabActions.classList.toggle('hidden');
+        });
+        logClassButton.addEventListener('click', () => {
+            logTodaysClass();
+            fabActions.classList.add('hidden'); // Hide FAB actions after click
+        });
+        logPaymentButton.addEventListener('click', () => {
+            paymentLogModalInstance.show();
+            fabActions.classList.add('hidden'); // Hide FAB actions after click
+        });
+        logManualClassButton.addEventListener('click', () => {
+            manualLogModalInstance.show();
+            fabActions.classList.add('hidden'); // Hide FAB actions after click
+        });
+
         saveManualLogButton.addEventListener('click', handleSaveManualLog);
         savePaymentLogButton.addEventListener('click', handleSavePayment);
         prevPageButton.addEventListener('click', () => changePage(-1));
