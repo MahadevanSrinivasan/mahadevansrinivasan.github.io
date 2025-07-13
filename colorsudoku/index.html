@@ -472,7 +472,6 @@
         }
 
         function toggleHelperButtonVisibility() {
-            // isToddlerModeActive is true if the toggle is CHECKED (green), meaning simple UI
             isToddlerModeActive = toddlerModeToggle.checked;
             console.log("Toddler Mode Active (simple UI):", isToddlerModeActive);
             const gameWon = checkIfBoardIsSolved();
@@ -501,7 +500,11 @@
         function generateNewPuzzle() {
             console.log("Attempting to generate new puzzle...");
             const selectedPuzzle = problems[Math.floor(Math.random() * problems.length)];
-            board = selectedPuzzle.map(r => [...r]); // Deep copy
+            const newBoard = [];
+            for (let i = 0; i < N; i++) {
+                newBoard.push(selectedPuzzle.slice(i * N, (i + 1) * N));
+            }
+            board = newBoard;
             solveSudoku(board.map(r => [...r]), (solvedBoard) => { solution = solvedBoard; }); // Solve a copy to get the solution
             prefilledCells = [];
             for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (board[r][c] !== 0) prefilledCells.push({ row: r, col: c });
