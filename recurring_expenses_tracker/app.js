@@ -1,10 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Google API Configuration ---
-    let API_KEY = '';
-    let CLIENT_ID = '';
-    const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest", "https://sheets.googleapis.com/$discovery/rest?version=v4"];
-    const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-
     // --- DOM Elements ---
     const configSection = document.getElementById('config-section');
     const statusSection = document.getElementById('status-section');
@@ -13,15 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const expenseNameInput = document.getElementById('expense-name');
     const classesPerPaymentInput = document.getElementById('classes-per-payment');
     const appScriptURLInput = document.getElementById('appScriptURLInput');
-
-    const googleAuthButton = document.getElementById('google-auth-button');
-    const signOutButton = document.getElementById('sign-out-button');
-    const dataSourceIndicator = document.getElementById('data-source-indicator');
-
-    const googleCredsModal = document.getElementById('google-creds-modal');
-    const googleApiKeyInput = document.getElementById('google-api-key');
-    const googleClientIdInput = document.getElementById('google-client-id');
-    const saveGoogleCredsButton = document.getElementById('save-google-creds-button');
 
     const expenseStatusName = document.getElementById('expense-status-name');
     const expenseStatusDetails = document.getElementById('expense-status-details');
@@ -45,7 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const toastFeedback = document.getElementById('toast-feedback');
     const toastMessage = document.getElementById('toast-message');
+    const toastIcon = document.getElementById('toast-icon');
 
+    // FAB elements
     const fabMainButton = document.getElementById('fab-main-button');
     const fabActions = document.getElementById('fab-actions');
     const logClassButton = document.getElementById('log-class-button');
@@ -57,63 +44,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const CONFIG_KEY = 'expenseTrackerConfig';
     const HISTORY_KEY = 'expenseTrackerHistory';
     const STATE_KEY = 'expenseTrackerState';
-    const SPREADSHEET_NAME = 'RecurringExpenseTrackerData';
 
     // --- State ---
     let config = null;
     let history = [];
-    let state = { remainingClasses: 0, currentPage: 1, spreadsheetId: null, dataSource: 'localStorage' };
+    let state = { remainingClasses: 0, currentPage: 1 };
     let toastTimeout;
     let manualLogModalInstance = null;
     let paymentLogModalInstance = null;
-    let googleCredsModalInstance = null;
-    let gapiInited = false;
-    let gisInited = false;
-    let tokenClient;
 
     // --- Initialization ---
-    window.onload = () => {
-        gapi.load('client', () => gapiInited = true);
-        gisInited = true;
-        loadData();
-    };
+    loadData();
+    setupEventListeners();
+    if (manualLogModal) { manualLogModalInstance = new Modal(manualLogModal); }
+    if (paymentLogModal) { paymentLogModalInstance = new Modal(paymentLogModal); }
 
-    async function initializeGapiClient() {
-        await gapi.client.init({
-            apiKey: API_KEY,
-            discoveryDocs: DISCOVERY_DOCS,
-        });
-        tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID,
-            scope: SCOPES,
-            callback: '', // defined later
-        });
-        const token = gapi.client.getToken();
-        if (token) {
-            state.dataSource = 'googleSheet';
-        }
-        loadData();
-    }
+    // --- Core Functions ---
 
     function loadData() {
         const storedConfig = localStorage.getItem(CONFIG_KEY);
         if (storedConfig) {
             config = JSON.parse(storedConfig);
-            const storedState = localStorage.getItem(STATE_KEY);
-            if (storedState) {
-                state = { ...state, ...JSON.parse(storedState) };
-            }
-
-            if (state.dataSource === 'googleSheet' && gapi.client.getToken()) {
-                findOrCreateSpreadsheet().then(loadSheetData);
-            } else if (state.dataSource === 'appScript' && config.appScriptURL) {
+            if (config.appScriptURL) {
                 syncWithGoogleSheets();
             } else {
                 const storedHistory = localStorage.getItem(HISTORY_KEY);
+                const storedState = localStorage.getItem(STATE_KEY);
                 if (storedHistory) {
                     history = JSON.parse(storedHistory).map(item => ({ ...item, date: new Date(item.date) }));
                 }
-                recalculateStateFromHistory();
+                if (storedState) {
+                    state = { ...state, ...JSON.parse(storedState) };
+                }
                 updateUI();
             }
         } else {
@@ -125,15 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (config) {
             localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
         }
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history.map(item => ({ ...item, date: item.date.toISOString() }))));
         localStorage.setItem(STATE_KEY, JSON.stringify(state));
-
-        if (state.dataSource === 'googleSheet' && state.spreadsheetId) {
-            writeSheetData();
-        } else if (state.dataSource === 'appScript' && config.appScriptURL) {
-            backupDataToGoogleSheets();
-        } else {
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(history.map(item => ({ ...item, date: item.date.toISOString() }))));
-        }
     }
 
     function clearData() {
@@ -142,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem(STATE_KEY);
         config = null;
         history = [];
-        state = { remainingClasses: 0, currentPage: 1, spreadsheetId: null, dataSource: 'localStorage' };
+        state = { remainingClasses: 0, currentPage: 1 };
         updateUI();
     }
 
@@ -153,20 +108,10 @@ document.addEventListener('DOMContentLoaded', () => {
             classesPerPayment: parseInt(classesPerPaymentInput.value),
             appScriptURL: appScriptURLInput.value.trim()
         };
-
-        if (config.appScriptURL) {
-            state.dataSource = 'appScript';
-        } else {
-            state.dataSource = gapi.client.getToken() ? 'googleSheet' : 'localStorage';
-        }
-
         history = [];
-        state.remainingClasses = config.classesPerPayment;
-        state.currentPage = 1;
-        
+        state = { remainingClasses: config.classesPerPayment, currentPage: 1 };
         saveData();
-
-        if (state.dataSource === 'appScript') {
+        if (config.appScriptURL) {
             syncWithGoogleSheets();
         } else {
             updateUI();
@@ -174,21 +119,162 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Configuration saved!', 'success');
     }
 
-    function setupEventListeners() {
-        configForm.addEventListener('submit', handleConfigSubmit);
-        saveGoogleCredsButton.addEventListener('click', handleSaveGoogleCreds);
-        signOutButton.addEventListener('click', handleSignoutClick);
-        document.getElementById('reset-config-button').addEventListener('click', () => {
-            if (confirm('Are you sure you want to reset?')) {
-                if (gapi.client.getToken()) handleSignoutClick();
-                clearData();
-            }
+    function logTodaysClass() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (history.some(h => new Date(h.date).toDateString() === today.toDateString())) {
+            showToast('Class for today has already been logged.', 'warning');
+            return;
+        }
+
+        const newEntry = {
+            date: today,
+            status: 'Happened',
+            paymentMade: false,
+            note: ''
+        };
+
+        history.push(newEntry);
+        recalculateStateFromHistory();
+        saveData();
+        if (config.appScriptURL) {
+            backupDataToGoogleSheets();
+        }
+        updateUI();
+        showToast('Logged today\'s class successfully.', 'success');
+    }
+
+    function handleSaveManualLog() {
+        const dateValue = manualLogDateInput.value;
+        const note = manualLogNoteInput.value.trim();
+        if (!dateValue) {
+            showToast("Please select a date.", "warning");
+            return;
+        }
+
+        let logDate;
+        try {
+            logDate = new Date(dateValue + 'T00:00:00');
+            if (isNaN(logDate.getTime())) throw new Error('Invalid Date');
+        } catch (e) {
+            showToast("Invalid date format.", "error");
+            return;
+        }
+
+        if (history.some(h => new Date(h.date).toDateString() === logDate.toDateString())) {
+            showToast(`An entry already exists for ${logDate.toLocaleDateString()}.`, 'error');
+            return;
+        }
+
+        history.push({
+            date: logDate,
+            status: 'Manual Log (Happened)',
+            paymentMade: false,
+            note: note
         });
 
-        fabMainButton.addEventListener('click', () => fabActions.classList.toggle('hidden'));
-        logClassButton.addEventListener('click', () => { logTodaysClass(); fabActions.classList.add('hidden'); });
-        logPaymentButton.addEventListener('click', () => { paymentLogModalInstance.show(); fabActions.classList.add('hidden'); });
-        logManualClassButton.addEventListener('click', () => { manualLogModalInstance.show(); fabActions.classList.add('hidden'); });
+        recalculateStateFromHistory();
+        saveData();
+        if (config.appScriptURL) {
+            backupDataToGoogleSheets();
+        }
+        manualLogModalInstance.hide();
+        updateUI();
+        showToast('Manual class logged.', 'success');
+    }
+
+    function handleSavePayment() {
+        const dateValue = paymentLogDateInput.value;
+        const note = paymentLogNoteInput.value.trim();
+        if (!dateValue) {
+            showToast("Please select a date.", "warning");
+            return;
+        }
+
+        let logDate;
+        try {
+            logDate = new Date(dateValue + 'T00:00:00');
+            if (isNaN(logDate.getTime())) throw new Error('Invalid Date');
+        } catch (e) {
+            showToast("Invalid date format.", "error");
+            return;
+        }
+
+        // Prevent duplicate payments on the same day
+        if (history.some(h => new Date(h.date).toDateString() === logDate.toDateString() && h.paymentMade)) {
+            showToast(`A payment has already been logged for ${logDate.toLocaleDateString()}.`, 'error');
+            return;
+        }
+
+        history.push({
+            date: logDate,
+            status: 'Payment',
+            paymentMade: true,
+            note: note
+        });
+
+        recalculateStateFromHistory();
+        saveData();
+        if (config.appScriptURL) {
+            backupDataToGoogleSheets();
+        }
+        paymentLogModalInstance.hide();
+        updateUI();
+        showToast('Payment logged successfully.', 'success');
+    }
+
+    function recalculateStateFromHistory() {
+        if (!config) {
+            state.remainingClasses = 0;
+            return;
+        }
+
+        // Filter out only class entries for calculation
+        const classEntries = history.filter(h => h.status === 'Happened' || h.status === 'Manual Log (Happened)');
+        const paymentEntries = history.filter(h => h.paymentMade);
+
+        if (paymentEntries.length === 0) {
+            state.remainingClasses = config.classesPerPayment;
+            return;
+        }
+
+        // Find the latest payment entry
+        paymentEntries.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const lastPaymentEntry = paymentEntries[paymentEntries.length - 1];
+
+        // Count classes since the last payment (inclusive of payment date if it was a class)
+        const classesSinceLastPayment = classEntries.filter(h => 
+            new Date(h.date) >= new Date(lastPaymentEntry.date)
+        ).length;
+
+        state.remainingClasses = config.classesPerPayment - classesSinceLastPayment;
+    }
+
+    // --- UI and Event Listeners ---
+
+    function setupEventListeners() {
+        configForm.addEventListener('submit', handleConfigSubmit);
+        document.getElementById('reset-config-button').addEventListener('click', () => {
+            if (confirm('Are you sure you want to reset?')) clearData();
+        });
+
+        // FAB button listeners
+        fabMainButton.addEventListener('click', () => {
+            fabActions.classList.toggle('hidden');
+        });
+        logClassButton.addEventListener('click', () => {
+            logTodaysClass();
+            fabActions.classList.add('hidden'); // Hide FAB actions after click
+        });
+        logPaymentButton.addEventListener('click', () => {
+            paymentLogModalInstance.show();
+            fabActions.classList.add('hidden'); // Hide FAB actions after click
+        });
+        logManualClassButton.addEventListener('click', () => {
+            manualLogModalInstance.show();
+            fabActions.classList.add('hidden'); // Hide FAB actions after click
+        });
 
         saveManualLogButton.addEventListener('click', handleSaveManualLog);
         savePaymentLogButton.addEventListener('click', handleSavePayment);
@@ -197,96 +283,149 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateUI() {
-        const isSignedIn = gapi.client.getToken() !== null;
-        googleAuthButton.classList.toggle('hidden', isSignedIn || (config && config.appScriptURL));
-        signOutButton.classList.toggle('hidden', !isSignedIn);
-
         if (config) {
             configSection.classList.add('hidden');
             statusSection.classList.remove('hidden');
             historySection.classList.remove('hidden');
-            fabMainButton.classList.remove('hidden');
 
             expenseStatusName.textContent = `Expense: ${config.name}`;
             expenseStatusDetails.textContent = ` (${state.remainingClasses} of ${config.classesPerPayment} classes remaining)`;
-            paymentOverdueIndicator.classList.toggle('hidden', state.remainingClasses > 0);
-            
-            let sourceText = 'Local Storage';
-            if (state.dataSource === 'googleSheet') sourceText = 'Google Sheet (OAuth)';
-            else if (state.dataSource === 'appScript') sourceText = 'Google Sheet (App Script)';
-            dataSourceIndicator.textContent = `Data from: ${sourceText}`;
 
+            if (state.remainingClasses <= 0) {
+                paymentOverdueIndicator.classList.remove('hidden');
+            } else {
+                paymentOverdueIndicator.classList.add('hidden');
+            }
             renderHistory();
         } else {
             configSection.classList.remove('hidden');
             statusSection.classList.add('hidden');
             historySection.classList.add('hidden');
-            fabMainButton.classList.add('hidden');
         }
     }
 
-    // --- Google Sheets via OAuth ---
-
-    function handleSaveGoogleCreds() {
-        API_KEY = googleApiKeyInput.value.trim();
-        CLIENT_ID = googleClientIdInput.value.trim();
-
-        if (!API_KEY || !CLIENT_ID) {
-            showToast('API Key and Client ID are required.', 'error');
+    function renderHistory() {
+        historyTableBody.innerHTML = '';
+        if (history.length === 0) {
+            historyTableBody.innerHTML = '<tr><td colspan="3" class="text-center">No history yet.</td></tr>';
+            updatePaginationControls(0);
             return;
         }
-        googleCredsModalInstance.hide();
-        initializeGapiClient().then(handleAuthClick);
-    }
+        const sortedHistory = [...history].sort((a, b) => new Date(b.date) - new Date(a.date));
+        const totalPages = Math.ceil(sortedHistory.length / ITEMS_PER_PAGE);
+        state.currentPage = Math.max(1, Math.min(state.currentPage, totalPages));
+        const pageItems = sortedHistory.slice((state.currentPage - 1) * ITEMS_PER_PAGE, state.currentPage * ITEMS_PER_PAGE);
 
-    function handleAuthClick() {
-        tokenClient.callback = async (resp) => {
-            if (resp.error !== undefined) {
-                throw (resp);
+        pageItems.forEach(item => {
+            const row = document.createElement('tr');
+            row.className = 'bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600';
+
+            const dateCell = document.createElement('td');
+            dateCell.className = 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white';
+            dateCell.textContent = new Date(item.date).toLocaleDateString();
+
+            const statusCell = document.createElement('td');
+            statusCell.className = 'px-6 py-4';
+            statusCell.textContent = `${item.status} ${item.note ? `(${item.note})` : ''}`;
+            if (item.status === 'Happened' || item.status === 'Manual Log (Happened)') {
+                statusCell.classList.add('text-green-600', 'dark:text-green-400');
+            } else if (item.status === 'Payment') {
+                statusCell.classList.add('text-blue-600', 'dark:text-blue-400');
             }
-            state.dataSource = 'googleSheet';
-            if(config) config.appScriptURL = ''; // Clear App Script URL if signing in
+
+            const paymentCell = document.createElement('td');
+            paymentCell.className = 'px-6 py-4';
+            if (item.paymentMade) {
+                paymentCell.textContent = 'Payment Made';
+                paymentCell.classList.add('font-semibold', 'text-blue-600', 'dark:text-blue-400');
+            } else {
+                paymentCell.textContent = '--';
+            }
+
+            row.appendChild(dateCell);
+            row.appendChild(statusCell);
+            row.appendChild(paymentCell);
+            historyTableBody.appendChild(row);
+        });
+        updatePaginationControls(totalPages);
+    }
+
+    function updatePaginationControls(totalPages) {
+        pageIndicator.textContent = `Page ${state.currentPage} of ${totalPages || 1}`;
+        prevPageButton.disabled = state.currentPage <= 1;
+        nextPageButton.disabled = state.currentPage >= totalPages;
+        paginationNav.style.display = totalPages > 1 ? 'flex' : 'none';
+    }
+
+    function changePage(delta) {
+        const totalPages = Math.ceil(history.length / ITEMS_PER_PAGE);
+        const newPage = state.currentPage + delta;
+        if (newPage >= 1 && newPage <= totalPages) {
+            state.currentPage = newPage;
             saveData();
-            await findOrCreateSpreadsheet().then(loadSheetData);
-            updateUI();
-        };
-
-        if (gapi.client.getToken() === null) {
-            tokenClient.requestAccessToken({ prompt: 'consent' });
-        } else {
-            tokenClient.requestAccessToken({ prompt: '' });
+            renderHistory();
         }
     }
 
-    function handleSignoutClick() {
-        const token = gapi.client.getToken();
-        if (token !== null) {
-            google.accounts.oauth2.revoke(token.access_token, () => {
-                gapi.client.setToken('');
-                state.dataSource = 'localStorage';
-                clearData();
-                showToast('Signed out successfully.', 'info');
+    function showToast(message, type = 'info') {
+        clearTimeout(toastTimeout);
+        toastMessage.textContent = message;
+        toastFeedback.className = 'fixed top-5 right-5 p-4 rounded-lg shadow-lg text-white';
+        switch (type) {
+            case 'success': toastFeedback.classList.add('bg-green-500'); break;
+            case 'error': toastFeedback.classList.add('bg-red-500'); break;
+            case 'warning': toastFeedback.classList.add('bg-yellow-500'); break;
+            default: toastFeedback.classList.add('bg-blue-500'); break;
+        }
+        toastFeedback.classList.remove('hidden');
+        toastTimeout = setTimeout(() => toastFeedback.classList.add('hidden'), 3000);
+    }
+
+    // --- Google Sheets Integration ---
+
+    async function syncWithGoogleSheets() {
+        if (!config || !config.appScriptURL) return;
+        showToast('Syncing with Google Sheets...', 'info');
+        try {
+            const response = await fetch(config.appScriptURL, { method: 'GET', mode: 'cors' });
+            if (!response.ok) throw new Error('Network response was not ok.');
+            const result = await response.json();
+            if (result.status !== 'success') throw new Error(result.message);
+
+            if (result.data && result.data.length > 0) {
+                history = result.data.map(item => ({
+                    date: new Date(item.Date),
+                    status: item.Status,
+                    paymentMade: item['Payment Made'] === true || item['Payment Made'] === 'TRUE',
+                    note: item.Note || ''
+                }));
+                recalculateStateFromHistory();
+                showToast('Successfully synced from Google Sheets.', 'success');
+            } else {
+                showToast('Google Sheet is empty. Ready to log first class.', 'info');
+            }
+        } catch (error) {
+            showToast(`Sync failed: ${error.message}`, 'error');
+        }
+        saveData();
+        updateUI();
+    }
+
+    async function backupDataToGoogleSheets() {
+        if (!config || !config.appScriptURL) return;
+        try {
+            const response = await fetch(config.appScriptURL, {
+                method: 'POST',
+                mode: 'cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(history)
             });
+            if (!response.ok) throw new Error('Backup network response was not ok.');
+            const result = await response.json();
+            if (result.status !== 'success') throw new Error(result.message);
+            showToast('Backup to Google Sheets successful.', 'success');
+        } catch (error) {
+            showToast(`Backup failed: ${error.message}`, 'error');
         }
     }
-
-    async function findOrCreateSpreadsheet() {
-        // ... (implementation remains the same)
-    }
-
-    async function loadSheetData() {
-        // ... (implementation remains the same)
-    }
-
-    async function writeSheetData() {
-        // ... (implementation remains the same)
-    }
-
-    // ... (rest of the functions remain the same) ...
-
-    // --- Initial Load ---
-    setupEventListeners();
-    if (manualLogModal) { manualLogModalInstance = new Modal(manualLogModal); }
-    if (paymentLogModal) { paymentLogModalInstance = new Modal(paymentLogModal); }
-    if (googleCredsModal) { googleCredsModalInstance = new Modal(googleCredsModal); }
 });

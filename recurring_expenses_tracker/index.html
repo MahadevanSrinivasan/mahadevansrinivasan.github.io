@@ -8,7 +8,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/datepicker.min.js"></script>
-    <script src="https://apis.google.com/js/api.js"></script>
     <style src="style.css">
     </style>
 </head>
@@ -46,14 +45,6 @@
                         <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Reset Configuration</span>
                     </button>
                 </li>
-                <li>
-                    <button id="sign-out-button" type="button" class="flex items-center w-full p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group hidden">
-                        <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Sign Out</span>
-                    </button>
-                </li>
             </ul>
         </div>
     </aside>
@@ -76,11 +67,6 @@
                         </div>
                     </div>
                     <div class="mb-6">
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Choose a data storage method:</p>
-                        <button id="google-auth-button" type="button" data-modal-target="google-creds-modal" data-modal-toggle="google-creds-modal" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                            Sign in with Google (Recommended)
-                        </button>
-                        <p class="text-sm text-center my-2 text-gray-500 dark:text-gray-400">OR</p>
                         <label for="appScriptURLInput" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Google Sheets App Script URL (Optional)</label>
                         <input type="text" id="appScriptURLInput" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" name="appScriptURLInput">
                     </div>
@@ -90,45 +76,11 @@
 
             <div id="status-section" class="mb-6 hidden">
                 <div class="p-4 mb-4 text-sm rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400" role="alert">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <span class="font-medium" id="expense-status-name">Expense:</span>
-                            <span id="expense-status-details"></span>
-                            <span id="payment-overdue-indicator" class="ml-2 payment-overdue hidden">(PAYMENT DUE/OVERDUE)</span>
-                        </div>
-                        <div id="data-source-indicator" class="text-xs font-semibold"></div>
-                    </div>
+                    <span class="font-medium" id="expense-status-name">Expense:</span>
+                    <span id="expense-status-details"></span>
+                    <span id="payment-overdue-indicator" class="ml-2 payment-overdue hidden">(PAYMENT DUE/OVERDUE)</span>
                 </div>
             </div>
-        <div id="google-creds-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-            <div class="relative p-4 w-full max-w-md max-h-full">
-                <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
-                    <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Google API Credentials</h3>
-                        <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" data-modal-hide="google-creds-modal">
-                            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-                            </svg>
-                            <span class="sr-only">Close modal</span>
-                        </button>
-                    </div>
-                    <div class="p-4 md:p-5 space-y-4">
-                        <div>
-                            <label for="google-api-key" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">API Key</label>
-                            <input type="password" id="google-api-key" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" required>
-                        </div>
-                        <div>
-                            <label for="google-client-id" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Client ID</label>
-                            <input type="password" id="google-client-id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" required>
-                        </div>
-                    </div>
-                    <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
-                        <button id="save-google-creds-button" type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Save and Sign In</button>
-                        <button data-modal-hide="google-creds-modal" type="button" class="py-2.5 px-5 ms-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">Cancel</button>
-                    </div>
-                </div>
-            </div>
-        </div>
 
             <div id="history-section" class="hidden">
                 <h2 class="text-xl font-semibold mb-4">Class History</h2>
