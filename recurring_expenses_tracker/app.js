@@ -52,12 +52,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let toastTimeout;
     let manualLogModalInstance = null;
     let paymentLogModalInstance = null;
+    let confirmLogTodayModalInstance = null;
 
     // --- Initialization ---
     loadData();
     setupEventListeners();
     if (manualLogModal) { manualLogModalInstance = new Modal(manualLogModal); }
     if (paymentLogModal) { paymentLogModalInstance = new Modal(paymentLogModal); }
+    const confirmLogTodayModal = document.getElementById('confirm-log-today-modal');
+    if (confirmLogTodayModal) { confirmLogTodayModalInstance = new Modal(confirmLogTodayModal); }
 
     // --- Core Functions ---
 
@@ -128,21 +131,26 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const newEntry = {
-            date: today,
-            status: 'Happened',
-            paymentMade: false,
-            note: ''
-        };
+        confirmLogTodayModalInstance.show();
 
-        history.push(newEntry);
-        recalculateStateFromHistory();
-        saveData();
-        if (config.appScriptURL) {
-            backupDataToGoogleSheets();
-        }
-        updateUI();
-        showToast('Logged today\'s class successfully.', 'success');
+        document.getElementById('confirm-log-today-button').onclick = () => {
+            const newEntry = {
+                date: today,
+                status: 'Happened',
+                paymentMade: false,
+                note: ''
+            };
+
+            history.push(newEntry);
+            recalculateStateFromHistory();
+            saveData();
+            if (config.appScriptURL) {
+                backupDataToGoogleSheets();
+            }
+            updateUI();
+            confirmLogTodayModalInstance.hide();
+            showToast('Logged today\'s class successfully.', 'success');
+        };
     }
 
     function handleSaveManualLog() {
@@ -280,6 +288,16 @@ document.addEventListener('DOMContentLoaded', () => {
         savePaymentLogButton.addEventListener('click', handleSavePayment);
         prevPageButton.addEventListener('click', () => changePage(-1));
         nextPageButton.addEventListener('click', () => changePage(1));
+
+        // TODO: Fix focus issue when modals are dismissed. The focus should be on the main content area.
+        const cancelButtons = document.querySelectorAll('[data-modal-hide]');
+        cancelButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                setTimeout(() => {
+                    document.querySelector('main').focus();
+                }, 150); // Delay to allow modal to close
+            });
+        });
     }
 
     function updateUI() {
