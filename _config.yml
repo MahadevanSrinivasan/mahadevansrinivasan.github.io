@@ -11,6 +11,8 @@ github_username:  MahadevanSrinivasan
 # Build settings
 markdown: kramdown
 highlighter: rouge 
+include:
+  - prepaid_tracker/_next
 
 gems:
   - jemoji
