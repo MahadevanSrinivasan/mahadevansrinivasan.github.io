@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MathClub - Arithmetic Typing Adventure for Kids</title>
+    <meta name="description" content="A fun, highly interactive typing-style arithmetic practice web app for kids to learn addition, subtraction, multiplication, and division.">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="logo-section">
+            <div class="logo-icon">±×</div>
+            <div class="logo-text">MathClub</div>
+        </div>
+        <nav>
+            <button class="nav-btn active" id="nav-dashboard">🗺 Level Map</button>
+            <button class="nav-btn" id="nav-custom">⚙ Custom Mode</button>
+            <button class="nav-btn" id="nav-stats">📊 Statistics</button>
+        </nav>
+        <div class="header-controls">
+            <span style="font-size: 0.9rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.25rem;">
+                🏆 <strong id="user-pts" style="color:var(--warning);">0</strong> pts
+            </span>
+            <button class="sound-toggle-btn" id="btn-toggle-sound" title="Toggle Sound">
+                <span id="sound-icon">🔊</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main>
+        
+        <!-- ================= DASHBOARD & MAP ================= -->
+        <section id="view-dashboard" class="view-section active">
+            <div class="dashboard-grid">
+                
+                <!-- Main Path and Node Section -->
+                <div>
+                    <div class="glass-panel hero-banner">
+                        <h1 class="hero-title">Master Mental Math <span>Like a Pro!</span></h1>
+                        <p class="hero-desc">Type your answers fast, build epic correct answer combos, and unlock new challenging levels on your math quest!</p>
+                        <div class="hero-actions">
+                            <button class="action-btn btn-primary" id="btn-quick-start">🚀 Quick Start (Lvl 1)</button>
+                            <button class="action-btn btn-secondary" id="btn-create-custom">🛠 Custom Playground</button>
+                        </div>
+                    </div>
+
+                    <div class="levels-header">
+                        <h2 class="levels-title">Your Progression Roadmap</h2>
+                    </div>
+                    <div id="levels-map" class="levels-map">
+                        <!-- Dynamic level node cards loaded from JS -->
+                    </div>
+                </div>
+
+                <!-- Right Side mini stat tracking -->
+                <div class="analytics-preview">
+                    <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap:1rem;">
+                        <h3 style="font-family: var(--font-heading); font-size:1.2rem;">Quick Stats</h3>
+                        
+                        <div class="stat-box-mini">
+                            <span class="stat-box-title">Average Speed</span>
+                            <span class="stat-box-val color-secondary"><span id="dash-ppm">0</span> <span style="font-size:1rem; font-weight: normal;">PPM</span></span>
+                        </div>
+                        
+                        <div class="stat-box-mini">
+                            <span class="stat-box-title">Average Accuracy</span>
+                            <span class="stat-box-val color-success" id="dash-accuracy">0%</span>
+                        </div>
+                        
+                        <div class="stat-box-mini">
+                            <span class="stat-box-title">Levels Cleared</span>
+                            <span class="stat-box-val color-primary" id="dash-completed">0/12</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- ================= GAMEPLAY / TYPING BOX ================= -->
+        <section id="view-play" class="view-section">
+            <div class="glass-panel game-layout">
+                
+                <!-- HUD Bar -->
+                <div class="game-control-header">
+                    <div class="game-info-block">
+                        <div class="info-stat">
+                            <span class="info-label">Active Goal</span>
+                            <span class="info-val" id="game-title" style="font-size: 1.25rem;">Level 1</span>
+                        </div>
+                        <div class="info-stat">
+                            <span class="info-label">Time Remaining</span>
+                            <span class="info-val color-secondary" id="game-time">--</span>
+                        </div>
+                        <div class="info-stat" id="game-lives-sec" style="display:none;">
+                            <span class="info-label">Shield / Hearts</span>
+                            <div class="lives-container" id="lives-container">
+                                <!-- ❤ ❤ ❤ -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="game-info-block">
+                        <div class="info-stat">
+                            <span class="info-label">Speed</span>
+                            <span class="info-val color-primary"><span id="game-ppm">0</span> <span style="font-size:0.9rem;">PPM</span></span>
+                        </div>
+                        <div class="info-stat">
+                            <span class="info-label">Score</span>
+                            <span class="info-val color-success" id="game-score">0</span>
+                        </div>
+                    </div>
+
+                    <button class="btn-quit" id="btn-quit-game">🏳 Quit Match</button>
+                </div>
+
+                <!-- Equation Area -->
+                <div class="equation-container">
+                    <canvas id="fx-canvas" class="fx-canvas"></canvas>
+                    
+                    <!-- Combo Badge Flyout -->
+                    <div class="combo-badge" id="combo-badge">
+                        <span>🔥 Combo</span>
+                        <strong id="combo-multiplier">x5</strong>
+                    </div>
+
+                    <div class="equation-box">
+                        <span id="equation-text">8 + 5 =</span>
+                        <div class="typing-value-carrier" id="input-carrier">
+                            <span class="typing-value-input" id="typing-input"></span>
+                            <span class="typing-cursor"></span>
+                        </div>
+                    </div>
+                    <span style="font-size: 0.85rem; color: var(--text-secondary);">Type numbers and press <strong style="color:var(--text-primary);">[Enter]</strong> or <strong style="color:var(--text-primary);">[Space]</strong> to submit!</span>
+                </div>
+
+                <!-- Virtual On-screen Keyboard -->
+                <div class="keyboard-section">
+                    <div class="keyboard-title">On-Screen Key Guide</div>
+                    <div class="keyboard-grid">
+                        <div class="k-row">
+                            <div class="key-cap" id="key-1">1</div>
+                            <div class="key-cap" id="key-2">2</div>
+                            <div class="key-cap" id="key-3">3</div>
+                            <div class="key-cap" id="key-4">4</div>
+                            <div class="key-cap" id="key-5">5</div>
+                            <div class="key-cap" id="key-6">6</div>
+                            <div class="key-cap" id="key-7">7</div>
+                            <div class="key-cap" id="key-8">8</div>
+                            <div class="key-cap" id="key-9">9</div>
+                            <div class="key-cap" id="key-0">0</div>
+                            <div class="key-cap" id="key--">-</div>
+                        </div>
+                        <div class="k-row">
+                            <div class="key-cap wide" id="key-backspace">⌫ Delete</div>
+                            <div class="key-cap wide" id="key-enter">↵ Enter</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- ================= CUSTOM MATCH BUILDER ================= -->
+        <section id="view-custom" class="view-section">
+            <div class="glass-panel">
+                <h2 class="custom-title-sec">Custom Match Playground</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">Design your own customized typing arithmetic session to tackle specific math categories!</p>
+                
+                <div class="custom-builder">
+                    
+                    <div class="custom-form">
+                        <!-- Operations selection -->
+                        <div class="form-group">
+                            <label>1. Select Operation Categories</label>
+                            <div class="operations-selector">
+                                <div class="checkbox-card selected">
+                                    <input type="checkbox" id="chk-add" value="add" checked>
+                                    <span>Addition (+)</span>
+                                </div>
+                                <div class="checkbox-card selected">
+                                    <input type="checkbox" id="chk-sub" value="sub" checked>
+                                    <span>Subtraction (-)</span>
+                                </div>
+                                <div class="checkbox-card">
+                                    <input type="checkbox" id="chk-mul" value="mul">
+                                    <span>Multiplication (×)</span>
+                                </div>
+                                <div class="checkbox-card">
+                                    <input type="checkbox" id="chk-div" value="div">
+                                    <span>Division (÷)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Difficulty select -->
+                        <div class="form-group">
+                            <label for="custom-difficulty">2. Difficulty Tier</label>
+                            <select id="custom-difficulty" class="action-btn btn-secondary" style="width: 100%; text-align: left; background: rgba(255,255,255,0.03); outline: none; border-color: var(--border-glass);">
+                                <option value="easy" style="background:#13152c;">Easy (Single Digits)</option>
+                                <option value="medium" style="background:#13152c;" selected>Medium (Double Digits)</option>
+                                <option value="hard" style="background:#13152c;">Hard (Large Numbers & Carrying)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="custom-form">
+                        <!-- Playmode select -->
+                        <div class="form-group">
+                            <label>3. Select Match Rules</label>
+                            <div class="gamemode-toggle">
+                                <div class="gamemode-card selected" data-mode="time_attack">
+                                    <span class="gamemode-title">⏰ Time Attack</span>
+                                    <span class="gamemode-desc">Answer as many as you can before time expires</span>
+                                </div>
+                                <div class="gamemode-card" data-mode="survival">
+                                    <span class="gamemode-title">🛡 Survival</span>
+                                    <span class="gamemode-desc">3 Hearts. Math hits harder. One mistake drops lives</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Time limit select -->
+                        <div class="form-group" id="custom-time-group">
+                            <div style="display:flex; justify-content:space-between;">
+                                <label for="custom-time-slider">4. Session Duration Limit</label>
+                                <span class="slider-val" id="custom-time-val">60s</span>
+                            </div>
+                            <input type="range" id="custom-time-slider" class="input-slider" min="30" max="180" step="15" value="60">
+                        </div>
+
+                        <button class="action-btn btn-primary" id="btn-run-custom" style="margin-top: 1rem; width: 100%;">⚡ Launch Custom Session</button>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= DETAILED STATISTICS ================= -->
+        <section id="view-stats" class="view-section">
+            <div class="glass-panel">
+                <div class="stats-header-bar">
+                    <h2 class="custom-title-sec" style="margin-bottom:0;">Performance Dashboard</h2>
+                    <button class="btn-quit" id="btn-clear-stats" style="background:rgba(255,23,68,0.05);">🧹 Wipe Logs</button>
+                </div>
+
+                <div id="stats-empty" class="empty-state" style="display:none;">
+                    <p>No statistics yet! Complete your first level or custom game to display analytical progress charts.</p>
+                </div>
+
+                <div id="stats-main-content">
+                    <div class="stats-grid">
+                        
+                        <!-- Speed PPM Progress Chart -->
+                        <div class="chart-wrapper">
+                            <h3 class="chart-title">Speed Improvement Curve (Last 15 Games)</h3>
+                            <div class="chart-canvas-container">
+                                <svg id="speed-chart" class="chart-svg" viewBox="0 0 450 240">
+                                    <!-- Drawn via JS -->
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Accuracy Analysis Chart -->
+                        <div class="chart-wrapper">
+                            <h3 class="chart-title">Breakdown: Accuracy by Operation Type</h3>
+                            <div class="chart-canvas-container">
+                                <svg id="accuracy-chart" class="chart-svg" viewBox="0 0 450 240">
+                                    <!-- Drawn via JS -->
+                                </svg>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- History Table Log -->
+                    <div class="history-section">
+                        <h3 class="chart-title">Recent Session Logs</h3>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date & Time</th>
+                                        <th>Session / Level</th>
+                                        <th>Game Rules</th>
+                                        <th>Final Score</th>
+                                        <th>WPM / PPM</th>
+                                        <th>Acc. Ratio</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stats-table-body">
+                                    <!-- Loaded dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Floating Tooltip to handle chart details -->
+                <div class="chart-tooltip" id="chart-tooltip"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Overlay results Modal -->
+    <div class="results-modal" id="results-modal">
+        <div class="modal-content">
+            <h2 class="modal-header" id="modal-title">Level Cleared!</h2>
+            
+            <div class="modal-stars" id="modal-stars">
+                ★ ★ ★
+            </div>
+
+            <div class="modal-grid">
+                <div class="modal-stat-box">
+                    <span class="modal-stat-lb">Keystroke Speed</span>
+                    <div class="modal-stat-num"><span id="modal-ppm">0</span> <span style="font-size:0.85rem; font-weight:normal;">PPM</span></div>
+                </div>
+                <div class="modal-stat-box">
+                    <span class="modal-stat-lb">Accuracy</span>
+                    <div class="modal-stat-num color-success" id="modal-accuracy">0%</div>
+                </div>
+                <div class="modal-stat-box">
+                    <span class="modal-stat-lb">Total Score</span>
+                    <div class="modal-stat-num color-primary" id="modal-score">0</div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="action-btn btn-secondary" id="btn-close-modal">🏠 Exit to Map</button>
+                <button class="action-btn btn-primary" id="btn-retry-level">🔄 Practice Again</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts Injection -->
+    <script src="levels.js"></script>
+    <script src="audio.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

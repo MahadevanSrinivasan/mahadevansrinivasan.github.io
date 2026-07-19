@@ -4,6 +4,8 @@ title: Projects
 permalink: /projects/
 ---
 
+- #### [MathClub](/mathclub/)
+A fun, interactive arithmetic typing adventure for kids! Practice addition, subtraction, multiplication, and division through timed challenges and survival modes. Features a level progression system, combo multipliers, performance tracking with charts, and a fully customizable practice playground.
 - #### [Stream to XBMC]({% post_url 2015-09-29-stream-to-xbmc %})
 Are you one of those people who watch the funny videos from some of the free video streaming sites on your laptop? Do you want to watch it on your big screen TV instead? I have the perfect tool for you. My chrome-plugin can push videos from several sites to your XBMC setup. It can be used it with Raspberry Pi or any other XBMC setup to watch videos from CBS, Youtube and so many other sites. Check it out!
 - #### [Sudokids]({% post_url 2015-09-29-sudokids %})
