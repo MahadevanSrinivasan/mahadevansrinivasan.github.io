@@ -82,7 +82,8 @@ class MathClubApp {
             customMixedOp: document.getElementById("custom-mixed"),
             customTimeSlider: document.getElementById("custom-time-slider"),
             customTimeVal: document.getElementById("custom-time-val"),
-            customDiff: document.getElementById("custom-difficulty")
+            customDiff: document.getElementById("custom-difficulty"),
+            hiddenInput: document.getElementById("hidden-mobile-input")
         };
     }
 
@@ -113,6 +114,74 @@ class MathClubApp {
         // Keyboard capturing
         document.addEventListener("keydown", (e) => this.handleKeyboardInput(e));
         document.addEventListener("keyup", (e) => this.handleKeyboardRelease(e));
+        
+        // Mobile hidden input handling
+        if (this.dom.hiddenInput) {
+            this.dom.hiddenInput.addEventListener("input", (e) => {
+                if (!this.gameState.isActive) return;
+                const val = this.dom.hiddenInput.value;
+                let newTyped = "";
+                for (let char of val) {
+                    if ((char >= "0" && char <= "9") || char === "-") {
+                        newTyped += char;
+                    }
+                }
+                
+                if (newTyped !== this.gameState.typedAnswer) {
+                    window.audioManager.playTick();
+                    this.gameState.typedAnswer = newTyped;
+                    this.dom.typingInput.textContent = this.gameState.typedAnswer;
+                }
+                
+                if (val.includes(" ")) {
+                    this.submitAnswer();
+                    this.dom.hiddenInput.value = this.gameState.typedAnswer;
+                }
+            });
+            
+            // Refocus when clicking game area
+            document.querySelector(".game-layout").addEventListener("click", () => {
+                if (this.gameState.isActive) {
+                    this.dom.hiddenInput.focus();
+                }
+            });
+        }
+        
+        // On-screen keyboard interactions
+        document.querySelectorAll(".key-cap").forEach(cap => {
+            const handleTouch = (e) => {
+                e.preventDefault();
+                if (!this.gameState.isActive) return;
+                
+                const id = cap.id.replace("key-", "");
+                let key = id;
+                if (id === "backspace") key = "Backspace";
+                if (id === "enter") key = "Enter";
+                
+                if (key === "Backspace") {
+                    window.audioManager.playTick();
+                    this.gameState.typedAnswer = this.gameState.typedAnswer.slice(0, -1);
+                    this.dom.typingInput.textContent = this.gameState.typedAnswer;
+                    if (this.dom.hiddenInput) this.dom.hiddenInput.value = this.gameState.typedAnswer;
+                } else if (key === "Enter") {
+                    this.submitAnswer();
+                } else {
+                    if (key >= "0" && key <= "9" || (key === "-" && this.gameState.typedAnswer.length === 0)) {
+                        window.audioManager.playTick();
+                        this.gameState.typedAnswer += key;
+                        this.dom.typingInput.textContent = this.gameState.typedAnswer;
+                        if (this.dom.hiddenInput) this.dom.hiddenInput.value = this.gameState.typedAnswer;
+                    }
+                }
+                
+                cap.classList.add("active");
+                setTimeout(() => cap.classList.remove("active"), 100);
+                
+                if (this.dom.hiddenInput) this.dom.hiddenInput.focus();
+            };
+            cap.addEventListener("mousedown", handleTouch);
+            cap.addEventListener("touchstart", handleTouch, {passive: false});
+        });
 
         // Buttons in Play
         document.getElementById("btn-quit-game").addEventListener("click", () => this.quitGame());
@@ -393,6 +462,14 @@ class MathClubApp {
         this.dom.typingInput.textContent = "";
         this.dom.typingInput.parentElement.classList.add("active");
         this.dom.comboBadge.style.display = "none";
+        
+        if (this.dom.hiddenInput) {
+            this.dom.hiddenInput.value = "";
+            // Small delay to ensure view transition completes before focusing
+            setTimeout(() => {
+                if (this.gameState.isActive) this.dom.hiddenInput.focus();
+            }, 50);
+        }
 
         // Setup HUD modules according to Mode
         if (this.gameState.gameMode === "survival") {
@@ -492,6 +569,7 @@ class MathClubApp {
     generateNextProblem() {
         this.gameState.typedAnswer = "";
         this.dom.typingInput.textContent = "";
+        if (this.dom.hiddenInput) this.dom.hiddenInput.value = "";
         this.gameState.currentProblem = MathGenerator.generate(this.gameState.activeLevel);
 
         // Display equations text
@@ -520,6 +598,10 @@ class MathClubApp {
             keycap.classList.add("active");
         }
 
+        if (e.target === this.dom.hiddenInput && key !== "Enter" && key !== "Backspace" && key !== " ") {
+            return; // Let the input event handle regular typing on mobile
+        }
+
         // Action handles
         if (key >= "0" && key <= "9") {
             window.audioManager.playTick();
@@ -536,6 +618,7 @@ class MathClubApp {
             window.audioManager.playTick();
             this.gameState.typedAnswer = this.gameState.typedAnswer.slice(0, -1);
             this.dom.typingInput.textContent = this.gameState.typedAnswer;
+            if (this.dom.hiddenInput) this.dom.hiddenInput.value = this.gameState.typedAnswer;
         } else if (key === "Enter" || key === " ") {
             this.submitAnswer();
         }
@@ -627,6 +710,7 @@ class MathClubApp {
             // Clear input for retry
             this.gameState.typedAnswer = "";
             this.dom.typingInput.textContent = "";
+            if (this.dom.hiddenInput) this.dom.hiddenInput.value = "";
             this.updatePPMDisplay();
 
             // In non-survival level mode, does it force they get it correct or slide to next?
