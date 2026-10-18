@@ -1,1 +1,6 @@
 .vscode/settings.json
+.jekyll-cache/
+.jekyll-metadata
+.sass-cache/
+.idx/
+.DS_Store

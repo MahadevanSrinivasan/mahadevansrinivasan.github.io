@@ -3,143 +3,143 @@ var increment = 0;
 var progress = 0;
 var currentMediaSession;
 
-$( document ).ready(function(){
-  document.getElementById("progress").addEventListener('mouseup', seekMedia);
-  document.getElementById("progress").addEventListener('mouseenter', showTime);
-  document.getElementById("progress").addEventListener('mouseleave', hideTime);
-  var loadCastInterval = setInterval(function(){
-    if (chrome.cast.isAvailable) 
-    {
+document.addEventListener('DOMContentLoaded', function () {
+  var progressEl = document.getElementById('progress');
+  if (progressEl) {
+    progressEl.addEventListener('mouseup', seekMedia);
+    progressEl.addEventListener('mouseenter', showTime);
+    progressEl.addEventListener('mouseleave', hideTime);
+  }
+
+  var castBtn = document.getElementById('castme');
+  if (castBtn) {
+    castBtn.addEventListener('click', launchApp);
+  }
+
+  var stopBtn = document.getElementById('stop');
+  if (stopBtn) {
+    stopBtn.addEventListener('click', stopApp);
+  }
+
+  var playBtn = document.getElementById('play');
+  if (playBtn) {
+    playBtn.addEventListener('click', function () {
+      if (!session || !currentMediaSession) {
+        return;
+      }
+      currentMediaSession.play(null, playSuccess, playPauseFailure);
+    });
+  }
+
+  var pauseBtn = document.getElementById('pause');
+  if (pauseBtn) {
+    pauseBtn.addEventListener('click', function () {
+      if (!session || !currentMediaSession) {
+        return;
+      }
+      currentMediaSession.pause(null, pauseSuccess, playPauseFailure);
+    });
+  }
+
+  var loadCastInterval = setInterval(function () {
+    if (window.chrome && chrome.cast && chrome.cast.isAvailable) {
       console.log('Cast has loaded.');
       clearInterval(loadCastInterval);
       initializeCastApi();
-    } 
-    else 
-    {
+    } else {
       console.log('Unavailable');
     }
   }, 1000);
 });
 
-
-function initializeCastApi() 
-{
+function initializeCastApi() {
   var applicationID = chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID;
   var sessionRequest = new chrome.cast.SessionRequest(applicationID);
   var apiConfig = new chrome.cast.ApiConfig(sessionRequest, sessionListener, receiverListener);
   chrome.cast.initialize(apiConfig, onInitSuccess, onInitError);
 }
 
-function sessionListener(e) 
-{
+function sessionListener(e) {
   session = e;
   console.log('New session');
-  if (session.media.length !== 0) 
-  {
+  if (session.media.length !== 0) {
     console.log('Found ' + session.media.length + ' sessions.');
   }
 }
 
 function receiverListener(e) {
-  if( e == 'available' ) 
-  {
-    console.log("Chromecast was found on the network.");
+  if (e === 'available') {
+    console.log('Chromecast was found on the network.');
     launchApp();
-  }
-  else 
-  {
-    console.log("There are no Chromecasts available.");
+  } else {
+    console.log('There are no Chromecasts available.');
   }
 }
 
-function onInitSuccess() 
-{
-  console.log("Initialization succeeded");
+function onInitSuccess() {
+  console.log('Initialization succeeded');
 }
 
-function onInitError() 
-{
-  console.log("Initialization failed");
+function onInitError() {
+  console.log('Initialization failed');
 }
 
-$('#castme').click(function()
-{
-  launchApp();
-});
-
-$('#pause').click(function()
-{
-  if(!session || !currentMediaSession) {
-    return;
+function pauseSuccess() {
+  console.log('Pause Success');
+  var pauseBtn = document.getElementById('pause');
+  var playBtn = document.getElementById('play');
+  if (pauseBtn) {
+    pauseBtn.classList.add('hidden');
   }
-  
-  currentMediaSession.pause(null, pauseSuccess, playPauseFailure);
-});
-
-function pauseSuccess()
-{
-  console.log("Pause Success");
-  $('#pause').addClass("hidden");
-  $('#play').removeClass("hidden");
+  if (playBtn) {
+    playBtn.classList.remove('hidden');
+  }
   increment = 0;
 }
 
-function playPauseFailure()
-{
-  console.log("Pause Failure");
+function playPauseFailure() {
+  console.log('Pause Failure');
 }
 
-$('#play').click(function()
-{
-  if(!session || !currentMediaSession) {
-    return;
+function playSuccess() {
+  console.log('Play Success');
+  var playBtn = document.getElementById('play');
+  var pauseBtn = document.getElementById('pause');
+  if (playBtn) {
+    playBtn.classList.add('hidden');
   }
-  
-  currentMediaSession.play(null, playSuccess, playPauseFailure);
-});
-
-function playSuccess()
-{
-  console.log("Play Success");
-  $('#play').addClass("hidden");
-  $('#pause').removeClass("hidden");
-  var tt = mediaSession.media.duration;
-  increment = (1/tt)*100;
+  if (pauseBtn) {
+    pauseBtn.classList.remove('hidden');
+  }
+  if (currentMediaSession && currentMediaSession.media && currentMediaSession.media.duration) {
+    var tt = currentMediaSession.media.duration;
+    increment = (1 / tt) * 100;
+  }
 }
 
-function launchApp() 
-{
-  console.log("Launching the Chromecast App...");
+function launchApp() {
+  console.log('Launching the Chromecast App...');
   chrome.cast.requestSession(onRequestSessionSuccess, onLaunchError);
 }
 
-function onRequestSessionSuccess(e) 
-{
-  console.log("Successfully created session: " + e.sessionId);
-  session = e;
+function onLaunchError() {
+  console.log('Error connecting to the Chromecast.');
 }
 
-function onLaunchError() 
-{
-  console.log("Error connecting to the Chromecast.");
-}
-
-function onRequestSessionSuccess(e) 
-{
-  console.log("Successfully created session: " + e.sessionId);
+function onRequestSessionSuccess(e) {
+  console.log('Successfully created session: ' + e.sessionId);
   session = e;
   loadMedia();
 }
 
-function loadMedia() 
-{
-  if (!session) 
-  {
-    console.log("No session.");
+function loadMedia() {
+  if (!session) {
+    console.log('No session.');
     return;
   }
 
-  var mediaInfo = new chrome.cast.media.MediaInfo(videoLink);
+  var targetLink = (typeof videoLink !== 'undefined') ? videoLink : '';
+  var mediaInfo = new chrome.cast.media.MediaInfo(targetLink);
   mediaInfo.contentType = 'video/mp4';
 
   var request = new chrome.cast.media.LoadRequest(mediaInfo);
@@ -150,48 +150,44 @@ function loadMedia()
 
 function onLoadSuccess(mediaSession) {
   console.log('Successfully loaded.');
-  playSuccess();
   currentMediaSession = mediaSession;
+  playSuccess();
   mediaSession.addUpdateListener(onMediaStatusUpdate);
   var tt = mediaSession.media.duration;
-  increment = (1/tt)*100;
-  console.log(increment, mediaSession.media.duration); 
+  increment = (1 / tt) * 100;
+  console.log(increment, mediaSession.media.duration);
   updateProgressBar();
 }
 
-function updateProgressBar()
-{
-  document.getElementById('progressBar').style.width= (progress) +'%';
-  var timeLeftInSecs = progress/increment;
+function updateProgressBar() {
+  var progressBar = document.getElementById('progressBar');
+  if (progressBar) {
+    progressBar.style.width = progress + '%';
+  }
+  var timeLeftInSecs = progress / increment;
   var hours = Math.floor(timeLeftInSecs / 3600);
   var minutes = Math.floor(timeLeftInSecs / 60);
   var seconds = timeLeftInSecs - hours * 3600 - minutes * 60;
-  if(!isNaN(timeLeftInSecs))
-  {
-    document.getElementById('timeleft').innerHTML = ((hours < 10) ? ('0' + hours) : hours) + ':' + ((minutes<10) ? ('0' + minutes) : minutes) + ':' + ((seconds<10) ? ('0'+seconds.toFixed(3)) : seconds.toFixed(3));
+  var timeLeftEl = document.getElementById('timeleft');
+  if (timeLeftEl) {
+    if (!isNaN(timeLeftInSecs)) {
+      timeLeftEl.innerHTML = ((hours < 10) ? ('0' + hours) : hours) + ':' + ((minutes < 10) ? ('0' + minutes) : minutes) + ':' + ((seconds < 10) ? ('0' + seconds.toFixed(3)) : seconds.toFixed(3));
+    } else {
+      timeLeftEl.innerHTML = '00:00:00.000';
+    }
   }
-  else
-  {
-    document.getElementById('timeleft').innerHTML = '00:00:00.000';
-  }
-  if(progress < 100 && increment !== 0)
-  {
+  if (progress < 100 && increment !== 0) {
     progress = progress + increment;
-    setTimeout(updateProgressBar,1000);
+    setTimeout(updateProgressBar, 1000);
   }
 }
 
-
-function onMediaStatusUpdate(e)
-{
-  if(e === false)
-  {
+function onMediaStatusUpdate(e) {
+  if (e === false) {
     progress = 0;
     increment = 0;
-  }
-  else
-  {
-    console.log("Updating Media");
+  } else if (currentMediaSession && currentMediaSession.media) {
+    console.log('Updating Media');
     progress = (currentMediaSession.currentTime / currentMediaSession.media.duration);
     console.log(currentMediaSession.currentTime, currentMediaSession.media.duration);
   }
@@ -201,12 +197,10 @@ function onLoadError() {
   console.log('Failed to load.');
 }
 
-$('#stop').click(function(){
-  stopApp();
-});
-
 function stopApp() {
-  session.stop(onStopAppSuccess, onStopAppError);
+  if (session) {
+    session.stop(onStopAppSuccess, onStopAppError);
+  }
   progress = 0;
   increment = 0;
 }
@@ -219,45 +213,54 @@ function onStopAppError() {
   console.log('Error stopping app.');
 }
 
-function seekMedia(event)
-{
-  var pos = parseInt(event.offsetX);
-  var total = document.getElementById("progress").clientWidth;
-  console.log(pos/total);
+function seekMedia(event) {
+  var progressEl = document.getElementById('progress');
+  if (!progressEl || !currentMediaSession || !currentMediaSession.media) {
+    return;
+  }
+  var pos = parseInt(event.offsetX, 10);
+  var total = progressEl.clientWidth;
+  console.log(pos / total);
   var request = new chrome.cast.media.SeekRequest();
-  request.currentTime = (pos/total)*currentMediaSession.media.duration;
-  currentMediaSession.seek(request, onSeekSuccess(request.currentTime), onSeekError);
+  var seekTime = (pos / total) * currentMediaSession.media.duration;
+  request.currentTime = seekTime;
+  currentMediaSession.seek(request, function () { onSeekSuccess(seekTime); }, onSeekError);
 }
 
-function showTime(event)
-{
-  var pos = parseInt(event.offsetX);
-  var total = document.getElementById("progress").clientWidth;
-  console.log(pos/total);
-  var timeLeftInSecs = (pos/total)*currentMediaSession.media.duration;
+function showTime(event) {
+  var progressEl = document.getElementById('progress');
+  if (!progressEl || !currentMediaSession || !currentMediaSession.media) {
+    return;
+  }
+  var pos = parseInt(event.offsetX, 10);
+  var total = progressEl.clientWidth;
+  console.log(pos / total);
+  var timeLeftInSecs = (pos / total) * currentMediaSession.media.duration;
   var hours = Math.floor(timeLeftInSecs / 3600);
   var minutes = Math.floor(timeLeftInSecs / 60);
   var seconds = timeLeftInSecs - hours * 3600 - minutes * 60;
-  if(!isNaN(timeLeftInSecs))
-  {
-    document.getElementById('hoverTime').innerHTML = ((hours < 10) ? ('0' + hours) : hours) + ':' + ((minutes<10) ? ('0' + minutes) : minutes) + ':' + ((seconds<10) ? ('0'+seconds.toFixed(3)) : seconds.toFixed(3));
+  var hoverTimeEl = document.getElementById('hoverTime');
+  if (hoverTimeEl) {
+    if (!isNaN(timeLeftInSecs)) {
+      hoverTimeEl.innerHTML = ((hours < 10) ? ('0' + hours) : hours) + ':' + ((minutes < 10) ? ('0' + minutes) : minutes) + ':' + ((seconds < 10) ? ('0' + seconds.toFixed(3)) : seconds.toFixed(3));
+    }
   }
 }
 
-function hideTime(event)
-{
-  document.getElementById('hoverTime').innerHTML = '00:00:00.000';
+function hideTime() {
+  var hoverTimeEl = document.getElementById('hoverTime');
+  if (hoverTimeEl) {
+    hoverTimeEl.innerHTML = '00:00:00.000';
+  }
 }
 
-function onSeekSuccess(currTime)
-{
-  progress = currTime/currentMediaSession.media.duration;
-  console.log("Seek success");
+function onSeekSuccess(currTime) {
+  if (currentMediaSession && currentMediaSession.media) {
+    progress = currTime / currentMediaSession.media.duration;
+  }
+  console.log('Seek success');
 }
 
-
-function onSeekError()
-{
-  console.log("Seek Failure");
+function onSeekError() {
+  console.log('Seek Failure');
 }
-

@@ -28,12 +28,16 @@
     float: right;
     line-height: 56px;
 
+    .nav-trigger {
+        display: none;
+    }
+
     .menu-icon {
         display: none;
     }
 
     .page-link {
-        color: #4582EC;;
+        color: #4582EC;
         line-height: $base-line-height;
 
         // Gaps between nav items, but not on the first one
@@ -50,6 +54,16 @@
         border: 1px solid $grey-color-light;
         border-radius: 5px;
         text-align: right;
+
+        label[for="nav-trigger"] {
+            display: block;
+            float: right;
+            width: 36px;
+            height: 36px;
+            z-index: 2;
+            cursor: pointer;
+            margin-bottom: 0;
+        }
 
         .menu-icon {
             display: block;
@@ -70,12 +84,12 @@
             }
         }
 
-        .trigger {
+        input ~ .trigger {
             clear: both;
             display: none;
         }
 
-        &:hover .trigger {
+        input:checked ~ .trigger {
             display: block;
             padding-bottom: 5px;
         }
@@ -122,38 +136,32 @@
 }
 
 .footer-col-1 {
-    width: -webkit-calc(35% - (#{$spacing-unit} / 2));
-    width:         calc(35% - (#{$spacing-unit} / 2));
+    width: calc(35% - (#{$spacing-unit} / 2));
 }
 
 .footer-col-2 {
-    width: -webkit-calc(20% - (#{$spacing-unit} / 2));
-    width:         calc(20% - (#{$spacing-unit} / 2));
+    width: calc(20% - (#{$spacing-unit} / 2));
 }
 
 .footer-col-3 {
-    width: -webkit-calc(45% - (#{$spacing-unit} / 2));
-    width:         calc(45% - (#{$spacing-unit} / 2));
+    width: calc(45% - (#{$spacing-unit} / 2));
 }
 
 @include media-query($on-laptop) {
     .footer-col-1,
     .footer-col-2 {
-        width: -webkit-calc(50% - (#{$spacing-unit} / 2));
-        width:         calc(50% - (#{$spacing-unit} / 2));
+        width: calc(50% - (#{$spacing-unit} / 2));
     }
 
     .footer-col-3 {
-        width: -webkit-calc(100% - (#{$spacing-unit} / 2));
-        width:         calc(100% - (#{$spacing-unit} / 2));
+        width: calc(100% - (#{$spacing-unit} / 2));
     }
 }
 
 @include media-query($on-palm) {
     .footer-col {
         float: none;
-        width: -webkit-calc(100% - (#{$spacing-unit} / 2));
-        width:         calc(100% - (#{$spacing-unit} / 2));
+        width: calc(100% - (#{$spacing-unit} / 2));
     }
 }
 
@@ -186,7 +194,7 @@
 
 .post-link {
     display: block;
-    font-size: 24px;
+    font-size: 20px;
 }
 
 
@@ -199,33 +207,21 @@
 }
 
 .post-title {
-    font-size: 36px;
+    font-size: 24px;
     letter-spacing: -1px;
     line-height: 1;
-    font-weight: bold;
-
-    @include media-query($on-laptop) {
-        font-size: 36px;
-    }
+    font-weight: 200;
 }
 
 .post-content {
     margin-bottom: $spacing-unit;
 
     h2 {
-        font-size: 32px;
-
-        @include media-query($on-laptop) {
-            font-size: 28px;
-        }
+        font-size: 22px;
     }
 
     h3 {
-        font-size: 26px;
-
-        @include media-query($on-laptop) {
-            font-size: 22px;
-        }
+        font-size: 21px;
     }
 
     h4 {
