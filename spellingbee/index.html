@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spelling Bee</title>
+  <meta name="description" content="Minimalist 3rd Grade Spelling Bee preparation web app with browser speech synthesis and LCS character diff.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top-bar">
+    <div class="brand" aria-label="Spelling Bee">🐝 Spelling Bee</div>
+
+    <nav class="difficulty-pill" role="tablist" aria-label="Difficulty Tier">
+      <button type="button" role="tab" class="tier-btn active" data-tier="easy" aria-selected="true">Easy</button>
+      <button type="button" role="tab" class="tier-btn" data-tier="medium" aria-selected="false">Medium</button>
+      <button type="button" role="tab" class="tier-btn" data-tier="hard" aria-selected="false">Hard</button>
+      <button type="button" role="tab" class="tier-btn" data-tier="stretch" aria-selected="false">Stretch</button>
+    </nav>
+
+    <div class="top-bar-right">
+      <span id="status-readout" class="status-readout" aria-live="polite">Score: 0 · 1/10</span>
+      <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode" title="Toggle light/dark mode">🌙</button>
+    </div>
+  </header>
+
+  <main class="stage-wrapper">
+    <!-- Active Spelling Stage -->
+    <section id="practice-stage" class="stage" aria-label="Spelling Practice">
+      <button type="button" id="hear-word-btn" class="hear-word-btn" title="Pronounce word (Alt+P)">
+        🔊 Hear Word
+      </button>
+
+      <!-- Hidden by default; enabled only when ?aids=... URL parameter is present -->
+      <div id="word-aids" class="word-aids" hidden></div>
+
+      <form id="spell-form" class="input-row" autocomplete="off" novalidate>
+        <input
+          type="text"
+          id="spell-input"
+          class="spell-input"
+          placeholder="Type the word..."
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          inputmode="text"
+          enterkeyhint="done"
+          aria-label="Spell the word"
+        />
+        <button type="submit" id="check-btn" class="check-btn">Check</button>
+      </form>
+
+      <div id="feedback-area" class="feedback-area" aria-live="polite" hidden>
+        <div class="feedback-banner">
+          <span id="feedback-text" class="feedback-text"></span>
+          <button type="button" id="next-btn" class="next-btn">Next →</button>
+        </div>
+
+        <div id="diff-container" class="diff-container" hidden>
+          <div class="diff-row">
+            <span class="diff-label">Yours</span>
+            <div id="diff-yours" class="diff-tiles" aria-label="Your spelling"></div>
+          </div>
+          <div class="diff-row">
+            <span class="diff-label">Correct</span>
+            <div id="diff-correct" class="diff-tiles" aria-label="Correct spelling"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10-Word Round Summary -->
+    <section id="summary-stage" class="stage summary-stage" aria-label="Round Summary" hidden>
+      <h1 class="summary-title">Round Summary</h1>
+
+      <div class="summary-metrics">
+        <div class="summary-metric">
+          <span class="metric-label">Score</span>
+          <strong id="summary-score" class="metric-value">0</strong>
+        </div>
+        <div class="summary-metric">
+          <span class="metric-label">Correct</span>
+          <strong id="summary-correct" class="metric-value">0 / 10</strong>
+        </div>
+        <div class="summary-metric">
+          <span class="metric-label">Accuracy</span>
+          <strong id="summary-accuracy" class="metric-value">0%</strong>
+        </div>
+      </div>
+
+      <div id="review-section" class="review-section">
+        <h2 class="review-heading">Words to Review</h2>
+        <p id="review-empty" class="review-empty" hidden>Perfect round! No missed words.</p>
+        <ul id="review-list" class="review-list"></ul>
+      </div>
+
+      <div class="summary-actions">
+        <button type="button" id="practice-missed-btn" class="secondary-action-btn">Practice Missed</button>
+        <button type="button" id="next-round-btn" class="primary-action-btn">Next Round →</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
