@@ -4,6 +4,8 @@ title: Projects
 permalink: /projects/
 ---
 
+- #### [Super Leo Bros.](/super-leo-bros/) ([GitHub](https://github.com/MahadevanSrinivasan/super-leo-bros))
+An original classic 2D platformer written in a single C99 file with zero external asset files—compiled natively for Raspberry Pi (RetroPie / SDL 1.2) and to WebAssembly for the browser. Features momentum & skidding physics, 3-tier power-ups (Mushroom, Fire Flower, Starman), kickable shells, an enterable secret coin pipe, checkpoints, and 4 stages culminating in a Lava Castle Boss fight.
 - #### [Spelling Bee](/spellingbee/)
 A minimalist, distraction-free Spelling Bee preparation web app for 3rd–5th graders. Features natural browser pronunciation via the Web Speech API, four difficulty tiers, streak bonuses, 10-word practice rounds with targeted review, and Longest Common Subsequence (LCS) letter-tile diffing to pinpoint exact spelling edits.
 - #### [MathClub](/mathclub/)
