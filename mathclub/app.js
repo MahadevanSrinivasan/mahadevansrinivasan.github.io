@@ -295,17 +295,15 @@ class MathClubApp {
 
         window.LEVEL_DEFINITIONS.forEach((lvl, idx) => {
             const isCompleted = completedLevels.includes(lvl.id);
-            // First level is always unlocked, other levels unlock after previous is completed
-            const isUnlocked = idx === 0 || completedLevels.includes(window.LEVEL_DEFINITIONS[idx - 1].id);
+            // All levels are open and unlocked so players can jump to any challenge
+            const isUnlocked = true;
 
             const card = document.createElement("div");
-            card.className = `level-card ${isUnlocked ? 'unlocked' : 'locked'} ${isCompleted ? 'completed' : ''}`;
+            card.className = `level-card unlocked ${isCompleted ? 'completed' : ''}`;
 
-            if (isUnlocked) {
-                card.addEventListener("click", () => {
-                    this.startLevel(lvl.id);
-                });
-            }
+            card.addEventListener("click", () => {
+                this.startLevel(lvl.id);
+            });
 
             const starCount = isCompleted ? (highscores[lvl.id]?.stars || 3) : 0;
             const starsHTML = isCompleted

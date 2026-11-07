@@ -203,17 +203,19 @@ body {
 
 /* Prominent Hear Word Pill Button */
 .hear-word-btn {
-  min-width: 240px;
-  padding: 0.95rem 2rem;
+  min-width: 190px;
+  padding: 0.85rem 1.5rem;
   font-family: inherit;
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--accent-contrast);
   background-color: var(--accent);
   border: 2px solid transparent;
-  border-radius: 9999px;
+  border-radius: 14px;
   cursor: pointer;
   box-shadow: var(--shadow);
+  flex-shrink: 0;
+  white-space: nowrap;
   transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
@@ -234,7 +236,7 @@ body {
 /* Optional Study Aids (?aids=...) */
 .word-aids {
   width: 100%;
-  max-width: 760px;
+  max-width: 860px;
   background-color: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -253,7 +255,7 @@ body {
 /* Wide Spelling Input Row */
 .input-row {
   width: 100%;
-  max-width: 760px;
+  max-width: 860px;
   display: flex;
   align-items: stretch;
   gap: 0.75rem;
@@ -316,7 +318,7 @@ body {
 /* ================= Inline Feedback & LCS Diff ================= */
 .feedback-area {
   width: 100%;
-  max-width: 760px;
+  max-width: 860px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -647,5 +649,209 @@ body {
 
   .summary-metrics {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Built-in Compact 3-Row QWERTY Keyboard (replaces oversized mobile/tablet OS keyboard) */
+.sb-touch-kb {
+  width: 100%;
+  max-width: 860px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sb-kb-row {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.sb-key {
+  flex: 1;
+  max-width: 76px;
+  height: 46px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--surface-subtle);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  touch-action: manipulation;
+  transition: transform 0.08s ease, background-color 0.1s ease;
+}
+
+.sb-key:hover {
+  border-color: var(--accent);
+}
+
+.sb-key:active,
+.sb-key.pressed {
+  background: var(--primary);
+  color: var(--primary-text);
+  border-color: var(--primary);
+  transform: scale(0.95);
+}
+
+.sb-key.sb-key-wide {
+  flex: 1.65;
+  max-width: 120px;
+  font-size: 0.92rem;
+}
+
+.sb-key.sb-key-enter {
+  background: var(--primary);
+  color: var(--primary-text);
+  border-color: var(--primary);
+}
+
+/* Compact Landscape / Tablet Height Optimization */
+@media (max-height: 650px) {
+  .top-bar {
+    min-height: 44px;
+    padding: 0.3rem 1rem;
+  }
+
+  .brand {
+    font-size: 1.05rem;
+  }
+
+  .tier-btn {
+    padding: 0.28rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .status-readout {
+    font-size: 0.9rem;
+  }
+
+  .theme-toggle {
+    width: 32px;
+    height: 32px;
+    font-size: 0.95rem;
+  }
+
+  .stage-wrapper {
+    padding: 0.5rem 1rem;
+    align-items: flex-start;
+  }
+
+  .stage {
+    gap: 0.55rem;
+    max-width: 920px;
+  }
+
+  .input-row {
+    max-width: 860px;
+    gap: 0.5rem;
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .hear-word-btn {
+    min-width: 145px;
+    padding: 0.55rem 1rem;
+    font-size: 0.98rem;
+    border-radius: 12px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .spell-input {
+    padding: 0.5rem 0.9rem;
+    font-size: 1.25rem;
+    border-radius: 12px;
+    height: 44px;
+  }
+
+  .check-btn {
+    padding: 0 1.25rem;
+    font-size: 1rem;
+    border-radius: 12px;
+    height: 44px;
+  }
+
+  .word-aids {
+    max-width: 860px;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.84rem;
+    gap: 0.2rem;
+    border-radius: 10px;
+  }
+
+  .feedback-area {
+    max-width: 860px;
+    gap: 0.55rem;
+  }
+
+  .feedback-banner {
+    padding: 0.5rem 0.9rem;
+    border-radius: 10px;
+  }
+
+  .feedback-text {
+    font-size: 1.05rem;
+  }
+
+  .next-btn {
+    padding: 0.45rem 1.1rem;
+    font-size: 0.95rem;
+  }
+
+  .diff-container {
+    padding: 0.55rem 0.85rem;
+    gap: 0.4rem;
+    border-radius: 10px;
+  }
+
+  .letter-tile {
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
+  }
+
+  .sb-touch-kb {
+    padding: 8px 10px;
+  }
+
+  .sb-key {
+    height: 42px;
+    max-width: 74px;
+  }
+
+  .summary-stage {
+    padding: 1rem 1.5rem;
+    gap: 0.75rem;
+  }
+
+  .summary-title {
+    font-size: 1.35rem;
+  }
+
+  .summary-metric {
+    padding: 0.6rem;
+  }
+
+  .metric-value {
+    font-size: 1.3rem;
+  }
+
+  .review-list {
+    max-height: 140px;
   }
 }

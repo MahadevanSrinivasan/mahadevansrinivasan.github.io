@@ -35,14 +35,13 @@
   <main class="stage-wrapper">
     <!-- Active Spelling Stage -->
     <section id="practice-stage" class="stage" aria-label="Spelling Practice">
-      <button type="button" id="hear-word-btn" class="hear-word-btn" title="Pronounce word (Alt+P)">
-        🔊 Hear Word
-      </button>
-
       <!-- Hidden by default; enabled only when ?aids=... URL parameter is present -->
       <div id="word-aids" class="word-aids" hidden></div>
 
       <form id="spell-form" class="input-row" autocomplete="off" novalidate>
+        <button type="button" id="hear-word-btn" class="hear-word-btn" title="Pronounce word (Alt+P)">
+          🔊 Hear Word
+        </button>
         <input
           type="text"
           id="spell-input"
@@ -52,7 +51,7 @@
           autocorrect="off"
           autocapitalize="off"
           spellcheck="false"
-          inputmode="text"
+          inputmode="none"
           enterkeyhint="done"
           aria-label="Spell the word"
         />
@@ -76,6 +75,9 @@
           </div>
         </div>
       </div>
+
+      <!-- Built-in 3-Row QWERTY Keyboard (prevents oversized mobile/tablet OS keyboard) -->
+      <div id="sb-touch-kb" class="sb-touch-kb" aria-label="On-screen keyboard"></div>
     </section>
 
     <!-- 10-Word Round Summary -->

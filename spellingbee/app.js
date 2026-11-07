@@ -958,7 +958,8 @@
     reviewEmpty: document.getElementById('review-empty'),
     reviewList: document.getElementById('review-list'),
     practiceMissedBtn: document.getElementById('practice-missed-btn'),
-    nextRoundBtn: document.getElementById('next-round-btn')
+    nextRoundBtn: document.getElementById('next-round-btn'),
+    touchKb: document.getElementById('sb-touch-kb')
   };
 
   // ================= Persistence & URL Params =================
@@ -1371,11 +1372,16 @@
     dom.checkBtn.disabled = false;
     dom.feedbackArea.hidden = true;
     dom.diffContainer.hidden = true;
+    if (dom.touchKb) {
+      dom.touchKb.hidden = false;
+    }
 
     updateTopBar();
     renderWordAids(currentWord, false);
 
-    dom.spellInput.focus();
+    if (!isCoarsePointerDevice()) {
+      dom.spellInput.focus();
+    }
     pronounceWord(currentWord.word);
   }
 
@@ -1386,13 +1392,18 @@
 
     const rawAttempt = dom.spellInput.value.trim();
     if (!rawAttempt) {
-      dom.spellInput.focus();
+      if (!isCoarsePointerDevice()) {
+        dom.spellInput.focus();
+      }
       return;
     }
 
     state.submitted = true;
     dom.spellInput.disabled = true;
     dom.checkBtn.disabled = true;
+    if (dom.touchKb) {
+      dom.touchKb.hidden = true;
+    }
 
     const isCorrect = rawAttempt.toLowerCase() === currentWord.word.toLowerCase();
     dom.feedbackArea.hidden = false;
@@ -1497,8 +1508,91 @@
     dom.nextRoundBtn.focus();
   }
 
+  // ================= Built-in 3-Row QWERTY Touch Keyboard =================
+  function isCoarsePointerDevice() {
+    return Boolean(
+      ('ontouchstart' in window) ||
+      (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
+      (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)
+    );
+  }
+
+  function initTouchKeyboard() {
+    if (!dom.touchKb) return;
+    dom.touchKb.innerHTML = '';
+
+    // Prevent mobile/tablet OS soft keyboard from popping up over the stage
+    if (isCoarsePointerDevice() && dom.spellInput) {
+      dom.spellInput.setAttribute('inputmode', 'none');
+      dom.spellInput.setAttribute('readonly', 'readonly');
+    }
+
+    const rows = [
+      ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+      ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+      ['BACKSPACE', 'z', 'x', 'c', 'v', 'b', 'n', 'm', 'ENTER']
+    ];
+
+    rows.forEach((rowKeys) => {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'sb-kb-row';
+
+      rowKeys.forEach((key) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'sb-key';
+        btn.dataset.key = key;
+
+        if (key === 'BACKSPACE') {
+          btn.classList.add('sb-key-wide');
+          btn.textContent = '⌫ Del';
+          btn.setAttribute('aria-label', 'Backspace');
+        } else if (key === 'ENTER') {
+          btn.classList.add('sb-key-wide', 'sb-key-enter');
+          btn.textContent = '↵ Check';
+          btn.setAttribute('aria-label', 'Submit spelling');
+        } else {
+          btn.textContent = key.toUpperCase();
+        }
+
+        let lastTap = 0;
+        const handleTap = (e) => {
+          e.preventDefault();
+          const now = Date.now();
+          if (now - lastTap < 60) return;
+          lastTap = now;
+
+          btn.classList.add('pressed');
+          setTimeout(() => btn.classList.remove('pressed'), 100);
+
+          if (key === 'BACKSPACE') {
+            if (!state.submitted && !dom.spellInput.disabled) {
+              dom.spellInput.value = dom.spellInput.value.slice(0, -1);
+            }
+          } else if (key === 'ENTER') {
+            if (!state.submitted) {
+              handleSubmission();
+            } else {
+              advanceWord();
+            }
+          } else if (!state.submitted && !dom.spellInput.disabled) {
+            dom.spellInput.value += key;
+          }
+        };
+
+        btn.addEventListener('touchstart', handleTap, { passive: false });
+        btn.addEventListener('mousedown', handleTap);
+        rowEl.appendChild(btn);
+      });
+
+      dom.touchKb.appendChild(rowEl);
+    });
+  }
+
   // ================= Event Listeners =================
   function bindEvents() {
+    initTouchKeyboard();
+
     dom.tierButtons.forEach((btn) => {
       btn.addEventListener('click', () => {
         const newTier = btn.dataset.tier;
@@ -1565,6 +1659,28 @@
       ) {
         e.preventDefault();
         advanceWord();
+        return;
+      }
+
+      // Support physical keyboard typing even when input is readonly or unfocused
+      if (
+        !state.submitted &&
+        !dom.practiceStage.hidden &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        (document.activeElement !== dom.spellInput || dom.spellInput.hasAttribute('readonly'))
+      ) {
+        if (e.key === 'Backspace') {
+          e.preventDefault();
+          dom.spellInput.value = dom.spellInput.value.slice(0, -1);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          handleSubmission();
+        } else if (/^[a-zA-Z]$/.test(e.key)) {
+          e.preventDefault();
+          dom.spellInput.value += e.key.toLowerCase();
+        }
       }
     });
 
