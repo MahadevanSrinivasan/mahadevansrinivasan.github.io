@@ -4,6 +4,8 @@ title: Projects
 permalink: /projects/
 ---
 
+- #### [Super Dirt Bike HD: Motocross & Trials](/super-dirt-bike-hd/) ([GitHub](https://github.com/MahadevanSrinivasan/super-dirt-bike-hd))
+A 1080p 60 FPS dirt bike physics & motocross game combining **Physics Trials & Stunt Obstacle Courses** (2-wheel spring suspension, boulders, logs, wheelies, and 360° backflips/frontflips), **Excitebike-Style 4-Lane Stadium Motocross GP** (turbo boost with engine overheat gauge, cooling arrows, mud pits, and AI rivals), and a live **Custom Track Builder**—playable in the browser with touch/gyroscope tilt controls and natively on RetroPie in 720p HD via SDL2.
 - #### [Super Leo World HD: Dino Island](/super-leo-world-hd/) ([GitHub](https://github.com/MahadevanSrinivasan/super-leo-world-hd))
 A 1080p (1920×1080) 60 FPS high-definition platformer featuring 4 rideable Dino companions inspired by *Super Mario World* — **Emerald Rex** (Chameleon Tongue-Grab & Flutter-Jump hover), **Blaze Rex** (spits 3x giant fireballs), **Sky Rex** (winged multi-flap flight), and **Quake Rex** (seismic shockwave stomp) — plus wall-jumps, ground-pounds, bail-out save jumps, and 8 HD stages.
 - #### [Super Leo Bros.](/super-leo-bros/) ([GitHub](https://github.com/MahadevanSrinivasan/super-leo-bros))
