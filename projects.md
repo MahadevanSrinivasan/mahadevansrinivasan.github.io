@@ -4,8 +4,10 @@ title: Projects
 permalink: /projects/
 ---
 
+- #### [Super Leo World HD: Dino Island](/super-leo-world-hd/) ([GitHub](https://github.com/MahadevanSrinivasan/super-leo-world-hd))
+A 1080p (1920×1080) 60 FPS high-definition platformer featuring 4 rideable Dino companions inspired by *Super Mario World* — **Emerald Rex** (Chameleon Tongue-Grab & Flutter-Jump hover), **Blaze Rex** (spits 3x giant fireballs), **Sky Rex** (winged multi-flap flight), and **Quake Rex** (seismic shockwave stomp) — plus wall-jumps, ground-pounds, bail-out save jumps, and 8 HD stages.
 - #### [Super Leo Bros.](/super-leo-bros/) ([GitHub](https://github.com/MahadevanSrinivasan/super-leo-bros))
-An original classic 2D platformer written in a single C99 file with zero external asset files—compiled natively for Raspberry Pi (RetroPie / SDL 1.2) and to WebAssembly for the browser. Features momentum & skidding physics, 3-tier power-ups (Mushroom, Fire Flower, Starman), kickable shells, an enterable secret coin pipe, checkpoints, and 4 stages culminating in a Lava Castle Boss fight.
+An original classic 2D platformer written in a single C99 file with zero external asset files—compiled natively for Raspberry Pi (RetroPie / SDL 1.2) and to WebAssembly for the browser. Features momentum & skidding physics, 3-tier power-ups (Mushroom, Fire Flower, Starman), kickable shells, an enterable secret coin pipe, checkpoints, and 12 stages across 3 worlds.
 - #### [Spelling Bee](/spellingbee/)
 A minimalist, distraction-free Spelling Bee preparation web app for 3rd–5th graders. Features natural browser pronunciation via the Web Speech API, four difficulty tiers, streak bonuses, 10-word practice rounds with targeted review, and Longest Common Subsequence (LCS) letter-tile diffing to pinpoint exact spelling edits.
 - #### [MathClub](/mathclub/)
