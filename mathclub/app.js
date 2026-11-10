@@ -87,6 +87,14 @@ class MathClubApp {
         };
     }
 
+    isCoarsePointerDevice() {
+        return Boolean(
+            ("ontouchstart" in window) ||
+            (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
+            (window.matchMedia && window.matchMedia("(pointer: coarse)").matches)
+        );
+    }
+
     bindEvents() {
         // Nav menu clicks
         Object.keys(this.navButtons).forEach(viewName => {
@@ -115,8 +123,12 @@ class MathClubApp {
         document.addEventListener("keydown", (e) => this.handleKeyboardInput(e));
         document.addEventListener("keyup", (e) => this.handleKeyboardRelease(e));
         
-        // Mobile hidden input handling
+        // Mobile hidden input handling (suppress OS keyboard on touch devices since built-in virtual keypad is shown)
         if (this.dom.hiddenInput) {
+            if (this.isCoarsePointerDevice()) {
+                this.dom.hiddenInput.setAttribute("inputmode", "none");
+                this.dom.hiddenInput.setAttribute("readonly", "readonly");
+            }
             this.dom.hiddenInput.addEventListener("input", (e) => {
                 if (!this.gameState.isActive) return;
                 const val = this.dom.hiddenInput.value;
@@ -139,9 +151,9 @@ class MathClubApp {
                 }
             });
             
-            // Refocus when clicking game area
+            // Refocus when clicking game area on non-touch devices
             document.querySelector(".game-layout").addEventListener("click", () => {
-                if (this.gameState.isActive) {
+                if (this.gameState.isActive && !this.isCoarsePointerDevice()) {
                     this.dom.hiddenInput.focus();
                 }
             });
@@ -149,9 +161,13 @@ class MathClubApp {
         
         // On-screen keyboard interactions
         document.querySelectorAll(".key-cap").forEach(cap => {
+            let lastTap = 0;
             const handleTouch = (e) => {
                 e.preventDefault();
                 if (!this.gameState.isActive) return;
+                const now = Date.now();
+                if (now - lastTap < 60) return;
+                lastTap = now;
                 
                 const id = cap.id.replace("key-", "");
                 let key = id;
@@ -177,7 +193,9 @@ class MathClubApp {
                 cap.classList.add("active");
                 setTimeout(() => cap.classList.remove("active"), 100);
                 
-                if (this.dom.hiddenInput) this.dom.hiddenInput.focus();
+                if (this.dom.hiddenInput && !this.isCoarsePointerDevice()) {
+                    this.dom.hiddenInput.focus();
+                }
             };
             cap.addEventListener("mousedown", handleTouch);
             cap.addEventListener("touchstart", handleTouch, {passive: false});
@@ -464,9 +482,11 @@ class MathClubApp {
         if (this.dom.hiddenInput) {
             this.dom.hiddenInput.value = "";
             // Small delay to ensure view transition completes before focusing
-            setTimeout(() => {
-                if (this.gameState.isActive) this.dom.hiddenInput.focus();
-            }, 50);
+            if (!this.isCoarsePointerDevice()) {
+                setTimeout(() => {
+                    if (this.gameState.isActive) this.dom.hiddenInput.focus();
+                }, 50);
+            }
         }
 
         // Setup HUD modules according to Mode
