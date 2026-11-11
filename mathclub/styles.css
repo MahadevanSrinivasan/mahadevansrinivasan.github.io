@@ -31,6 +31,10 @@
     padding: 0;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 body {
     background: radial-gradient(circle at 20% 10%, #1e293b 0%, #0f172a 100%);
     color: var(--text-primary);
