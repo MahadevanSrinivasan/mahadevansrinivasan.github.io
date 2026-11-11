@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MathClub - Arithmetic Typing Adventure for Kids</title>
-    <meta name="description" content="A fun, highly interactive typing-style arithmetic practice web app for kids to learn addition, subtraction, multiplication, and division.">
+    <title>MathClub - Mental Math Cards &amp; Tips</title>
+    <meta name="description" content="Age-tailored Mental Math Cards, vertical flashcard practice, voice input, and mental math strategy tips for kids.">
     <link rel="stylesheet" href="styles.css">
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-7BM4FSL4YP"></script>
@@ -17,22 +17,31 @@
 </head>
 <body>
 
-    <!-- Header Navigation -->
-    <header>
-        <div class="logo-section">
-            <div class="logo-icon">±×</div>
+    <!-- Top Header: Brand + Age Profile Switcher + View Tabs -->
+    <header class="top-bar">
+        <div class="logo-section" id="brand-home" title="Back to Mental Math Cards">
+            <div class="logo-icon">🃏</div>
             <div class="logo-text">MathClub</div>
         </div>
-        <nav>
-            <button class="nav-btn active" id="nav-dashboard">🗺 Level Map</button>
-            <button class="nav-btn" id="nav-custom">⚙ Custom Mode</button>
-            <button class="nav-btn" id="nav-stats">📊 Statistics</button>
-        </nav>
+
+        <!-- Primary Age Switcher: Defaulting to Age 4 and Age 8–9 -->
+        <div class="age-switcher" role="group" aria-label="Select Age Profile">
+            <button type="button" class="age-pill" data-age="age4" id="age-btn-age4">👧 Age 4</button>
+            <button type="button" class="age-pill active" data-age="age8_9" id="age-btn-age8_9">👦 Age 8–9</button>
+            <select id="age-more-select" class="age-more-select" aria-label="Other Ages" title="More age modes">
+                <option value="">Other Ages…</option>
+                <option value="age6_7">Age 6–7 (1st–2nd)</option>
+                <option value="age10_plus">Age 10+ (Advanced)</option>
+            </select>
+        </div>
+
         <div class="header-controls">
-            <span style="font-size: 0.9rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.25rem;">
-                🏆 <strong id="user-pts" style="color:var(--warning);">0</strong> pts
+            <button type="button" class="nav-btn active" id="nav-dashboard">🃏 Cards</button>
+            <button type="button" class="nav-btn" id="nav-tips">💡 Tips</button>
+            <span class="pts-pill" title="Total Points">
+                🏆 <strong id="user-pts">0</strong>
             </span>
-            <button class="sound-toggle-btn" id="btn-toggle-sound" title="Toggle Sound">
+            <button type="button" class="sound-toggle-btn" id="btn-toggle-sound" title="Toggle Sound">
                 <span id="sound-icon">🔊</span>
             </button>
         </div>
@@ -40,48 +49,70 @@
 
     <!-- Main Container -->
     <main>
-        
-        <!-- ================= DASHBOARD & MAP ================= -->
+
+        <!-- ================= VIEW 1: MENTAL MATH CARDS MENU ================= -->
         <section id="view-dashboard" class="view-section active">
-            <div class="dashboard-grid">
-                
-                <!-- Main Path and Node Section -->
-                <div>
-                    <div class="glass-panel hero-banner">
-                        <h1 class="hero-title">Master Mental Math <span>Like a Pro!</span></h1>
-                        <p class="hero-desc">Type your answers fast, build epic correct answer combos, and master math levels on your arithmetic quest!</p>
-                        <div class="hero-actions">
-                            <button class="action-btn btn-primary" id="btn-quick-start">🚀 Quick Start (Lvl 1)</button>
-                            <button class="action-btn btn-secondary" id="btn-create-custom">🛠 Custom Playground</button>
-                        </div>
+            <div class="cards-menu-layout">
+
+                <!-- Left Card: Classic "Mental Math Cards" Operation Stack -->
+                <div class="menu-card-paper">
+                    <div class="menu-card-header">
+                        <h1 class="menu-card-title">Mental Math Cards</h1>
+                        <div class="menu-card-subtitle" id="active-age-subtitle">👦 Age 8–9 • Mental Math Cards &amp; Tricks</div>
                     </div>
 
-                    <div class="levels-header">
-                        <h2 class="levels-title">Your Progression Roadmap</h2>
+                    <!-- Mode Toggle: 12-Card Deck vs Timed Challenge -->
+                    <div class="session-mode-bar" role="group" aria-label="Session Mode">
+                        <button type="button" class="mode-chip active" data-mode="deck" id="mode-btn-deck">🃏 <span id="deck-count-label">12</span> Cards</button>
+                        <button type="button" class="mode-chip" data-mode="timed" id="mode-btn-timed">⏱ 1:50 Timed</button>
                     </div>
-                    <div id="levels-map" class="levels-map">
-                        <!-- Dynamic level node cards loaded from JS -->
+
+                    <!-- Primary Operation Buttons (Addition, Subtraction, Multiplication, Division) -->
+                    <div class="deck-buttons-stack" id="primary-decks-list">
+                        <!-- Populated dynamically from AGE_PROFILES -->
+                    </div>
+
+                    <!-- More Cards Toggle + Drawer -->
+                    <button type="button" class="more-cards-btn" id="btn-toggle-more-cards">
+                        ▲ More Cards ▲
+                    </button>
+                    <div class="deck-buttons-stack more-decks-drawer" id="more-decks-list" hidden>
+                        <!-- Populated dynamically from AGE_PROFILES -->
                     </div>
                 </div>
 
-                <!-- Right Side mini stat tracking -->
-                <div class="analytics-preview">
-                    <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap:1rem;">
-                        <h3 style="font-family: var(--font-heading); font-size:1.2rem;">Quick Stats</h3>
-                        
-                        <div class="stat-box-mini">
-                            <span class="stat-box-title">Average Speed</span>
-                            <span class="stat-box-val color-secondary"><span id="dash-ppm">0</span> <span style="font-size:1rem; font-weight: normal;">PPM</span></span>
+                <!-- Right Column: Featured Mental Math Tip + Quick Scoreboard -->
+                <div class="side-info-col">
+                    <div class="tip-spotlight-card" id="spotlight-tip-card">
+                        <div class="tip-spotlight-header">
+                            <span class="tip-badge">💡 Featured Math Tip</span>
+                            <button type="button" class="link-btn" id="btn-see-all-tips">See All Tips →</button>
                         </div>
-                        
-                        <div class="stat-box-mini">
-                            <span class="stat-box-title">Average Accuracy</span>
-                            <span class="stat-box-val color-success" id="dash-accuracy">0%</span>
+                        <h3 class="tip-spotlight-title" id="spotlight-tip-title">Left-to-Right Split (82 × 3)</h3>
+                        <div class="tip-formula-box" id="spotlight-tip-formula">
+                            82 × 3 → (80 × 3) + (2 × 3) = 240 + 6 = 246
                         </div>
-                        
-                        <div class="stat-box-mini">
-                            <span class="stat-box-title">Levels Cleared</span>
-                            <span class="stat-box-val color-primary" id="dash-completed">0/12</span>
+                        <p class="tip-spotlight-body" id="spotlight-tip-body">
+                            In your head, multiply from LEFT to RIGHT! Do the tens first (80 × 3 = 240), then add the ones (2 × 3 = 6).
+                        </p>
+                        <div class="tip-spotlight-actions">
+                            <button type="button" class="btn-try-tip" id="btn-next-tip">↻ Next Tip</button>
+                            <button type="button" class="btn-try-tip primary" id="btn-practice-tip">▶ Practice This Trick</button>
+                        </div>
+                    </div>
+
+                    <div class="mini-scoreboard">
+                        <div class="mini-stat">
+                            <span class="mini-stat-label">Cards Solved</span>
+                            <strong class="mini-stat-val" id="dash-completed">0</strong>
+                        </div>
+                        <div class="mini-stat">
+                            <span class="mini-stat-label">Accuracy</span>
+                            <strong class="mini-stat-val color-success" id="dash-accuracy">100%</strong>
+                        </div>
+                        <div class="mini-stat">
+                            <span class="mini-stat-label">Best Streak</span>
+                            <strong class="mini-stat-val color-warning" id="dash-ppm">0 🔥</strong>
                         </div>
                     </div>
                 </div>
@@ -89,268 +120,137 @@
             </div>
         </section>
 
-
-        <!-- ================= GAMEPLAY / TYPING BOX ================= -->
+        <!-- ================= VIEW 2: STACKED FLASHCARD + 3x4 KEYPAD ================= -->
         <section id="view-play" class="view-section">
-            <div class="glass-panel game-layout">
-                
-                <!-- HUD Bar -->
-                <div class="game-control-header">
-                    <div class="game-info-block">
-                        <div class="info-stat">
-                            <span class="info-label">Active Goal</span>
-                            <span class="info-val" id="game-title" style="font-size: 1.25rem;">Level 1</span>
-                        </div>
-                        <div class="info-stat">
-                            <span class="info-label">Time Remaining</span>
-                            <span class="info-val color-secondary" id="game-time">--</span>
-                        </div>
-                        <div class="info-stat" id="game-lives-sec" style="display:none;">
-                            <span class="info-label">Shield / Hearts</span>
-                            <div class="lives-container" id="lives-container">
-                                <!-- ❤ ❤ ❤ -->
-                            </div>
-                        </div>
-                    </div>
+            <div class="flashcard-stage-grid">
 
-                    <div class="game-info-block">
-                        <div class="info-stat">
-                            <span class="info-label">Speed</span>
-                            <span class="info-val color-primary"><span id="game-ppm">0</span> <span style="font-size:0.9rem;">PPM</span></span>
-                        </div>
-                        <div class="info-stat">
-                            <span class="info-label">Score</span>
-                            <span class="info-val color-success" id="game-score">0</span>
-                        </div>
-                    </div>
-
-                    <button class="btn-quit" id="btn-quit-game">🏳 Quit Match</button>
-                </div>
-
-                <!-- Equation Area -->
-                <div class="equation-container">
+                <!-- Left: Stacked Vertical Flashcard (Inspired by Mental Math Cards) -->
+                <div class="flashcard-paper" id="flashcard-paper">
                     <canvas id="fx-canvas" class="fx-canvas"></canvas>
-                    
-                    <!-- Combo Badge Flyout -->
-                    <div class="combo-badge" id="combo-badge">
-                        <span>🔥 Combo</span>
-                        <strong id="combo-multiplier">x5</strong>
-                    </div>
 
-                    <div class="equation-box">
-                        <span id="equation-text">8 + 5 =</span>
-                        <div class="typing-value-carrier" id="input-carrier">
-                            <span class="typing-value-input" id="typing-input"></span>
-                            <span class="typing-cursor"></span>
-                            <input type="text" inputmode="numeric" id="hidden-mobile-input" style="position: absolute; opacity: 0; width: 1px; height: 1px; top: 0; left: 0; border: none; padding: 0; z-index: -1;" autocomplete="off" />
+                    <!-- Big Translucent Green Checkmark Overlay -->
+                    <div class="big-check-overlay" id="card-check-overlay" aria-hidden="true">✓</div>
+
+                    <!-- Top Bar Inside Flashcard -->
+                    <div class="flashcard-top-row">
+                        <button type="button" class="card-back-btn" id="btn-quit-game" title="Back to Card Decks">&lt; Cards</button>
+                        <div class="right-wrong-pill">
+                            <span class="rw-right">RIGHT: <strong id="stat-right">0</strong></span>
+                            <span class="rw-sep">|</span>
+                            <span class="rw-wrong">WRONG: <strong id="stat-wrong">0</strong></span>
                         </div>
                     </div>
-                    <span style="font-size: 0.85rem; color: var(--text-secondary);">Type numbers and press <strong style="color:var(--text-primary);">[Enter]</strong> or <strong style="color:var(--text-primary);">[Space]</strong> to submit!</span>
+
+                    <div class="flashcard-sub-row">
+                        <span class="card-meta-text">Score: <strong id="game-score">0</strong></span>
+                        <span class="card-deck-tag" id="game-title">Addition (+)</span>
+                        <span class="card-meta-text" id="game-time">Q: 1/12</span>
+                    </div>
+
+                    <!-- Visual Emoji Helper (Shown in Age 4 Mode!) -->
+                    <div class="visual-helper-box" id="visual-helper-box" hidden></div>
+
+                    <!-- Stacked Vertical Equation (Right-Aligned like Mental Math Cards) -->
+                    <div class="stacked-equation-wrap">
+                        <div class="stacked-equation" id="equation-text">
+                            <div class="stack-row stack-top" id="stack-top">82</div>
+                            <div class="stack-row stack-bottom">
+                                <span class="stack-op" id="stack-op">×</span>
+                                <span class="stack-num" id="stack-bottom">3</span>
+                            </div>
+                            <div class="stack-divider"></div>
+                            <div class="stack-row stack-answer" id="input-carrier">
+                                <span class="typing-value-input" id="typing-input">?</span>
+                                <input type="text" inputmode="none" readonly="readonly" id="hidden-mobile-input" style="position: absolute; opacity: 0; width: 1px; height: 1px; top: 0; left: 0; border: none; padding: 0; z-index: -1;" autocomplete="off" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feedback / Hint Line + Voice Mode ("I'm listening...") -->
+                    <div class="flashcard-footer">
+                        <div class="card-hint-banner" id="card-hint-banner" hidden></div>
+                        <button type="button" class="voice-listen-btn" id="btn-voice-listen" title="Say the answer out loud">
+                            <span id="voice-status-text">🎤 Tap to Speak Answer</span>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Virtual On-screen Keyboard -->
-                <div class="keyboard-section">
-                    <div class="keyboard-title">On-Screen Key Guide</div>
-                    <div class="keyboard-grid">
-                        <div class="k-row">
-                            <div class="key-cap" id="key-1">1</div>
-                            <div class="key-cap" id="key-2">2</div>
-                            <div class="key-cap" id="key-3">3</div>
-                            <div class="key-cap" id="key-4">4</div>
-                            <div class="key-cap" id="key-5">5</div>
-                            <div class="key-cap" id="key-6">6</div>
-                            <div class="key-cap" id="key-7">7</div>
-                            <div class="key-cap" id="key-8">8</div>
-                            <div class="key-cap" id="key-9">9</div>
-                            <div class="key-cap" id="key-0">0</div>
-                            <div class="key-cap" id="key--">-</div>
-                        </div>
-                        <div class="k-row">
-                            <div class="key-cap wide" id="key-backspace">⌫ Delete</div>
-                            <div class="key-cap wide" id="key-enter">↵ Enter</div>
-                        </div>
+                <!-- Right: 3x4 Calculator Keypad (1-9, Clear, 0, Enter) -->
+                <div class="calc-pad-panel">
+                    <div class="calc-pad-header">
+                        <span id="calc-pad-label">Tap Answer or Use Keyboard</span>
+                        <span class="combo-pill" id="combo-badge" style="display:none;">🔥 <strong id="combo-multiplier">x2</strong></span>
+                    </div>
+
+                    <div class="calc-grid" id="virtual-keyboard">
+                        <button type="button" class="key-cap" id="key-1" data-key="1">1</button>
+                        <button type="button" class="key-cap" id="key-2" data-key="2">2</button>
+                        <button type="button" class="key-cap" id="key-3" data-key="3">3</button>
+
+                        <button type="button" class="key-cap" id="key-4" data-key="4">4</button>
+                        <button type="button" class="key-cap" id="key-5" data-key="5">5</button>
+                        <button type="button" class="key-cap" id="key-6" data-key="6">6</button>
+
+                        <button type="button" class="key-cap" id="key-7" data-key="7">7</button>
+                        <button type="button" class="key-cap" id="key-8" data-key="8">8</button>
+                        <button type="button" class="key-cap" id="key-9" data-key="9">9</button>
+
+                        <button type="button" class="key-cap key-clear" id="key-backspace" data-key="Clear">Clear</button>
+                        <button type="button" class="key-cap" id="key-0" data-key="0">0</button>
+                        <button type="button" class="key-cap key-enter" id="key-enter" data-key="Enter">Enter</button>
                     </div>
                 </div>
 
             </div>
         </section>
 
-
-        <!-- ================= CUSTOM MATCH BUILDER ================= -->
-        <section id="view-custom" class="view-section">
-            <div class="glass-panel">
-                <h2 class="custom-title-sec">Custom Match Playground</h2>
-                <p style="color: var(--text-secondary); margin-bottom: 2rem;">Design your own customized typing arithmetic session to tackle specific math categories!</p>
-                
-                <div class="custom-builder">
-                    
-                    <div class="custom-form">
-                        <!-- Operations selection -->
-                        <div class="form-group">
-                            <label>1. Select Operation Categories</label>
-                            <div class="operations-selector">
-                                <div class="checkbox-card selected">
-                                    <input type="checkbox" id="chk-add" value="add" checked>
-                                    <span>Addition (+)</span>
-                                </div>
-                                <div class="checkbox-card selected">
-                                    <input type="checkbox" id="chk-sub" value="sub" checked>
-                                    <span>Subtraction (-)</span>
-                                </div>
-                                <div class="checkbox-card">
-                                    <input type="checkbox" id="chk-mul" value="mul">
-                                    <span>Multiplication (×)</span>
-                                </div>
-                                <div class="checkbox-card">
-                                    <input type="checkbox" id="chk-div" value="div">
-                                    <span>Division (÷)</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Difficulty select -->
-                        <div class="form-group">
-                            <label for="custom-difficulty">2. Difficulty Tier</label>
-                            <select id="custom-difficulty" class="action-btn btn-secondary" style="width: 100%; text-align: left; background: rgba(255,255,255,0.03); outline: none; border-color: var(--border-glass);">
-                                <option value="easy" style="background:#13152c;">Easy (Single Digits)</option>
-                                <option value="medium" style="background:#13152c;" selected>Medium (Double Digits)</option>
-                                <option value="hard" style="background:#13152c;">Hard (Large Numbers & Carrying)</option>
-                            </select>
-                        </div>
+        <!-- ================= VIEW 3: MENTAL MATH TIPS & TRICKS ================= -->
+        <section id="view-tips" class="view-section">
+            <div class="tips-container">
+                <div class="tips-header-row">
+                    <div>
+                        <h2 class="tips-main-title" id="tips-view-title">💡 Mental Math Tips &amp; Tricks</h2>
+                        <p class="tips-main-sub" id="tips-view-sub">Clever shortcuts to solve problems in your head!</p>
                     </div>
-
-                    <div class="custom-form">
-                        <!-- Playmode select -->
-                        <div class="form-group">
-                            <label>3. Select Match Rules</label>
-                            <div class="gamemode-toggle">
-                                <div class="gamemode-card selected" data-mode="time_attack">
-                                    <span class="gamemode-title">⏰ Time Attack</span>
-                                    <span class="gamemode-desc">Answer as many as you can before time expires</span>
-                                </div>
-                                <div class="gamemode-card" data-mode="survival">
-                                    <span class="gamemode-title">🛡 Survival</span>
-                                    <span class="gamemode-desc">3 Hearts. Math hits harder. One mistake drops lives</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Time limit select -->
-                        <div class="form-group" id="custom-time-group">
-                            <div style="display:flex; justify-content:space-between;">
-                                <label for="custom-time-slider">4. Session Duration Limit</label>
-                                <span class="slider-val" id="custom-time-val">60s</span>
-                            </div>
-                            <input type="range" id="custom-time-slider" class="input-slider" min="30" max="180" step="15" value="60">
-                        </div>
-
-                        <button class="action-btn btn-primary" id="btn-run-custom" style="margin-top: 1rem; width: 100%;">⚡ Launch Custom Session</button>
-                    </div>
-
-                </div>
-            </div>
-        </section>
-
-
-        <!-- ================= DETAILED STATISTICS ================= -->
-        <section id="view-stats" class="view-section">
-            <div class="glass-panel">
-                <div class="stats-header-bar">
-                    <h2 class="custom-title-sec" style="margin-bottom:0;">Performance Dashboard</h2>
-                    <button class="btn-quit" id="btn-clear-stats" style="background:rgba(255,23,68,0.05);">🧹 Wipe Logs</button>
+                    <button type="button" class="btn-try-tip primary" id="btn-back-to-cards">🃏 Back to Cards</button>
                 </div>
 
-                <div id="stats-empty" class="empty-state" style="display:none;">
-                    <p>No statistics yet! Complete your first level or custom game to display analytical progress charts.</p>
+                <div class="tips-grid" id="tips-cards-grid">
+                    <!-- Populated dynamically for the selected Age Profile -->
                 </div>
-
-                <div id="stats-main-content">
-                    <div class="stats-grid">
-                        
-                        <!-- Speed PPM Progress Chart -->
-                        <div class="chart-wrapper">
-                            <h3 class="chart-title">Speed Improvement Curve (Last 15 Games)</h3>
-                            <div class="chart-canvas-container">
-                                <svg id="speed-chart" class="chart-svg" viewBox="0 0 450 240">
-                                    <!-- Drawn via JS -->
-                                </svg>
-                            </div>
-                        </div>
-
-                        <!-- Accuracy Analysis Chart -->
-                        <div class="chart-wrapper">
-                            <h3 class="chart-title">Breakdown: Accuracy by Operation Type</h3>
-                            <div class="chart-canvas-container">
-                                <svg id="accuracy-chart" class="chart-svg" viewBox="0 0 450 240">
-                                    <!-- Drawn via JS -->
-                                </svg>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <!-- History Table Log -->
-                    <div class="history-section">
-                        <h3 class="chart-title">Recent Session Logs</h3>
-                        <div class="table-wrapper">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Date & Time</th>
-                                        <th>Session / Level</th>
-                                        <th>Game Rules</th>
-                                        <th>Final Score</th>
-                                        <th>WPM / PPM</th>
-                                        <th>Acc. Ratio</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="stats-table-body">
-                                    <!-- Loaded dynamic rows -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Floating Tooltip to handle chart details -->
-                <div class="chart-tooltip" id="chart-tooltip"></div>
             </div>
         </section>
 
     </main>
 
-    <!-- Overlay results Modal -->
+    <!-- Round Complete Modal -->
     <div class="results-modal" id="results-modal">
         <div class="modal-content">
-            <h2 class="modal-header" id="modal-title">Level Cleared!</h2>
-            
-            <div class="modal-stars" id="modal-stars">
-                ★ ★ ★
-            </div>
+            <h2 class="modal-header" id="modal-title">Deck Complete! 🎉</h2>
+            <div class="modal-stars" id="modal-stars">★ ★ ★</div>
 
             <div class="modal-grid">
                 <div class="modal-stat-box">
-                    <span class="modal-stat-lb">Keystroke Speed</span>
-                    <div class="modal-stat-num"><span id="modal-ppm">0</span> <span style="font-size:0.85rem; font-weight:normal;">PPM</span></div>
+                    <span class="modal-stat-lb">Right / Wrong</span>
+                    <div class="modal-stat-num" id="modal-ppm">12 / 0</div>
                 </div>
                 <div class="modal-stat-box">
                     <span class="modal-stat-lb">Accuracy</span>
-                    <div class="modal-stat-num color-success" id="modal-accuracy">0%</div>
+                    <div class="modal-stat-num color-success" id="modal-accuracy">100%</div>
                 </div>
                 <div class="modal-stat-box">
-                    <span class="modal-stat-lb">Total Score</span>
-                    <div class="modal-stat-num color-primary" id="modal-score">0</div>
+                    <span class="modal-stat-lb">Score</span>
+                    <div class="modal-stat-num color-primary" id="modal-score">120</div>
                 </div>
             </div>
 
             <div class="modal-actions">
-                <button class="action-btn btn-secondary" id="btn-close-modal">🏠 Exit to Map</button>
-                <button class="action-btn btn-primary" id="btn-retry-level">🔄 Practice Again</button>
+                <button type="button" class="action-btn btn-secondary" id="btn-close-modal">🃏 Pick Another Deck</button>
+                <button type="button" class="action-btn btn-primary" id="btn-retry-level">🔄 Play Again</button>
             </div>
         </div>
     </div>
 
-    <!-- Scripts Injection -->
     <script src="levels.js"></script>
     <script src="audio.js"></script>
     <script src="app.js"></script>

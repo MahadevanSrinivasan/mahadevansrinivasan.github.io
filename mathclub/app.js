@@ -1,90 +1,67 @@
-// app.js - Core logic for MathClub typing application
+// app.js - MathClub: Simplified Age-Based Mental Math Cards & Tips
+
+const SPOKEN_NUMBER_WORDS = {
+    zero: 0, one: 1, won: 1, two: 2, to: 2, too: 2, three: 3, four: 4, for: 4,
+    five: 5, six: 6, seven: 7, eight: 8, ate: 8, nine: 9, ten: 10,
+    eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15,
+    sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20,
+    thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90
+};
+
+function parseSpokenNumber(transcript) {
+    if (!transcript) return null;
+    const cleaned = transcript.toLowerCase().trim();
+    const digitMatch = cleaned.match(/-?\d+/);
+    if (digitMatch) {
+        return parseInt(digitMatch[0], 10);
+    }
+    const tokens = cleaned.replace(/[^a-z\s-]/g, "").split(/[\s-]+/).filter(Boolean);
+    let total = 0;
+    let matched = false;
+    for (const tok of tokens) {
+        if (Object.prototype.hasOwnProperty.call(SPOKEN_NUMBER_WORDS, tok)) {
+            total += SPOKEN_NUMBER_WORDS[tok];
+            matched = true;
+        }
+    }
+    return matched ? total : null;
+}
 
 class MathClubApp {
     constructor() {
         this.activeView = "dashboard";
+        this.activeAgeId = localStorage.getItem("mathclub_age_profile") || "age8_9";
+        if (!window.AGE_PROFILES[this.activeAgeId]) {
+            this.activeAgeId = "age8_9";
+        }
+        this.sessionMode = window.AGE_PROFILES[this.activeAgeId].defaultMode || "deck";
+        this.tipIndex = 0;
 
-        // Game State variables
         this.gameState = {
-            activeLevel: null,
-            gameMode: "level", // "level", "time_attack", "survival"
+            activeDeck: null,
             currentProblem: null,
             typedAnswer: "",
             score: 0,
-            correctCount: 0,
-            totalCount: 0,
+            rightCount: 0,
+            wrongCount: 0,
+            questionIndex: 1,
+            deckSize: 12,
             combo: 0,
             maxCombo: 0,
-            lives: 3,
             timer: null,
             secondsLeft: 0,
-            problemTimer: null,
-            problemSecondsLeft: 0,
-            startTime: 0,
-            isActive: false
+            isActive: false,
+            isTransitioning: false
         };
 
-        // UI Binding and setup
+        this.recognition = null;
+        this.isListening = false;
+
         this.initDOM();
         this.loadStats();
         this.bindEvents();
-        this.initCanvas();
-        this.renderLevelsMap();
+        this.renderAgeProfile();
         this.updateDashboardStats();
-    }
-
-    initDOM() {
-        this.views = {
-            dashboard: document.getElementById("view-dashboard"),
-            play: document.getElementById("view-play"),
-            stats: document.getElementById("view-stats"),
-            custom: document.getElementById("view-custom")
-        };
-
-        this.navButtons = {
-            dashboard: document.getElementById("nav-dashboard"),
-            custom: document.getElementById("nav-custom"),
-            stats: document.getElementById("nav-stats")
-        };
-
-        // Text & Displays
-        this.dom = {
-            userLevelPoints: document.getElementById("user-pts"),
-            headerSoundIcon: document.getElementById("sound-icon"),
-            levelsMap: document.getElementById("levels-map"),
-            equationText: document.getElementById("equation-text"),
-            typingInput: document.getElementById("typing-input"),
-            comboBadge: document.getElementById("combo-badge"),
-            comboMultiplier: document.getElementById("combo-multiplier"),
-
-            // Header stats during game
-            gameTitle: document.getElementById("game-title"),
-            gameTime: document.getElementById("game-time"),
-            gameScore: document.getElementById("game-score"),
-            gamePPM: document.getElementById("game-ppm"),
-            gameLivesContainer: document.getElementById("lives-container"),
-            gameLivesSection: document.getElementById("game-lives-sec"),
-
-            // Results Modal
-            resultsModal: document.getElementById("results-modal"),
-            modalTitle: document.getElementById("modal-title"),
-            modalStars: document.getElementById("modal-stars"),
-            modalPPM: document.getElementById("modal-ppm"),
-            modalAccuracy: document.getElementById("modal-accuracy"),
-            modalScore: document.getElementById("modal-score"),
-
-            // Dashboard quick metrics
-            dashPPM: document.getElementById("dash-ppm"),
-            dashAccuracy: document.getElementById("dash-accuracy"),
-            dashCompleted: document.getElementById("dash-completed"),
-
-            // Custom game settings inputs
-            customMixedOp: document.getElementById("custom-mixed"),
-            customTimeSlider: document.getElementById("custom-time-slider"),
-            customTimeVal: document.getElementById("custom-time-val"),
-            customDiff: document.getElementById("custom-difficulty"),
-            hiddenInput: document.getElementById("hidden-mobile-input")
-        };
     }
 
     isCoarsePointerDevice() {
@@ -95,126 +72,214 @@ class MathClubApp {
         );
     }
 
+    initDOM() {
+        this.views = {
+            dashboard: document.getElementById("view-dashboard"),
+            play: document.getElementById("view-play"),
+            tips: document.getElementById("view-tips")
+        };
+
+        this.dom = {
+            brandHome: document.getElementById("brand-home"),
+            navDashboard: document.getElementById("nav-dashboard"),
+            navTips: document.getElementById("nav-tips"),
+            ageBtn4: document.getElementById("age-btn-age4"),
+            ageBtn89: document.getElementById("age-btn-age8_9"),
+            ageMoreSelect: document.getElementById("age-more-select"),
+            activeAgeSubtitle: document.getElementById("active-age-subtitle"),
+
+            modeBtnDeck: document.getElementById("mode-btn-deck"),
+            modeBtnTimed: document.getElementById("mode-btn-timed"),
+            deckCountLabel: document.getElementById("deck-count-label"),
+
+            primaryDecksList: document.getElementById("primary-decks-list"),
+            moreDecksList: document.getElementById("more-decks-list"),
+            btnToggleMoreCards: document.getElementById("btn-toggle-more-cards"),
+
+            spotlightTipTitle: document.getElementById("spotlight-tip-title"),
+            spotlightTipFormula: document.getElementById("spotlight-tip-formula"),
+            spotlightTipBody: document.getElementById("spotlight-tip-body"),
+            btnNextTip: document.getElementById("btn-next-tip"),
+            btnPracticeTip: document.getElementById("btn-practice-tip"),
+            btnSeeAllTips: document.getElementById("btn-see-all-tips"),
+            btnBackToCards: document.getElementById("btn-back-to-cards"),
+            tipsCardsGrid: document.getElementById("tips-cards-grid"),
+            tipsViewTitle: document.getElementById("tips-view-title"),
+            tipsViewSub: document.getElementById("tips-view-sub"),
+
+            userLevelPoints: document.getElementById("user-pts"),
+            headerSoundIcon: document.getElementById("sound-icon"),
+            dashCompleted: document.getElementById("dash-completed"),
+            dashAccuracy: document.getElementById("dash-accuracy"),
+            dashPPM: document.getElementById("dash-ppm"),
+
+            flashcardPaper: document.getElementById("flashcard-paper"),
+            cardCheckOverlay: document.getElementById("card-check-overlay"),
+            statRight: document.getElementById("stat-right"),
+            statWrong: document.getElementById("stat-wrong"),
+            gameScore: document.getElementById("game-score"),
+            gameTitle: document.getElementById("game-title"),
+            gameTime: document.getElementById("game-time"),
+            visualHelperBox: document.getElementById("visual-helper-box"),
+            stackTop: document.getElementById("stack-top"),
+            stackOp: document.getElementById("stack-op"),
+            stackBottom: document.getElementById("stack-bottom"),
+            typingInput: document.getElementById("typing-input"),
+            hiddenInput: document.getElementById("hidden-mobile-input"),
+            cardHintBanner: document.getElementById("card-hint-banner"),
+            btnVoiceListen: document.getElementById("btn-voice-listen"),
+            voiceStatusText: document.getElementById("voice-status-text"),
+
+            comboBadge: document.getElementById("combo-badge"),
+            comboMultiplier: document.getElementById("combo-multiplier"),
+
+            resultsModal: document.getElementById("results-modal"),
+            modalTitle: document.getElementById("modal-title"),
+            modalStars: document.getElementById("modal-stars"),
+            modalPPM: document.getElementById("modal-ppm"),
+            modalAccuracy: document.getElementById("modal-accuracy"),
+            modalScore: document.getElementById("modal-score")
+        };
+    }
+
     bindEvents() {
-        // Nav menu clicks
-        Object.keys(this.navButtons).forEach(viewName => {
-            this.navButtons[viewName].addEventListener("click", () => this.switchView(viewName));
-        });
+        if (this.dom.brandHome) {
+            this.dom.brandHome.addEventListener("click", () => this.switchView("dashboard"));
+        }
+        if (this.dom.navDashboard) {
+            this.dom.navDashboard.addEventListener("click", () => this.switchView("dashboard"));
+        }
+        if (this.dom.navTips) {
+            this.dom.navTips.addEventListener("click", () => this.switchView("tips"));
+        }
+        if (this.dom.btnSeeAllTips) {
+            this.dom.btnSeeAllTips.addEventListener("click", () => this.switchView("tips"));
+        }
+        if (this.dom.btnBackToCards) {
+            this.dom.btnBackToCards.addEventListener("click", () => this.switchView("dashboard"));
+        }
 
-        // Quick Starts
-        document.getElementById("btn-quick-start").addEventListener("click", () => {
-            // Start Level 1
-            this.startLevel(1);
-        });
-        document.getElementById("btn-create-custom").addEventListener("click", () => {
-            this.switchView("custom");
-        });
-
-        // Custom Mode adjustments
-        this.dom.customTimeSlider.addEventListener("input", (e) => {
-            this.dom.customTimeVal.textContent = e.target.value + "s";
-        });
-
-        document.getElementById("btn-run-custom").addEventListener("click", () => {
-            this.startCustomGame();
-        });
-
-        // Keyboard capturing
-        document.addEventListener("keydown", (e) => this.handleKeyboardInput(e));
-        document.addEventListener("keyup", (e) => this.handleKeyboardRelease(e));
-        
-        // Mobile hidden input handling (suppress OS keyboard on touch devices since built-in virtual keypad is shown)
-        if (this.dom.hiddenInput) {
-            if (this.isCoarsePointerDevice()) {
-                this.dom.hiddenInput.setAttribute("inputmode", "none");
-                this.dom.hiddenInput.setAttribute("readonly", "readonly");
-            }
-            this.dom.hiddenInput.addEventListener("input", (e) => {
-                if (!this.gameState.isActive) return;
-                const val = this.dom.hiddenInput.value;
-                let newTyped = "";
-                for (let char of val) {
-                    if ((char >= "0" && char <= "9") || char === "-") {
-                        newTyped += char;
-                    }
-                }
-                
-                if (newTyped !== this.gameState.typedAnswer) {
-                    window.audioManager.playTick();
-                    this.gameState.typedAnswer = newTyped;
-                    this.dom.typingInput.textContent = this.gameState.typedAnswer;
-                }
-                
-                if (val.includes(" ")) {
-                    this.submitAnswer();
-                    this.dom.hiddenInput.value = this.gameState.typedAnswer;
-                }
+        // Age Switcher (Age 4 & Age 8–9 primary pills + Other Ages dropdown)
+        [this.dom.ageBtn4, this.dom.ageBtn89].forEach(btn => {
+            if (!btn) return;
+            btn.addEventListener("click", () => {
+                this.setAgeProfile(btn.dataset.age);
             });
-            
-            // Refocus when clicking game area on non-touch devices
-            document.querySelector(".game-layout").addEventListener("click", () => {
-                if (this.gameState.isActive && !this.isCoarsePointerDevice()) {
-                    this.dom.hiddenInput.focus();
+        });
+
+        if (this.dom.ageMoreSelect) {
+            this.dom.ageMoreSelect.addEventListener("change", (e) => {
+                if (e.target.value) {
+                    this.setAgeProfile(e.target.value);
                 }
             });
         }
-        
-        // On-screen keyboard interactions
-        document.querySelectorAll(".key-cap").forEach(cap => {
-            let lastTap = 0;
-            const handleTouch = (e) => {
-                e.preventDefault();
-                if (!this.gameState.isActive) return;
-                const now = Date.now();
-                if (now - lastTap < 60) return;
-                lastTap = now;
-                
-                const id = cap.id.replace("key-", "");
-                let key = id;
-                if (id === "backspace") key = "Backspace";
-                if (id === "enter") key = "Enter";
-                
-                if (key === "Backspace") {
-                    window.audioManager.playTick();
-                    this.gameState.typedAnswer = this.gameState.typedAnswer.slice(0, -1);
-                    this.dom.typingInput.textContent = this.gameState.typedAnswer;
-                    if (this.dom.hiddenInput) this.dom.hiddenInput.value = this.gameState.typedAnswer;
-                } else if (key === "Enter") {
-                    this.submitAnswer();
-                } else {
-                    if (key >= "0" && key <= "9" || (key === "-" && this.gameState.typedAnswer.length === 0)) {
-                        window.audioManager.playTick();
-                        this.gameState.typedAnswer += key;
-                        this.dom.typingInput.textContent = this.gameState.typedAnswer;
-                        if (this.dom.hiddenInput) this.dom.hiddenInput.value = this.gameState.typedAnswer;
-                    }
-                }
-                
-                cap.classList.add("active");
-                setTimeout(() => cap.classList.remove("active"), 100);
-                
-                if (this.dom.hiddenInput && !this.isCoarsePointerDevice()) {
-                    this.dom.hiddenInput.focus();
-                }
-            };
-            cap.addEventListener("mousedown", handleTouch);
-            cap.addEventListener("touchstart", handleTouch, {passive: false});
+
+        // Session Mode Toggle (Deck vs Timed)
+        [this.dom.modeBtnDeck, this.dom.modeBtnTimed].forEach(btn => {
+            if (!btn) return;
+            btn.addEventListener("click", () => {
+                this.sessionMode = btn.dataset.mode;
+                this.updateModeButtonsUI();
+            });
         });
 
-        // Buttons in Play
-        document.getElementById("btn-quit-game").addEventListener("click", () => this.quitGame());
+        // More Cards Drawer Toggle
+        if (this.dom.btnToggleMoreCards) {
+            this.dom.btnToggleMoreCards.addEventListener("click", () => {
+                const isHidden = this.dom.moreDecksList.hidden;
+                this.dom.moreDecksList.hidden = !isHidden;
+                this.dom.btnToggleMoreCards.textContent = isHidden ? "▼ Hide Extra Cards ▼" : "▲ More Cards ▲";
+            });
+        }
 
-        // Buttons in results modal
+        // Featured Tip Rotation & Practice
+        if (this.dom.btnNextTip) {
+            this.dom.btnNextTip.addEventListener("click", () => {
+                const profile = this.getActiveProfile();
+                const tips = profile.tips || [];
+                if (tips.length > 0) {
+                    this.tipIndex = (this.tipIndex + 1) % tips.length;
+                    this.renderSpotlightTip();
+                }
+            });
+        }
+
+        if (this.dom.btnPracticeTip) {
+            this.dom.btnPracticeTip.addEventListener("click", () => {
+                const profile = this.getActiveProfile();
+                const tip = (profile.tips || [])[this.tipIndex];
+                if (tip && tip.practiceDeckId) {
+                    this.startDeckById(tip.practiceDeckId);
+                } else if (profile.primaryDecks.length > 0) {
+                    this.startDeck(profile.primaryDecks[0]);
+                }
+            });
+        }
+
+        // Physical Keyboard Support
+        document.addEventListener("keydown", (e) => this.handleKeyboardInput(e));
+        document.addEventListener("keyup", (e) => this.handleKeyboardRelease(e));
+
+        // Suppress Android OS soft keyboard on touch devices
+        if (this.dom.hiddenInput) {
+            this.dom.hiddenInput.setAttribute("inputmode", "none");
+            this.dom.hiddenInput.setAttribute("readonly", "readonly");
+        }
+
+        // 3x4 On-Screen Calculator Pad
+        document.querySelectorAll(".key-cap").forEach(cap => {
+            let lastTap = 0;
+            const handleTap = (e) => {
+                e.preventDefault();
+                if (!this.gameState.isActive || this.gameState.isTransitioning) return;
+                const now = Date.now();
+                if (now - lastTap < 55) return;
+                lastTap = now;
+
+                const key = cap.dataset.key;
+                if (key === "Clear") {
+                    window.audioManager.playTick();
+                    this.gameState.typedAnswer = "";
+                    this.updateTypedDisplay();
+                } else if (key === "Enter") {
+                    this.submitAnswer();
+                } else if (key >= "0" && key <= "9") {
+                    if (this.gameState.typedAnswer.length < 5) {
+                        window.audioManager.playTick();
+                        this.gameState.typedAnswer += key;
+                        this.updateTypedDisplay();
+                    }
+                }
+
+                cap.classList.add("active");
+                setTimeout(() => cap.classList.remove("active"), 100);
+            };
+            cap.addEventListener("touchstart", handleTap, { passive: false });
+            cap.addEventListener("mousedown", handleTap);
+        });
+
+        // Quit / Back to Cards
+        const quitBtn = document.getElementById("btn-quit-game");
+        if (quitBtn) {
+            quitBtn.addEventListener("click", () => {
+                this.stopGameTimers();
+                this.stopVoiceListening();
+                this.gameState.isActive = false;
+                this.switchView("dashboard");
+            });
+        }
+
+        // Results Modal Actions
         document.getElementById("btn-close-modal").addEventListener("click", () => {
             this.dom.resultsModal.classList.remove("active");
             this.switchView("dashboard");
         });
+
         document.getElementById("btn-retry-level").addEventListener("click", () => {
             this.dom.resultsModal.classList.remove("active");
-            if (this.gameState.activeLevel) {
-                this.startLevel(this.gameState.activeLevel.id);
-            } else {
-                this.startCustomGame();
+            if (this.gameState.activeDeck) {
+                this.startDeck(this.gameState.activeDeck);
             }
         });
 
@@ -226,892 +291,544 @@ class MathClubApp {
         });
         this.updateSoundToggleUI();
 
-        // Custom Mode ops card selections
-        document.querySelectorAll(".checkbox-card").forEach(card => {
-            card.addEventListener("click", (e) => {
-                const chk = card.querySelector("input[type='checkbox']");
-                if (e.target !== chk) {
-                    chk.checked = !chk.checked;
-                }
-                card.classList.toggle("selected", chk.checked);
-            });
-        });
+        // Voice Answer Button ("I'm listening...")
+        if (this.dom.btnVoiceListen) {
+            this.dom.btnVoiceListen.addEventListener("click", () => this.toggleVoiceListening());
+        }
+    }
 
-        // Custom Mode Gamemode Selectors
-        document.querySelectorAll(".gamemode-card").forEach(card => {
-            card.addEventListener("click", () => {
-                document.querySelectorAll(".gamemode-card").forEach(c => c.classList.remove("selected"));
-                card.classList.add("selected");
+    getActiveProfile() {
+        return window.AGE_PROFILES[this.activeAgeId] || window.AGE_PROFILES.age8_9;
+    }
 
-                const mode = card.dataset.mode;
-                const tracker = document.getElementById("custom-time-group");
-                if (mode === "survival") {
-                    tracker.style.opacity = "0.5";
-                    tracker.style.pointerEvents = "none";
-                } else {
-                    tracker.style.opacity = "1";
-                    tracker.style.pointerEvents = "auto";
+    setAgeProfile(ageId) {
+        if (!window.AGE_PROFILES[ageId]) return;
+        this.activeAgeId = ageId;
+        localStorage.setItem("mathclub_age_profile", ageId);
+        const profile = this.getActiveProfile();
+        this.sessionMode = profile.defaultMode || "deck";
+        this.tipIndex = 0;
+
+        if (this.gameState.isActive) {
+            this.stopGameTimers();
+            this.stopVoiceListening();
+            this.gameState.isActive = false;
+            this.switchView("dashboard");
+        }
+        this.renderAgeProfile();
+    }
+
+    updateModeButtonsUI() {
+        if (this.dom.modeBtnDeck) {
+            this.dom.modeBtnDeck.classList.toggle("active", this.sessionMode === "deck");
+        }
+        if (this.dom.modeBtnTimed) {
+            this.dom.modeBtnTimed.classList.toggle("active", this.sessionMode === "timed");
+        }
+    }
+
+    renderAgeProfile() {
+        const profile = this.getActiveProfile();
+
+        // Update Top Age Switcher Pills
+        if (this.dom.ageBtn4) {
+            this.dom.ageBtn4.classList.toggle("active", this.activeAgeId === "age4");
+        }
+        if (this.dom.ageBtn89) {
+            this.dom.ageBtn89.classList.toggle("active", this.activeAgeId === "age8_9");
+        }
+        if (this.dom.ageMoreSelect) {
+            if (this.activeAgeId === "age6_7" || this.activeAgeId === "age10_plus") {
+                this.dom.ageMoreSelect.value = this.activeAgeId;
+                this.dom.ageMoreSelect.classList.add("active");
+            } else {
+                this.dom.ageMoreSelect.value = "";
+                this.dom.ageMoreSelect.classList.remove("active");
+            }
+        }
+
+        if (this.dom.activeAgeSubtitle) {
+            this.dom.activeAgeSubtitle.textContent = `${profile.label} • ${profile.subtitle}`;
+        }
+        if (this.dom.deckCountLabel) {
+            this.dom.deckCountLabel.textContent = String(profile.deckSize || 12);
+        }
+        this.updateModeButtonsUI();
+
+        // Render Primary Operation Buttons (Mental Math Cards style)
+        if (this.dom.primaryDecksList) {
+            this.dom.primaryDecksList.innerHTML = "";
+            (profile.primaryDecks || []).forEach(deck => {
+                this.dom.primaryDecksList.appendChild(this.createDeckButton(deck));
+            });
+        }
+
+        // Render More Cards Drawer
+        const moreDecks = profile.moreDecks || [];
+        if (this.dom.moreDecksList && this.dom.btnToggleMoreCards) {
+            this.dom.moreDecksList.innerHTML = "";
+            this.dom.moreDecksList.hidden = true;
+            if (moreDecks.length === 0) {
+                this.dom.btnToggleMoreCards.hidden = true;
+            } else {
+                this.dom.btnToggleMoreCards.hidden = false;
+                this.dom.btnToggleMoreCards.textContent = "▲ More Cards ▲";
+                moreDecks.forEach(deck => {
+                    this.dom.moreDecksList.appendChild(this.createDeckButton(deck));
+                });
+            }
+        }
+
+        this.renderSpotlightTip();
+        this.renderAllTipsView();
+    }
+
+    createDeckButton(deck) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "deck-pill-btn";
+        btn.innerHTML = `
+            <span>${deck.title}</span>
+            ${deck.badge ? `<span class="deck-pill-badge">${deck.badge}</span>` : ""}
+        `;
+        btn.addEventListener("click", () => this.startDeck(deck));
+        return btn;
+    }
+
+    renderSpotlightTip() {
+        const profile = this.getActiveProfile();
+        const tips = profile.tips || [];
+        if (tips.length === 0) return;
+        const tip = tips[this.tipIndex % tips.length];
+        if (this.dom.spotlightTipTitle) this.dom.spotlightTipTitle.textContent = tip.title;
+        if (this.dom.spotlightTipFormula) this.dom.spotlightTipFormula.textContent = tip.formula;
+        if (this.dom.spotlightTipBody) this.dom.spotlightTipBody.textContent = tip.body;
+    }
+
+    renderAllTipsView() {
+        const profile = this.getActiveProfile();
+        if (this.dom.tipsViewTitle) {
+            this.dom.tipsViewTitle.textContent = `💡 ${profile.label} Mental Math Tips`;
+        }
+        if (this.dom.tipsViewSub) {
+            this.dom.tipsViewSub.textContent = profile.subtitle;
+        }
+        if (!this.dom.tipsCardsGrid) return;
+        this.dom.tipsCardsGrid.innerHTML = "";
+        (profile.tips || []).forEach(tip => {
+            const card = document.createElement("div");
+            card.className = "tip-card-item";
+            card.innerHTML = `
+                <h3>${tip.title}</h3>
+                <div class="tip-formula-box">${tip.formula}</div>
+                <p>${tip.body}</p>
+                <button type="button" class="btn-try-tip primary">▶ Practice This Trick</button>
+            `;
+            card.querySelector("button").addEventListener("click", () => {
+                if (tip.practiceDeckId) {
+                    this.startDeckById(tip.practiceDeckId);
+                } else if (profile.primaryDecks.length > 0) {
+                    this.startDeck(profile.primaryDecks[0]);
                 }
             });
+            this.dom.tipsCardsGrid.appendChild(card);
         });
     }
 
+    startDeckById(deckId) {
+        const profile = this.getActiveProfile();
+        const allDecks = [...(profile.primaryDecks || []), ...(profile.moreDecks || [])];
+        const found = allDecks.find(d => d.id === deckId) || allDecks[0];
+        if (found) this.startDeck(found);
+    }
+
     switchView(viewName) {
-        if (this.gameState.isActive) {
-            if (!confirm("Your active game is running. Are you sure you want to exit?")) {
-                return;
-            }
-            this.quitGame();
-        }
-
         this.activeView = viewName;
-
-        // Update View Display
-        Object.keys(this.views).forEach(name => {
-            if (name === viewName) {
-                this.views[name].classList.add("active");
-            } else {
-                this.views[name].classList.remove("active");
+        Object.keys(this.views).forEach(k => {
+            if (this.views[k]) {
+                this.views[k].classList.toggle("active", k === viewName);
             }
         });
-
-        // Update Active Nav Link
-        Object.keys(this.navButtons).forEach(name => {
-            if (name === viewName) {
-                this.navButtons[name].classList.add("active");
-            } else {
-                this.navButtons[name].classList.remove("active");
-            }
-        });
-
-        // Specific actions when loading views
+        if (this.dom.navDashboard) {
+            this.dom.navDashboard.classList.toggle("active", viewName === "dashboard" || viewName === "play");
+        }
+        if (this.dom.navTips) {
+            this.dom.navTips.classList.toggle("active", viewName === "tips");
+        }
         if (viewName === "dashboard") {
-            this.renderLevelsMap();
             this.updateDashboardStats();
-        } else if (viewName === "stats") {
-            this.renderStatsView();
         }
     }
 
     updateSoundToggleUI() {
         const enabled = window.audioManager.isEnabled;
-        if (enabled) {
-            this.dom.headerSoundIcon.textContent = "🔊";
-            this.dom.headerSoundIcon.parentElement.title = "Mute Sound";
-        } else {
-            this.dom.headerSoundIcon.textContent = "🔇";
-            this.dom.headerSoundIcon.parentElement.title = "Unmute Sound";
+        if (this.dom.headerSoundIcon) {
+            this.dom.headerSoundIcon.textContent = enabled ? "🔊" : "🔇";
         }
     }
 
-    // --- Dynamic Levels System ---
-    renderLevelsMap() {
-        const completedLevels = JSON.parse(localStorage.getItem("mathclub_completed_levels") || "[]");
-        const highscores = JSON.parse(localStorage.getItem("mathclub_highscores") || "{}");
+    // ================= FLASHCARD GAME LOOP =================
 
-        this.dom.levelsMap.innerHTML = "";
-
-        window.LEVEL_DEFINITIONS.forEach((lvl, idx) => {
-            const isCompleted = completedLevels.includes(lvl.id);
-            // All levels are open and unlocked so players can jump to any challenge
-            const isUnlocked = true;
-
-            const card = document.createElement("div");
-            card.className = `level-card unlocked ${isCompleted ? 'completed' : ''}`;
-
-            card.addEventListener("click", () => {
-                this.startLevel(lvl.id);
-            });
-
-            const starCount = isCompleted ? (highscores[lvl.id]?.stars || 3) : 0;
-            const starsHTML = isCompleted
-                ? Array(3).fill(0).map((_, i) => `<span class="star">${i < starCount ? '★' : '☆'}</span>`).join("")
-                : "";
-
-            const scoreText = isCompleted ? `HighScore: ${highscores[lvl.id]?.score || 0}` : "";
-
-            card.innerHTML = `
-                <div class="level-num">Level ${lvl.id}</div>
-                <div class="level-name">${lvl.title}</div>
-                <div class="level-desc">${lvl.description}</div>
-                <div class="level-meta">
-                    <span class="level-score">${scoreText}</span>
-                    <span class="level-stars">${starsHTML}</span>
-                </div>
-            `;
-            this.dom.levelsMap.appendChild(card);
-        });
-
-        // Compute overall user total points / level
-        let totalPts = 0;
-        Object.values(highscores).forEach(entry => {
-            totalPts += (entry.score || 0);
-        });
-        this.dom.userLevelPoints.textContent = totalPts;
-    }
-
-    // --- Canvas Keystroke effect & particles ---
-    initCanvas() {
-        this.canvas = document.getElementById("fx-canvas");
-        this.ctx = this.canvas.getContext("2d");
-        this.particles = [];
-
-        const resizeCanvas = () => {
-            const rect = this.canvas.parentElement.getBoundingClientRect();
-            this.canvas.width = rect.width;
-            this.canvas.height = rect.height;
-        };
-
-        resizeCanvas();
-        window.addEventListener("resize", resizeCanvas);
-
-        // Particle animator loop
-        const animate = () => {
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            this.particles.forEach((p, idx) => {
-                p.update(this.ctx);
-                if (p.alpha <= 0) {
-                    this.particles.splice(idx, 1);
-                }
-            });
-            requestAnimationFrame(animate);
-        };
-        requestAnimationFrame(animate);
-    }
-
-    createParticlesBurst(x, y) {
-        const colors = ["#7c4dff", "#00e5ff", "#00e676", "#ffd600", "#ff1744"];
-        for (let i = 0; i < 20; i++) {
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            const size = Math.random() * 6 + 4;
-            const speedX = (Math.random() - 0.5) * 8;
-            const speedY = (Math.random() - 0.5) * 8 - 2; // slight bias upwards
-            const decay = Math.random() * 0.02 + 0.01;
-
-            this.particles.push(new Particle(x, y, speedX, speedY, size, color, decay));
-        }
-    }
-
-    // --- Main Game Loop implementation ---
-
-    startLevel(levelId) {
-        const def = window.LEVEL_DEFINITIONS.find(l => l.id === levelId);
-        if (!def) return;
-
-        this.gameState.activeLevel = def;
-        this.gameState.gameMode = "level";
-        this.gameState.secondsLeft = def.timer || 0;
-        this.dom.gameTitle.textContent = def.title;
-
-        this.setupPlayScreen();
-    }
-
-    startCustomGame() {
-        // Collect checked ops
-        const selectedOps = [];
-        document.querySelectorAll(".operations-selector input:checked").forEach(chk => {
-            selectedOps.push(chk.value);
-        });
-
-        if (selectedOps.length === 0) {
-            alert("Please select at least one operation to practice!");
-            return;
-        }
-
-        const mode = document.querySelector(".gamemode-card.selected").dataset.mode;
-        const timeLimit = parseInt(this.dom.customTimeSlider.value);
-        const difficulty = this.dom.customDiff.value; // "easy", "medium", "hard"
-
-        // Build a dynamic local Level configuration
-        let operationName = "add"; // fallback
-        if (selectedOps.length > 1) {
-            operationName = difficulty === "hard" ? "mixed_hard" : "mixed_medium";
-        } else {
-            // map single op
-            const op = selectedOps[0];
-            if (op === "add") operationName = difficulty === "hard" ? "add" : (difficulty === "medium" ? "add" : "add_simple_double");
-            if (op === "sub") operationName = difficulty === "hard" ? "sub" : (difficulty === "medium" ? "sub" : "sub_simple_double");
-            if (op === "mul") operationName = "multiply";
-            if (op === "div") operationName = "divide";
-        }
-
-        // Custom details mapping
-        const customDef = {
-            id: null,
-            title: `Custom Match: ${difficulty.toUpperCase()}`,
-            operation: operationName,
-            timer: mode === "survival" ? null : timeLimit,
-            forcePositive: true,
-            min: difficulty === "easy" ? 1 : (difficulty === "medium" ? 10 : 50),
-            max: difficulty === "easy" ? 9 : (difficulty === "medium" ? 50 : 250),
-            minLeft: difficulty === "easy" ? 1 : 5,
-            maxLeft: difficulty === "easy" ? 5 : 12,
-            minRight: difficulty === "easy" ? 1 : 5,
-            maxRight: difficulty === "easy" ? 9 : 12
-        };
-
-        this.gameState.activeLevel = customDef;
-        this.gameState.gameMode = mode;
-        this.gameState.secondsLeft = customDef.timer || 0;
-        this.dom.gameTitle.textContent = customDef.title;
-
-        this.setupPlayScreen();
-    }
-
-    setupPlayScreen() {
-        this.switchView("play");
-
-        // Reset state values
+    startDeck(deckDef) {
+        const profile = this.getActiveProfile();
+        this.gameState.activeDeck = deckDef;
         this.gameState.score = 0;
-        this.gameState.correctCount = 0;
-        this.gameState.totalCount = 0;
+        this.gameState.rightCount = 0;
+        this.gameState.wrongCount = 0;
+        this.gameState.questionIndex = 1;
+        this.gameState.deckSize = profile.deckSize || 12;
         this.gameState.combo = 0;
         this.gameState.maxCombo = 0;
         this.gameState.typedAnswer = "";
-        this.gameState.lives = 3;
         this.gameState.isActive = true;
-        this.gameState.startTime = Date.now();
+        this.gameState.isTransitioning = false;
+        this.gameState.secondsLeft = this.sessionMode === "timed" ? (profile.timeLimit || 110) : 0;
 
-        // Update displays
+        this.switchView("play");
+
+        this.dom.statRight.textContent = "0";
+        this.dom.statWrong.textContent = "0";
         this.dom.gameScore.textContent = "0";
-        this.dom.gamePPM.textContent = "0";
-        this.dom.typingInput.textContent = "";
-        this.dom.typingInput.parentElement.classList.add("active");
+        this.dom.gameTitle.textContent = deckDef.title;
         this.dom.comboBadge.style.display = "none";
-        
-        if (this.dom.hiddenInput) {
-            this.dom.hiddenInput.value = "";
-            // Small delay to ensure view transition completes before focusing
-            if (!this.isCoarsePointerDevice()) {
-                setTimeout(() => {
-                    if (this.gameState.isActive) this.dom.hiddenInput.focus();
-                }, 50);
-            }
-        }
+        this.dom.cardHintBanner.hidden = true;
+        this.dom.flashcardPaper.classList.remove("card-correct", "card-wrong");
 
-        // Setup HUD modules according to Mode
-        if (this.gameState.gameMode === "survival") {
-            this.dom.gameTime.textContent = "--";
-            this.dom.gameLivesSection.style.display = "flex";
-            this.updateLivesContainer();
-        } else {
-            this.dom.gameLivesSection.style.display = "none";
-            this.updateTimerDisplay();
-        }
-
-        this.startTimers();
-        this.generateNextProblem();
-    }
-
-    startTimers() {
-        if (this.gameState.timer) clearInterval(this.gameState.timer);
-        if (this.gameState.problemTimer) clearInterval(this.gameState.problemTimer);
-
-        // Core Game time counter
-        if (this.gameState.secondsLeft > 0) {
+        this.stopGameTimers();
+        if (this.sessionMode === "timed") {
+            this.updateTimeOrDeckHud();
             this.gameState.timer = setInterval(() => {
                 this.gameState.secondsLeft--;
-                this.updateTimerDisplay();
+                this.updateTimeOrDeckHud();
                 if (this.gameState.secondsLeft <= 0) {
-                    this.endGame(true);
+                    this.endSession();
                 }
             }, 1000);
+        } else {
+            this.updateTimeOrDeckHud();
         }
 
-        // Survival specific ticks (individual problem countdowns)
-        if (this.gameState.gameMode === "survival") {
-            this.startSurvivalProblemTimer();
+        this.generateNextCard();
+    }
+
+    stopGameTimers() {
+        if (this.gameState.timer) {
+            clearInterval(this.gameState.timer);
+            this.gameState.timer = null;
         }
     }
 
-    startSurvivalProblemTimer() {
-        if (this.gameState.problemTimer) clearInterval(this.gameState.problemTimer);
-
-        this.gameState.problemSecondsLeft = 10; // 10 seconds per math equations
-        this.dom.gameTime.textContent = `${this.gameState.problemSecondsLeft}s`;
-
-        // Highlight critical timer pulse if low
-        this.dom.gameTime.classList.remove("color-error");
-
-        this.gameState.problemTimer = setInterval(() => {
-            this.gameState.problemSecondsLeft--;
-            this.dom.gameTime.textContent = `${this.gameState.problemSecondsLeft}s`;
-
-            if (this.gameState.problemSecondsLeft <= 3) {
-                this.dom.gameTime.classList.add("color-error");
-            }
-
-            if (this.gameState.problemSecondsLeft <= 0) {
-                clearInterval(this.gameState.problemTimer);
-                window.audioManager.playIncorrect();
-                this.gameState.lives--;
-                this.updateLivesContainer();
-
-                // Shake and generate next
-                this.triggerShakeEffect();
-                this.gameState.combo = 0;
-                this.dom.comboBadge.style.display = "none";
-                this.gameState.totalCount++;
-
-                if (this.gameState.lives <= 0) {
-                    this.endGame(false);
-                } else {
-                    this.generateNextProblem();
-                }
-            }
-        }, 1000);
-    }
-
-    updateTimerDisplay() {
-        if (this.gameState.secondsLeft <= 0) {
-            this.dom.gameTime.textContent = "--";
-            return;
+    updateTimeOrDeckHud() {
+        if (this.sessionMode === "timed") {
+            const sec = Math.max(0, this.gameState.secondsLeft);
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            this.dom.gameTime.textContent = `TIME: ${m}:${s < 10 ? "0" : ""}${s}`;
+        } else {
+            this.dom.gameTime.textContent = `Q: ${this.gameState.questionIndex}/${this.gameState.deckSize}`;
         }
-        const m = Math.floor(this.gameState.secondsLeft / 60);
-        const s = this.gameState.secondsLeft % 60;
-        this.dom.gameTime.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
-    updateLivesContainer() {
-        const hearts = [];
-        for (let i = 1; i <= 3; i++) {
-            if (i <= this.gameState.lives) {
-                hearts.push('<span class="heart-on">❤</span>');
-            } else {
-                hearts.push('<span class="heart-off">❤</span>');
-            }
-        }
-        this.dom.gameLivesContainer.innerHTML = hearts.join("");
-    }
-
-    generateNextProblem() {
+    generateNextCard() {
         this.gameState.typedAnswer = "";
-        this.dom.typingInput.textContent = "";
-        if (this.dom.hiddenInput) this.dom.hiddenInput.value = "";
-        this.gameState.currentProblem = MathGenerator.generate(this.gameState.activeLevel);
+        this.gameState.isTransitioning = false;
+        this.dom.flashcardPaper.classList.remove("card-correct", "card-wrong");
+        this.dom.cardHintBanner.hidden = true;
 
-        // Display equations text
-        this.dom.equationText.innerHTML = `${this.gameState.currentProblem.left} <span style="color:var(--primary); font-family:var(--font-heading);">${this.gameState.currentProblem.operator}</span> ${this.gameState.currentProblem.right} =`;
+        const problem = window.MathGenerator.generate(this.gameState.activeDeck);
+        this.gameState.currentProblem = problem;
 
-        // If survival is on, restart the problem timer
-        if (this.gameState.gameMode === "survival") {
-            this.startSurvivalProblemTimer();
-        }
-    }
-
-    handleKeyboardInput(e) {
-        if (!this.gameState.isActive) return;
-
-        const key = e.key;
-
-        // Skip default page scrolls
-        if (["Space", "ArrowUp", "ArrowDown", "Backspace"].includes(key) && e.target === document.body) {
-            e.preventDefault();
+        // Render stacked vertical equation
+        if (problem.right === null) {
+            // Counting mode for Age 4
+            this.dom.stackTop.textContent = problem.visualHelper ? problem.visualHelper.emoji : "⭐";
+            this.dom.stackOp.textContent = "";
+            this.dom.stackBottom.textContent = "Count";
+        } else {
+            this.dom.stackTop.textContent = String(problem.left);
+            this.dom.stackOp.textContent = problem.operator;
+            this.dom.stackBottom.textContent = String(problem.right);
         }
 
-        // Highlight Virtual Keycap
-        const keyCapId = `key-${key.toLowerCase()}`;
-        const keycap = document.getElementById(keyCapId);
-        if (keycap) {
-            keycap.classList.add("active");
-        }
-
-        if (e.target === this.dom.hiddenInput && key !== "Enter" && key !== "Backspace" && key !== " ") {
-            return; // Let the input event handle regular typing on mobile
-        }
-
-        // Action handles
-        if (key >= "0" && key <= "9") {
-            window.audioManager.playTick();
-            this.gameState.typedAnswer += key;
-            this.dom.typingInput.textContent = this.gameState.typedAnswer;
-        } else if (key === "-") {
-            // Allow negative prefix for subtraction operations
-            if (this.gameState.typedAnswer.length === 0) {
-                window.audioManager.playTick();
-                this.gameState.typedAnswer += key;
-                this.dom.typingInput.textContent = this.gameState.typedAnswer;
+        // Render Visual Emoji Helper for Age 4
+        if (problem.visualHelper) {
+            this.dom.visualHelperBox.hidden = false;
+            const vh = problem.visualHelper;
+            if (vh.type === "add") {
+                this.dom.visualHelperBox.innerHTML = `<span>${vh.leftGroup}</span> <strong style="margin:0 6px;">+</strong> <span>${vh.rightGroup}</span>`;
+            } else if (vh.type === "sub") {
+                const kept = Array(vh.total - vh.taken).fill(vh.emoji).join(" ");
+                const crossed = Array(vh.taken).fill(`<span class="crossed-emoji">${vh.emoji}</span>`).join(" ");
+                this.dom.visualHelperBox.innerHTML = `${kept} ${crossed}`;
+            } else if (vh.type === "count") {
+                this.dom.visualHelperBox.innerHTML = `<span>${vh.leftGroup}</span>`;
             }
-        } else if (key === "Backspace") {
-            window.audioManager.playTick();
-            this.gameState.typedAnswer = this.gameState.typedAnswer.slice(0, -1);
-            this.dom.typingInput.textContent = this.gameState.typedAnswer;
-            if (this.dom.hiddenInput) this.dom.hiddenInput.value = this.gameState.typedAnswer;
-        } else if (key === "Enter" || key === " ") {
-            this.submitAnswer();
+        } else {
+            this.dom.visualHelperBox.hidden = true;
+            this.dom.visualHelperBox.innerHTML = "";
         }
+
+        this.updateTypedDisplay();
+        this.updateTimeOrDeckHud();
     }
 
-    handleKeyboardRelease(e) {
-        const keyCapId = `key-${e.key.toLowerCase()}`;
-        const keycap = document.getElementById(keyCapId);
-        if (keycap) {
-            keycap.classList.remove("active");
+    updateTypedDisplay() {
+        if (!this.gameState.typedAnswer) {
+            this.dom.typingInput.textContent = "?";
+            this.dom.typingInput.classList.add("placeholder");
+        } else {
+            this.dom.typingInput.textContent = this.gameState.typedAnswer;
+            this.dom.typingInput.classList.remove("placeholder");
         }
     }
 
     submitAnswer() {
-        if (this.gameState.typedAnswer.length === 0) return;
+        if (!this.gameState.isActive || this.gameState.isTransitioning) return;
+        if (this.gameState.typedAnswer === "") return;
 
-        const typed = parseInt(this.gameState.typedAnswer);
+        const userVal = parseInt(this.gameState.typedAnswer, 10);
         const correctVal = this.gameState.currentProblem.answer;
 
-        this.gameState.totalCount++;
-
-        if (typed === correctVal) {
-            // Correct Answer Chime
-            this.gameState.correctCount++;
-
-            // Particles and animation
-            const carrierRect = this.dom.typingInput.parentElement.getBoundingClientRect();
-            const canvasRect = this.canvas.getBoundingClientRect();
-            const centerX = (carrierRect.left + carrierRect.width / 2) - canvasRect.left;
-            const centerY = (carrierRect.top + carrierRect.height / 2) - canvasRect.top;
-            this.createParticlesBurst(centerX, centerY);
-
-            // Combo calculations
+        if (userVal === correctVal) {
+            this.gameState.isTransitioning = true;
+            this.gameState.rightCount++;
             this.gameState.combo++;
             if (this.gameState.combo > this.gameState.maxCombo) {
                 this.gameState.maxCombo = this.gameState.combo;
             }
+            const pts = 10 + Math.min(this.gameState.combo, 5) * 2;
+            this.gameState.score += pts;
 
-            if (this.gameState.combo >= 3) {
-                this.showComboMultiplier();
-                window.audioManager.playCombo(this.gameState.combo);
+            this.dom.statRight.textContent = String(this.gameState.rightCount);
+            this.dom.gameScore.textContent = String(this.gameState.score);
+            this.dom.cardHintBanner.hidden = true;
+
+            if (this.gameState.combo >= 2) {
+                this.dom.comboBadge.style.display = "inline-flex";
+                this.dom.comboMultiplier.textContent = `x${this.gameState.combo}`;
+                window.audioManager.playCombo(Math.min(this.gameState.combo, 8));
             } else {
                 window.audioManager.playCorrect();
             }
 
-            // Score Calculations matching difficulty
-            const difficultyMultiplier = this.gameState.activeLevel.id ? (this.gameState.activeLevel.id * 10) : 25;
-            const comboMultiplier = 1 + (Math.floor(this.gameState.combo / 5) * 0.5);
-            this.gameState.score += Math.round(difficultyMultiplier * comboMultiplier);
-            this.dom.gameScore.textContent = this.gameState.score;
+            // Flash Mint Card + Big Green Checkmark Overlay (like Mental Math Cards!)
+            this.dom.flashcardPaper.classList.remove("card-wrong");
+            this.dom.flashcardPaper.classList.add("card-correct");
 
-            // Flash keypad success indication
-            const caps = document.querySelectorAll(".key-cap");
-            caps.forEach(cap => {
-                if (cap.classList.contains("active")) {
-                    cap.classList.add("active-success");
-                    setTimeout(() => cap.classList.remove("active-success"), 150);
+            setTimeout(() => {
+                if (!this.gameState.isActive) return;
+                if (this.sessionMode === "deck") {
+                    if (this.gameState.questionIndex >= this.gameState.deckSize) {
+                        this.endSession();
+                        return;
+                    }
+                    this.gameState.questionIndex++;
                 }
-            });
-
-            this.updatePPMDisplay();
-            this.generateNextProblem();
+                this.generateNextCard();
+            }, 420);
         } else {
-            // Incorrect
+            // Wrong Answer: Shake + Show Friendly Mental Math Strategy Hint
             window.audioManager.playIncorrect();
+            this.gameState.wrongCount++;
             this.gameState.combo = 0;
+            this.dom.statWrong.textContent = String(this.gameState.wrongCount);
             this.dom.comboBadge.style.display = "none";
 
-            this.triggerShakeEffect();
+            this.dom.flashcardPaper.classList.remove("card-wrong");
+            void this.dom.flashcardPaper.offsetWidth; // Reflow for shake animation
+            this.dom.flashcardPaper.classList.add("card-wrong");
 
-            // Flash keypad error details
-            const caps = document.querySelectorAll(".key-cap");
-            caps.forEach(cap => {
-                if (cap.classList.contains("active")) {
-                    cap.classList.add("active-error");
-                    setTimeout(() => cap.classList.remove("active-error"), 150);
-                }
-            });
-
-            if (this.gameState.gameMode === "survival") {
-                this.gameState.lives--;
-                this.updateLivesContainer();
-                if (this.gameState.lives <= 0) {
-                    this.endGame(false);
-                    return;
-                }
+            if (this.gameState.currentProblem.hintText) {
+                this.dom.cardHintBanner.textContent = `💡 ${this.gameState.currentProblem.hintText}`;
+                this.dom.cardHintBanner.hidden = false;
             }
 
-            // Clear input for retry
             this.gameState.typedAnswer = "";
-            this.dom.typingInput.textContent = "";
-            if (this.dom.hiddenInput) this.dom.hiddenInput.value = "";
-            this.updatePPMDisplay();
-
-            // In non-survival level mode, does it force they get it correct or slide to next?
-            // In standard typing test, you backspace and correct it. In simple math, you correct it!
-            // So we don't automatically generate the next problem on failure, let the user backspace and type it again.
-            // Wait, but we already added 1 to totalCount. If we don't generate next problem, they will eventually submit it correctly,
-            // which counts as correct count = 1, total count = 2 (1 mistake). That's perfect because accuracy will be 50%!
-            // This is exactly how we want accuracy computed step-by-step!
+            this.updateTypedDisplay();
         }
     }
 
-    triggerShakeEffect() {
-        const carrier = this.dom.typingInput.parentElement;
-        carrier.classList.add("shake");
-        setTimeout(() => {
-            carrier.classList.remove("shake");
-        }, 300);
-    }
-
-    showComboMultiplier() {
-        this.dom.comboMultiplier.textContent = `x${this.gameState.combo}`;
-        this.dom.comboBadge.style.display = "flex";
-    }
-
-    updatePPMDisplay() {
-        const durationSec = (Date.now() - this.gameState.startTime) / 1000;
-        if (durationSec <= 2) return;
-        const ppm = Math.round((this.gameState.correctCount / durationSec) * 60);
-        this.dom.gamePPM.textContent = ppm;
-    }
-
-    quitGame() {
-        this.cleanupGameLoop();
-        this.switchView("dashboard");
-    }
-
-    cleanupGameLoop() {
+    endSession() {
         this.gameState.isActive = false;
-        if (this.gameState.timer) clearInterval(this.gameState.timer);
-        if (this.gameState.problemTimer) clearInterval(this.gameState.problemTimer);
-        this.dom.typingInput.parentElement.classList.remove("active");
-    }
+        this.stopGameTimers();
+        this.stopVoiceListening();
+        window.audioManager.playVictory();
 
-    endGame(timeCompleted = true) {
-        this.cleanupGameLoop();
+        const total = this.gameState.rightCount + this.gameState.wrongCount;
+        const acc = total > 0 ? Math.round((this.gameState.rightCount / total) * 100) : 100;
 
-        // Calculate statistics
-        const durationSec = (Date.now() - this.gameState.startTime) / 1000;
-        const ppm = durationSec > 0 ? Math.round((this.gameState.correctCount / durationSec) * 60) : 0;
-        const accuracy = this.gameState.totalCount > 0
-            ? Math.round((this.gameState.correctCount / this.gameState.totalCount) * 100)
-            : 0;
+        this.saveSessionStats(this.gameState.rightCount, acc, this.gameState.maxCombo, this.gameState.score);
 
-        // Sound Feedback
-        const isSuccess = this.gameState.gameMode !== "survival" || this.gameState.correctCount > 10;
-        if (isSuccess) {
-            window.audioManager.playVictory();
-        } else {
-            window.audioManager.playGameOver();
-        }
+        let stars = 3;
+        if (acc < 85) stars = 2;
+        if (acc < 65) stars = 1;
 
-        // Stars mapping (For Level Progression)
-        let stars = 0;
-        if (this.gameState.gameMode === "level") {
-            if (accuracy >= 95) stars = 3;
-            else if (accuracy >= 80) stars = 2;
-            else if (accuracy >= 50) stars = 1;
-        }
-
-        // Update levels history and progress
-        if (this.gameState.gameMode === "level" && stars > 0) {
-            const completedLevels = JSON.parse(localStorage.getItem("mathclub_completed_levels") || "[]");
-            const levelId = this.gameState.activeLevel.id;
-
-            if (!completedLevels.includes(levelId)) {
-                completedLevels.push(levelId);
-                localStorage.setItem("mathclub_completed_levels", JSON.stringify(completedLevels));
-            }
-
-            const highscores = JSON.parse(localStorage.getItem("mathclub_highscores") || "{}");
-            const previousBest = highscores[levelId]?.score || 0;
-            if (this.gameState.score > previousBest) {
-                highscores[levelId] = {
-                    score: this.gameState.score,
-                    stars: Math.max(highscores[levelId]?.stars || 0, stars),
-                    ppm,
-                    accuracy
-                };
-                localStorage.setItem("mathclub_highscores", JSON.stringify(highscores));
-            }
-        }
-
-        // Save entry globally in History logs
-        this.saveHistoryEntry(ppm, accuracy);
-
-        // Display results modal overlay
-        this.dom.modalTitle.textContent = isSuccess ? "Level Cleared!" : "Game Over";
-
-        // Stars display
-        if (this.gameState.gameMode === "level") {
-            this.dom.modalStars.innerHTML = Array(3).fill(0).map((_, i) => i < stars ? '★' : '☆').join("");
-            this.dom.modalStars.style.display = "flex";
-        } else {
-            this.dom.modalStars.style.display = "none";
-        }
-
-        this.dom.modalPPM.textContent = ppm;
-        this.dom.modalAccuracy.textContent = `${accuracy}%`;
-        this.dom.modalScore.textContent = this.gameState.score;
-
+        this.dom.modalTitle.textContent = this.gameState.rightCount > 0 ? "Awesome Job! 🎉" : "Session Complete!";
+        this.dom.modalStars.textContent = Array(3).fill(0).map((_, i) => (i < stars ? "★" : "☆")).join(" ");
+        this.dom.modalPPM.textContent = `${this.gameState.rightCount} / ${this.gameState.wrongCount}`;
+        this.dom.modalAccuracy.textContent = `${acc}%`;
+        this.dom.modalScore.textContent = String(this.gameState.score);
         this.dom.resultsModal.classList.add("active");
     }
 
-    // --- Statistics and Charting module ---
+    // ================= KEYBOARD & VOICE INPUT =================
 
-    loadStats() {
-        this.history = JSON.parse(localStorage.getItem("mathclub_history") || "[]");
+    handleKeyboardInput(e) {
+        if (!this.gameState.isActive || this.gameState.isTransitioning) return;
+        const key = e.key;
+
+        if (key >= "0" && key <= "9") {
+            if (this.gameState.typedAnswer.length < 5) {
+                window.audioManager.playTick();
+                this.gameState.typedAnswer += key;
+                this.updateTypedDisplay();
+            }
+            const cap = document.getElementById(`key-${key}`);
+            if (cap) cap.classList.add("active");
+        } else if (key === "Backspace" || key === "Delete" || key === "Escape") {
+            e.preventDefault();
+            window.audioManager.playTick();
+            this.gameState.typedAnswer = this.gameState.typedAnswer.slice(0, -1);
+            this.updateTypedDisplay();
+            const cap = document.getElementById("key-backspace");
+            if (cap) cap.classList.add("active");
+        } else if (key === "Enter" || key === " ") {
+            e.preventDefault();
+            this.submitAnswer();
+            const cap = document.getElementById("key-enter");
+            if (cap) cap.classList.add("active");
+        }
     }
 
-    saveHistoryEntry(ppm, accuracy) {
-        const entry = {
-            date: new Date().toISOString(),
-            level: this.gameState.activeLevel.title,
-            mode: this.gameState.gameMode,
-            score: this.gameState.score,
-            ppm,
-            accuracy,
-            operation: this.gameState.activeLevel.operation || "custom"
-        };
+    handleKeyboardRelease(e) {
+        const key = e.key;
+        if (key >= "0" && key <= "9") {
+            const cap = document.getElementById(`key-${key}`);
+            if (cap) cap.classList.remove("active");
+        } else if (key === "Backspace" || key === "Delete" || key === "Escape") {
+            const cap = document.getElementById("key-backspace");
+            if (cap) cap.classList.remove("active");
+        } else if (key === "Enter" || key === " ") {
+            const cap = document.getElementById("key-enter");
+            if (cap) cap.classList.remove("active");
+        }
+    }
 
-        this.history.push(entry);
-        // keep last 50 matches
-        if (this.history.length > 50) this.history.shift();
+    toggleVoiceListening() {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) {
+            if (this.dom.voiceStatusText) {
+                this.dom.voiceStatusText.textContent = "⌨️ Use Keypad on This Device";
+            }
+            return;
+        }
 
-        localStorage.setItem("mathclub_history", JSON.stringify(this.history));
+        if (this.isListening) {
+            this.stopVoiceListening();
+            return;
+        }
+
+        try {
+            this.recognition = new SpeechRec();
+            this.recognition.lang = "en-US";
+            this.recognition.continuous = true;
+            this.recognition.interimResults = false;
+
+            this.recognition.onstart = () => {
+                this.isListening = true;
+                this.dom.btnVoiceListen.classList.add("listening");
+                this.dom.voiceStatusText.textContent = "🎙 I'm listening...";
+            };
+
+            this.recognition.onresult = (event) => {
+                if (!this.gameState.isActive || this.gameState.isTransitioning) return;
+                const last = event.results[event.results.length - 1];
+                if (last && last[0]) {
+                    const num = parseSpokenNumber(last[0].transcript);
+                    if (num !== null && !Number.isNaN(num)) {
+                        this.gameState.typedAnswer = String(num);
+                        this.updateTypedDisplay();
+                        this.submitAnswer();
+                    }
+                }
+            };
+
+            this.recognition.onend = () => {
+                if (this.isListening && this.gameState.isActive) {
+                    try { this.recognition.start(); } catch (e) {}
+                } else {
+                    this.stopVoiceListening();
+                }
+            };
+
+            this.recognition.start();
+        } catch (e) {
+            this.stopVoiceListening();
+        }
+    }
+
+    stopVoiceListening() {
+        this.isListening = false;
+        if (this.recognition) {
+            try { this.recognition.stop(); } catch (e) {}
+            this.recognition = null;
+        }
+        if (this.dom.btnVoiceListen) {
+            this.dom.btnVoiceListen.classList.remove("listening");
+        }
+        if (this.dom.voiceStatusText) {
+            this.dom.voiceStatusText.textContent = "🎤 Tap to Speak Answer";
+        }
+    }
+
+    // ================= PERSISTENCE & STATS =================
+
+    loadStats() {
+        try {
+            this.stats = JSON.parse(localStorage.getItem("mathclub_cards_stats") || "null") || {
+                totalSolved: 0,
+                totalSessions: 0,
+                avgAccuracy: 100,
+                bestStreak: 0,
+                totalPoints: 0
+            };
+        } catch (e) {
+            this.stats = { totalSolved: 0, totalSessions: 0, avgAccuracy: 100, bestStreak: 0, totalPoints: 0 };
+        }
+    }
+
+    saveSessionStats(solvedCount, accuracy, maxCombo, points) {
+        this.stats.totalSolved += solvedCount;
+        this.stats.totalSessions += 1;
+        this.stats.avgAccuracy = Math.round(
+            ((this.stats.avgAccuracy * (this.stats.totalSessions - 1)) + accuracy) / this.stats.totalSessions
+        );
+        if (maxCombo > this.stats.bestStreak) {
+            this.stats.bestStreak = maxCombo;
+        }
+        this.stats.totalPoints += points;
+        try {
+            localStorage.setItem("mathclub_cards_stats", JSON.stringify(this.stats));
+        } catch (e) {}
+        this.updateDashboardStats();
     }
 
     updateDashboardStats() {
-        if (this.history.length === 0) {
-            this.dom.dashPPM.textContent = "0";
-            this.dom.dashAccuracy.textContent = "0%";
-            this.dom.dashCompleted.textContent = "0";
-            return;
+        if (this.dom.userLevelPoints) {
+            this.dom.userLevelPoints.textContent = String(this.stats.totalPoints || 0);
         }
-
-        // Average PPM and Accuracy
-        let totalPPM = 0;
-        let totalAcc = 0;
-        this.history.forEach(x => {
-            totalPPM += x.ppm;
-            totalAcc += x.accuracy;
-        });
-
-        const avgPPM = Math.round(totalPPM / this.history.length);
-        const avgAcc = Math.round(totalAcc / this.history.length);
-
-        this.dom.dashPPM.textContent = avgPPM;
-        this.dom.dashAccuracy.textContent = `${avgAcc}%`;
-
-        const completedLevels = JSON.parse(localStorage.getItem("mathclub_completed_levels") || "[]");
-        this.dom.dashCompleted.textContent = `${completedLevels.length}/12`;
-    }
-
-    renderStatsView() {
-        const listBody = document.getElementById("stats-table-body");
-        listBody.innerHTML = "";
-
-        if (this.history.length === 0) {
-            document.getElementById("stats-main-content").style.display = "none";
-            document.getElementById("stats-empty").style.display = "block";
-            return;
+        if (this.dom.dashCompleted) {
+            this.dom.dashCompleted.textContent = String(this.stats.totalSolved || 0);
         }
-
-        document.getElementById("stats-main-content").style.display = "grid";
-        document.getElementById("stats-empty").style.display = "none";
-
-        // Display Table History (last 10 items)
-        const recent = [...this.history].reverse().slice(0, 10);
-        recent.forEach(x => {
-            const tr = document.createElement("tr");
-            const dateStr = new Date(x.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-            tr.innerHTML = `
-                <td>${dateStr}</td>
-                <td>${x.level}</td>
-                <td style="text-transform: capitalize;">${x.mode.replace("_", " ")}</td>
-                <td><span style="color:var(--secondary); font-weight:600;">${x.score}</span></td>
-                <td>${x.ppm} PPM</td>
-                <td>${x.accuracy}%</td>
-            `;
-            listBody.appendChild(tr);
-        });
-
-        this.drawCharts();
-    }
-
-    drawCharts() {
-        const last15 = this.history.slice(-15);
-
-        // 1. Line Chart: Speed PPM Progress
-        const speedSvg = document.getElementById("speed-chart");
-        speedSvg.innerHTML = "";// Clear
-
-        // 2. Bar Chart: Accuracy Per Operation Type
-        const accuracySvg = document.getElementById("accuracy-chart");
-        accuracySvg.innerHTML = "";
-
-        const width = 450;
-        const height = 240;
-        const padding = 30;
-
-        // Render Speed Line Chart
-        if (last15.length > 0) {
-            // Draw grid lines
-            for (let i = 0; i <= 4; i++) {
-                const y = padding + (i * (height - 2 * padding) / 4);
-                const val = Math.round(100 - (i * 25)); // assume base 100 max ppm
-                speedSvg.innerHTML += `
-                    <line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}" class="grid-line" />
-                    <text x="${padding - 5}" y="${y + 3}" class="axis-text" text-anchor="end">${val * 1.2}</text>
-                `;
-            }
-
-            const maxVal = Math.max(...last15.map(x => x.ppm), 40) * 1.2;
-            const points = last15.map((x, index) => {
-                const step = last15.length > 1 ? (width - 2 * padding) / (last15.length - 1) : 0;
-                const px = padding + (index * step);
-                const py = height - padding - ((x.ppm / maxVal) * (height - 2 * padding));
-                return { x: px, y: py, ppm: x.ppm, label: x.level };
-            });
-
-            // Draw line
-            if (points.length > 1) {
-                let pathD = `M ${points[0].x} ${points[0].y}`;
-                for (let i = 1; i < points.length; i++) {
-                    pathD += ` L ${points[i].x} ${points[i].y}`;
-                }
-                const pathEl = `<path d="${pathD}" class="line-chart-path" />`;
-                speedSvg.innerHTML += pathEl;
-            }
-
-            // Draw Dots and bind simple tooltips
-            points.forEach((pt, index) => {
-                speedSvg.innerHTML += `
-                    <circle cx="${pt.x}" cy="${pt.y}" r="5" class="chart-dot" data-val="${pt.ppm} PPM" data-lbl="${pt.label}"></circle>
-                `;
-            });
+        if (this.dom.dashAccuracy) {
+            this.dom.dashAccuracy.textContent = `${this.stats.avgAccuracy ?? 100}%`;
         }
-
-        // Render Accuracy Bar Chart
-        const opAccuracies = {};
-        const opCounts = {};
-        this.history.forEach(x => {
-            let op = x.operation;
-            if (op.includes("add")) op = "Addition";
-            else if (op.includes("sub")) op = "Subtraction";
-            else if (op.includes("multi") || op.includes("mul")) op = "Multiplication";
-            else if (op.includes("divi") || op.includes("div")) op = "Division";
-            else op = "Mixed";
-
-            if (!opAccuracies[op]) {
-                opAccuracies[op] = 0;
-                opCounts[op] = 0;
-            }
-            opAccuracies[op] += x.accuracy;
-            opCounts[op]++;
-        });
-
-        const opKeys = Object.keys(opAccuracies);
-        if (opKeys.length > 0) {
-            // Draw grid lines
-            for (let i = 0; i <= 4; i++) {
-                const y = padding + (i * (height - 2 * padding) / 4);
-                const val = 100 - (i * 25);
-                accuracySvg.innerHTML += `
-                    <line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}" class="grid-line" />
-                    <text x="${padding - 5}" y="${y + 3}" class="axis-text" text-anchor="end">${val}%</text>
-                `;
-            }
-
-            // Draw gradient definitions for bars
-            accuracySvg.innerHTML += `
-                <defs>
-                    <linearGradient id="barGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="var(--secondary)" />
-                        <stop offset="100%" stop-color="var(--primary)" />
-                    </linearGradient>
-                </defs>
-            `;
-
-            const barWidth = 40;
-            const gap = (width - 2 * padding - (opKeys.length * barWidth)) / (opKeys.length + 1);
-
-            opKeys.forEach((op, index) => {
-                const avg = Math.round(opAccuracies[op] / opCounts[op]);
-                const bx = padding + gap + (index * (barWidth + gap));
-                const bHeight = (avg / 100) * (height - 2 * padding);
-                const by = height - padding - bHeight;
-
-                accuracySvg.innerHTML += `
-                    <rect x="${bx}" y="${by}" width="${barWidth}" height="${bHeight}" rx="4" class="chart-bar" data-val="${avg}% Accuracy" data-lbl="${op}" />
-                    <text x="${bx + barWidth / 2}" y="${height - padding + 15}" class="axis-text" text-anchor="middle">${op}</text>
-                `;
-            });
-        }
-
-        // Tooltip listeners setup
-        this.setupChartTooltip(speedSvg);
-        this.setupChartTooltip(accuracySvg);
-    }
-
-    setupChartTooltip(svg) {
-        const tooltip = document.getElementById("chart-tooltip");
-        const shapes = svg.querySelectorAll("circle, rect");
-
-        shapes.forEach(elem => {
-            elem.addEventListener("mousemove", (e) => {
-                const val = elem.getAttribute("data-val");
-                const lbl = elem.getAttribute("data-lbl");
-
-                tooltip.style.display = "block";
-                tooltip.innerHTML = `<strong>${lbl}</strong><br/>${val}`;
-
-                // Position tooltip
-                const parentRect = svg.parentElement.getBoundingClientRect();
-                tooltip.style.left = `${(e.clientX - parentRect.left) + 15}px`;
-                tooltip.style.top = `${(e.clientY - parentRect.top) - 40}px`;
-            });
-
-            elem.addEventListener("mouseleave", () => {
-                tooltip.style.display = "none";
-            });
-        });
-    }
-
-    clearStats() {
-        if (confirm("Are you sure you want to clear your entire history? This cannot be undone.")) {
-            localStorage.removeItem("mathclub_history");
-            localStorage.removeItem("mathclub_completed_levels");
-            localStorage.removeItem("mathclub_highscores");
-            this.history = [];
-            this.switchView("dashboard");
+        if (this.dom.dashPPM) {
+            this.dom.dashPPM.textContent = `${this.stats.bestStreak || 0} 🔥`;
         }
     }
 }
 
-// Particle Helper Class for keystroke splash and correct chimes bounce
-class Particle {
-    constructor(x, y, dx, dy, size, color, decay) {
-        this.x = x;
-        this.y = y;
-        this.dx = dx;
-        this.dy = dy;
-        this.size = size;
-        this.color = color;
-        this.alpha = 1.0;
-        this.decay = decay;
-    }
-
-    update(ctx) {
-        this.x += this.dx;
-        this.y += this.dy;
-        // Gravity
-        this.dy += 0.15;
-        this.alpha -= this.decay;
-
-        ctx.save();
-        ctx.globalAlpha = this.alpha;
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-    }
-}
-
-
-// Start application on page load
-window.addEventListener("DOMContentLoaded", () => {
-    window.mathclub = new MathClubApp();
-
-    // Clear history handler bind
-    const clearBtn = document.getElementById("btn-clear-stats");
-    if (clearBtn) {
-        clearBtn.addEventListener("click", () => window.mathclub.clearStats());
-    }
+document.addEventListener("DOMContentLoaded", () => {
+    window.app = new MathClubApp();
 });
