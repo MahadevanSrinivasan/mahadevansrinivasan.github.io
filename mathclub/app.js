@@ -270,6 +270,24 @@ class MathClubApp {
             });
         }
 
+        // Tap the Deck Level Tag during play to manually cycle difficulty level (Lv 1 -> Lv 5)
+        if (this.dom.gameTitle) {
+            this.dom.gameTitle.style.cursor = "pointer";
+            this.dom.gameTitle.title = "Tap to adjust difficulty level (Lv 1–5)";
+            this.dom.gameTitle.addEventListener("click", () => {
+                if (!this.gameState.isActive || !this.gameState.activeDeck) return;
+                const deckId = this.gameState.activeDeck.id;
+                const prog = this.getProfileProgress();
+                const cur = this.getDeckTier(deckId);
+                const next = (cur % 5) + 1;
+                prog.deckTiers[deckId] = next;
+                this.saveAdaptiveProgress();
+                this.dom.gameTitle.textContent = `${this.gameState.activeDeck.title} (Lv ${next} ⬆)`;
+                this.renderAgeProfile();
+                this.generateNextCard();
+            });
+        }
+
         // Results Modal Actions
         document.getElementById("btn-close-modal").addEventListener("click", () => {
             this.dom.resultsModal.classList.remove("active");
@@ -387,9 +405,15 @@ class MathClubApp {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "deck-pill-btn";
+        const tier = this.getDeckTier(deck.id);
+        const wins = this.getDeckWins(deck.id);
+        const tierBadge = window.MathGenerator.describeTier
+            ? window.MathGenerator.describeTier(deck, tier)
+            : `⭐ Lv ${tier}`;
+        const subBadge = wins > 0 ? `${tierBadge} • ${wins} Done` : `${tierBadge} • ${deck.badge || ""}`;
         btn.innerHTML = `
             <span>${deck.title}</span>
-            ${deck.badge ? `<span class="deck-pill-badge">${deck.badge}</span>` : ""}
+            <span class="deck-pill-badge" title="Tap + or − during play or finish with 85%+ to level up!">${subBadge}</span>
         `;
         btn.addEventListener("click", () => this.startDeck(deck));
         return btn;
@@ -482,14 +506,17 @@ class MathClubApp {
         this.gameState.typedAnswer = "";
         this.gameState.isActive = true;
         this.gameState.isTransitioning = false;
+        this.gameState.currentCardHadError = false;
+        this.gameState.sessionSeenKeys = new Set();
         this.gameState.secondsLeft = this.sessionMode === "timed" ? (profile.timeLimit || 110) : 0;
 
         this.switchView("play");
 
+        const curTier = this.getDeckTier(deckDef.id);
         this.dom.statRight.textContent = "0";
         this.dom.statWrong.textContent = "0";
         this.dom.gameScore.textContent = "0";
-        this.dom.gameTitle.textContent = deckDef.title;
+        this.dom.gameTitle.textContent = `${deckDef.title} (Lv ${curTier})`;
         this.dom.comboBadge.style.display = "none";
         this.dom.cardHintBanner.hidden = true;
         this.dom.flashcardPaper.classList.remove("card-correct", "card-wrong");
@@ -532,11 +559,29 @@ class MathClubApp {
     generateNextCard() {
         this.gameState.typedAnswer = "";
         this.gameState.isTransitioning = false;
+        this.gameState.currentCardHadError = false;
         this.dom.flashcardPaper.classList.remove("card-correct", "card-wrong");
         this.dom.cardHintBanner.hidden = true;
 
-        const problem = window.MathGenerator.generate(this.gameState.activeDeck);
+        const deckId = this.gameState.activeDeck ? this.gameState.activeDeck.id : "default";
+        const curTier = this.getDeckTier(deckId);
+        const profileProg = this.getProfileProgress();
+        const avoidKeys = new Set([
+            ...(profileProg.recentSolved || []),
+            ...(this.gameState.sessionSeenKeys || [])
+        ]);
+        const missedQueue = (profileProg.missedByDeck && profileProg.missedByDeck[deckId]) || [];
+
+        const problem = window.MathGenerator.generate(this.gameState.activeDeck, {
+            tier: curTier,
+            avoidKeys,
+            missedQueue
+        });
         this.gameState.currentProblem = problem;
+        const probKey = `${problem.left}${problem.operator}${problem.right}`;
+        if (this.gameState.sessionSeenKeys) {
+            this.gameState.sessionSeenKeys.add(probKey);
+        }
 
         // Render stacked vertical equation
         if (problem.right === null) {
@@ -599,6 +644,10 @@ class MathClubApp {
             const pts = 10 + Math.min(this.gameState.combo, 5) * 2;
             this.gameState.score += pts;
 
+            if (!this.gameState.currentCardHadError && this.gameState.activeDeck) {
+                this.recordCardMastered(this.gameState.activeDeck.id, this.gameState.currentProblem);
+            }
+
             this.dom.statRight.textContent = String(this.gameState.rightCount);
             this.dom.gameScore.textContent = String(this.gameState.score);
             this.dom.cardHintBanner.hidden = true;
@@ -631,6 +680,10 @@ class MathClubApp {
             window.audioManager.playIncorrect();
             this.gameState.wrongCount++;
             this.gameState.combo = 0;
+            this.gameState.currentCardHadError = true;
+            if (this.gameState.activeDeck && this.gameState.currentProblem) {
+                this.recordCardMissed(this.gameState.activeDeck.id, this.gameState.currentProblem);
+            }
             this.dom.statWrong.textContent = String(this.gameState.wrongCount);
             this.dom.comboBadge.style.display = "none";
 
@@ -657,13 +710,30 @@ class MathClubApp {
         const total = this.gameState.rightCount + this.gameState.wrongCount;
         const acc = total > 0 ? Math.round((this.gameState.rightCount / total) * 100) : 100;
 
+        let levelUpMsg = "";
+        if (this.gameState.activeDeck) {
+            const deckId = this.gameState.activeDeck.id;
+            const prog = this.getProfileProgress();
+            prog.deckWins[deckId] = (prog.deckWins[deckId] || 0) + (this.gameState.rightCount > 0 ? 1 : 0);
+            const curTier = this.getDeckTier(deckId);
+            if (this.gameState.rightCount >= 6 && acc >= 85 && curTier < 6) {
+                const nextTier = curTier + 1;
+                prog.deckTiers[deckId] = nextTier;
+                levelUpMsg = `🚀 Level Up! Unlocked Level ${nextTier}!`;
+            } else if (total >= 6 && acc < 55 && curTier > 1) {
+                prog.deckTiers[deckId] = curTier - 1;
+            }
+            this.saveAdaptiveProgress();
+            this.renderAgeProfile();
+        }
+
         this.saveSessionStats(this.gameState.rightCount, acc, this.gameState.maxCombo, this.gameState.score);
 
         let stars = 3;
         if (acc < 85) stars = 2;
         if (acc < 65) stars = 1;
 
-        this.dom.modalTitle.textContent = this.gameState.rightCount > 0 ? "Awesome Job! 🎉" : "Session Complete!";
+        this.dom.modalTitle.textContent = levelUpMsg || (this.gameState.rightCount > 0 ? "Awesome Job! 🎉" : "Session Complete!");
         this.dom.modalStars.textContent = Array(3).fill(0).map((_, i) => (i < stars ? "★" : "☆")).join(" ");
         this.dom.modalPPM.textContent = `${this.gameState.rightCount} / ${this.gameState.wrongCount}`;
         this.dom.modalAccuracy.textContent = `${acc}%`;
@@ -795,6 +865,81 @@ class MathClubApp {
         } catch (e) {
             this.stats = { totalSolved: 0, totalSessions: 0, avgAccuracy: 100, bestStreak: 0, totalPoints: 0 };
         }
+        try {
+            this.adaptiveProgress = JSON.parse(localStorage.getItem("mathclub_adaptive_progress_v1") || "null") || {};
+        } catch (e) {
+            this.adaptiveProgress = {};
+        }
+    }
+
+    getProfileProgress(ageId = this.activeAgeId) {
+        if (!this.adaptiveProgress) this.adaptiveProgress = {};
+        if (!this.adaptiveProgress[ageId]) {
+            this.adaptiveProgress[ageId] = {
+                deckTiers: {},
+                deckWins: {},
+                recentSolved: [],
+                missedByDeck: {}
+            };
+        }
+        return this.adaptiveProgress[ageId];
+    }
+
+    getDeckTier(deckId) {
+        const prog = this.getProfileProgress();
+        return Math.max(1, Number((prog.deckTiers && prog.deckTiers[deckId]) || 1));
+    }
+
+    getDeckWins(deckId) {
+        const prog = this.getProfileProgress();
+        return Math.max(0, Number((prog.deckWins && prog.deckWins[deckId]) || 0));
+    }
+
+    recordCardMastered(deckId, problem) {
+        if (!problem) return;
+        const prog = this.getProfileProgress();
+        const key = `${problem.left}${problem.operator}${problem.right}`;
+        if (!Array.isArray(prog.recentSolved)) prog.recentSolved = [];
+        prog.recentSolved = prog.recentSolved.filter(k => k !== key);
+        prog.recentSolved.push(key);
+        if (prog.recentSolved.length > 45) {
+            prog.recentSolved = prog.recentSolved.slice(-45);
+        }
+        if (prog.missedByDeck && Array.isArray(prog.missedByDeck[deckId])) {
+            prog.missedByDeck[deckId] = prog.missedByDeck[deckId].filter(
+                item => `${item.left}${item.operator}${item.right}` !== key
+            );
+        }
+        this.saveAdaptiveProgress();
+    }
+
+    recordCardMissed(deckId, problem) {
+        if (!problem) return;
+        const prog = this.getProfileProgress();
+        if (!prog.missedByDeck) prog.missedByDeck = {};
+        if (!Array.isArray(prog.missedByDeck[deckId])) prog.missedByDeck[deckId] = [];
+        const key = `${problem.left}${problem.operator}${problem.right}`;
+        if (!prog.missedByDeck[deckId].some(item => `${item.left}${item.operator}${item.right}` === key)) {
+            prog.missedByDeck[deckId].push({
+                left: problem.left,
+                right: problem.right,
+                operator: problem.operator,
+                answer: problem.answer,
+                visualHelper: problem.visualHelper || null,
+                hintText: problem.hintText || "",
+                questionString: problem.questionString || ""
+            });
+            if (prog.missedByDeck[deckId].length > 8) {
+                prog.missedByDeck[deckId].shift();
+            }
+        }
+        this.saveAdaptiveProgress();
+    }
+
+    saveAdaptiveProgress() {
+        try {
+            localStorage.setItem("mathclub_adaptive_progress_v1", JSON.stringify(this.adaptiveProgress));
+        } catch (e) {}
     }
 
     saveSessionStats(solvedCount, accuracy, maxCombo, points) {

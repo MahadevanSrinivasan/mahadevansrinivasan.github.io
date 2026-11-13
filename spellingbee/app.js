@@ -895,6 +895,96 @@
     }
   ];
 
+  /**
+   * Dedicated 64-word bank for Age 4–5 (Kindergarten / Early 1st Grade Phonics & Sight Words)
+   * 16 words per tier:
+   * - easy: 3-letter CVC words (cat, dog, sun, hat...)
+   * - medium: 4-letter blends & sight words (frog, star, jump, cake...)
+   * - hard: 5-letter kindergarten words (smile, train, plant, happy...)
+   * - stretch: Big-kid 1st-grade words (friend, school, garden, rainbow...)
+   */
+  const AGE_4_5_WORD_BANK = [
+    // EASY (3-letter CVC)
+    { word: "cat", grade: 0, difficulty: "easy", points: 10, partOfSpeech: "noun", definition: "A small furry pet that says meow.", exampleSentence: "The orange cat slept on the warm rug.", hints: ["Starts with c: c-a-t"] },
+    { word: "dog", grade: 0, difficulty: "easy", points: 10, partOfSpeech: "noun", definition: "A friendly pet that barks and wags its tail.", exampleSentence: "Our dog loves to fetch the red ball.", hints: ["Sound it out: d-o-g"] },
+    { word: "sun", grade: 0, difficulty: "easy", points: 10, partOfSpeech: "noun", definition: "The bright star that shines in the daytime sky.", exampleSentence: "The yellow sun is shining brightly today.", hints: ["Starts with s: s-u-n"] },
+    { word: "hat", grade: 0, difficulty: "easy", points: 10, partOfSpeech: "noun", definition: "Something you wear on your head.", exampleSentence: "She wore a sun hat at the beach.", hints: ["Rhymes with cat: h-a-t"] },
+    { word: "pig", grade: 0, difficulty: "easy", points: 10, partOfSpeech: "noun", definition: "A pink farm animal with a curly tail.", exampleSentence: "The little pig rolled in the mud.", hints: ["Short i in the middle: p-i-g"] },
+    { word: "bed", grade: 0, difficulty: "easy", points: 10, partOfSpeech: "noun", definition: "A cozy place where you sleep at night.", exampleSentence: "It is time to brush your teeth and go to bed.", hints: ["Starts with b, ends with d: b-e-d"] },
+    { word: "cup", grade: 0, difficulty: "easy", points: 10, partOfSpeech: "noun", definition: "A small container you drink water or milk from.", exampleSentence: "He poured cold milk into his blue cup.", hints: ["Starts with c: c-u-p"] },
+    { word: "fox", grade: 0, difficulty: "easy", points: 10, partOfSpeech: "noun", definition: "A clever wild animal with a bushy orange tail.", exampleSentence: "A red fox trotted across the forest path.", hints: ["Ends with the letter x: f-o-x"] },
+    { word: "jam", grade: 0, difficulty: "easy", points: 10, partOfSpeech: "noun", definition: "Sweet fruit spread you put on toast.", exampleSentence: "We put strawberry jam on our warm toast.", hints: ["Starts with j: j-a-m"] },
+    { word: "map", grade: 0, difficulty: "easy", points: 10, partOfSpeech: "noun", definition: "A drawing of roads, towns, or treasure islands.", exampleSentence: "We looked at the park map to find the zoo.", hints: ["Starts with m, ends with p: m-a-p"] },
+    { word: "net", grade: 0, difficulty: "easy", points: 10, partOfSpeech: "noun", definition: "A mesh bag used to catch butterflies or fish, or a soccer goal.", exampleSentence: "She kicked the soccer ball right into the net.", hints: ["Short e in the middle: n-e-t"] },
+    { word: "pen", grade: 0, difficulty: "easy", points: 10, partOfSpeech: "noun", definition: "A tool with ink used for writing or drawing.", exampleSentence: "Dad signed his name with a blue pen.", hints: ["Rhymes with ten: p-e-n"] },
+    { word: "bus", grade: 0, difficulty: "easy", points: 10, partOfSpeech: "noun", definition: "A big yellow vehicle that takes kids to school.", exampleSentence: "We waved as the yellow school bus drove by.", hints: ["Short u in the middle: b-u-s"] },
+    { word: "fan", grade: 0, difficulty: "easy", points: 10, partOfSpeech: "noun", definition: "A machine with spinning blades that blows cool air.", exampleSentence: "Turn on the fan to cool down the room.", hints: ["Rhymes with pan and can: f-a-n"] },
+    { word: "hop", grade: 0, difficulty: "easy", points: 10, partOfSpeech: "verb", definition: "To jump up and down like a bunny or frog.", exampleSentence: "Watch the little bunny hop across the grass.", hints: ["Starts with h: h-o-p"] },
+    { word: "red", grade: 0, difficulty: "easy", points: 10, partOfSpeech: "adjective", definition: "The bright color of a ripe strawberry or fire truck.", exampleSentence: "She picked a shiny red apple from the basket.", hints: ["Rhymes with bed: r-e-d"] },
+
+    // MEDIUM (4-letter Blends, Digraphs & CVCe)
+    { word: "frog", grade: 1, difficulty: "medium", points: 15, partOfSpeech: "noun", definition: "A green jumping animal that lives near ponds and says ribbit.", exampleSentence: "The green frog jumped onto a lily pad.", hints: ["Starts with the 'fr' blend: f-r-o-g"] },
+    { word: "star", grade: 1, difficulty: "medium", points: 15, partOfSpeech: "noun", definition: "A tiny twinkling light in the night sky.", exampleSentence: "We made a wish on the first bright star.", hints: ["Starts with 'st' and ends with 'ar'"] },
+    { word: "jump", grade: 1, difficulty: "medium", points: 15, partOfSpeech: "verb", definition: "To push yourself up into the air with your feet.", exampleSentence: "How high can you jump on the trampoline?", hints: ["Starts with j and ends with 'mp'"] },
+    { word: "milk", grade: 1, difficulty: "medium", points: 15, partOfSpeech: "noun", definition: "A white drink that comes from cows and makes bones strong.", exampleSentence: "She drank a glass of cold milk with breakfast.", hints: ["Ends with 'lk': m-i-l-k"] },
+    { word: "ship", grade: 1, difficulty: "medium", points: 15, partOfSpeech: "noun", definition: "A large boat that sails across the ocean.", exampleSentence: "The tall sailing ship glided across the sea.", hints: ["Starts with the 'sh' sound: s-h-i-p"] },
+    { word: "cake", grade: 1, difficulty: "medium", points: 15, partOfSpeech: "noun", definition: "A sweet baked dessert for birthdays.", exampleSentence: "We put five candles on the birthday cake.", hints: ["Magic 'e' at the end makes the 'a' say its name"] },
+    { word: "bike", grade: 1, difficulty: "medium", points: 15, partOfSpeech: "noun", definition: "A two-wheeled cycle that you pedal.", exampleSentence: "He rode his red bike down the driveway.", hints: ["Magic 'e' at the end: b-i-k-e"] },
+    { word: "tree", grade: 1, difficulty: "medium", points: 15, partOfSpeech: "noun", definition: "A tall plant with a wooden trunk, branches, and leaves.", exampleSentence: "A squirrel climbed up the tall oak tree.", hints: ["Starts with 'tr' and ends with double 'ee'"] },
+    { word: "fish", grade: 1, difficulty: "medium", points: 15, partOfSpeech: "noun", definition: "An animal with fins that swims in the water.", exampleSentence: "Colorful fish swam around the coral reef.", hints: ["Ends with the 'sh' sound: f-i-s-h"] },
+    { word: "duck", grade: 1, difficulty: "medium", points: 15, partOfSpeech: "noun", definition: "A water bird with webbed feet that says quack.", exampleSentence: "The yellow duck paddled across the pond.", hints: ["Ends with 'ck': d-u-c-k"] },
+    { word: "drum", grade: 1, difficulty: "medium", points: 15, partOfSpeech: "noun", definition: "A musical instrument you tap with sticks to make a beat.", exampleSentence: "He tapped a steady beat on the big drum.", hints: ["Starts with the 'dr' blend: d-r-u-m"] },
+    { word: "flag", grade: 1, difficulty: "medium", points: 15, partOfSpeech: "noun", definition: "A piece of cloth with colors or stars that waves on a pole.", exampleSentence: "The colorful flag waved in the morning breeze.", hints: ["Starts with the 'fl' blend: f-l-a-g"] },
+    { word: "nest", grade: 1, difficulty: "medium", points: 15, partOfSpeech: "noun", definition: "A cozy home of twigs built by a bird for its eggs.", exampleSentence: "Three blue robin eggs rested inside the nest.", hints: ["Ends with 'st': n-e-s-t"] },
+    { word: "snow", grade: 1, difficulty: "medium", points: 15, partOfSpeech: "noun", definition: "Soft white flakes that fall from the sky in winter.", exampleSentence: "We built a happy snowman in the fresh snow.", hints: ["Starts with 'sn' and ends with 'ow'"] },
+    { word: "book", grade: 1, difficulty: "medium", points: 15, partOfSpeech: "noun", definition: "Pages with stories and pictures that you read.", exampleSentence: "We read a funny bedtime book together.", hints: ["Double 'oo' in the middle: b-o-o-k"] },
+    { word: "moon", grade: 1, difficulty: "medium", points: 15, partOfSpeech: "noun", definition: "The bright round orb that shines in the night sky.", exampleSentence: "The full moon glowed above the rooftops.", hints: ["Double 'oo' in the middle: m-o-o-n"] },
+
+    // HARD (5-letter Kindergarten / 1st Grade Words)
+    { word: "smile", grade: 1, difficulty: "hard", points: 20, partOfSpeech: "noun", definition: "A happy expression on your face.", exampleSentence: "Her big smile made everyone feel welcome.", hints: ["Starts with 'sm' and has a magic 'e': s-m-i-l-e"] },
+    { word: "train", grade: 1, difficulty: "hard", points: 20, partOfSpeech: "noun", definition: "Cars on tracks pulled by a locomotive engine.", exampleSentence: "The toy train chugged around the wooden track.", hints: ["Uses 'ai' in the middle: t-r-a-i-n"] },
+    { word: "clock", grade: 1, difficulty: "hard", points: 20, partOfSpeech: "noun", definition: "Something on the wall that tells the time.", exampleSentence: "The wall clock showed that it was noon.", hints: ["Starts with 'cl' and ends with 'ck'"] },
+    { word: "plant", grade: 1, difficulty: "hard", points: 20, partOfSpeech: "noun", definition: "A green living thing that grows in soil.", exampleSentence: "We watered the little flower plant every day.", hints: ["Starts with 'pl' and ends with 'nt'"] },
+    { word: "happy", grade: 1, difficulty: "hard", points: 20, partOfSpeech: "adjective", definition: "Feeling joyful and glad.", exampleSentence: "The puppy was so happy to play in the yard.", hints: ["Double 'p' in the middle, ends with 'y'"] },
+    { word: "green", grade: 1, difficulty: "hard", points: 20, partOfSpeech: "adjective", definition: "The color of grass and leaves in spring.", exampleSentence: "The caterpillar munched on a green leaf.", hints: ["Starts with 'gr' and has double 'ee'"] },
+    { word: "cloud", grade: 1, difficulty: "hard", points: 20, partOfSpeech: "noun", definition: "A fluffy white shape floating in the sky.", exampleSentence: "A puffy white cloud drifted across the blue sky.", hints: ["Starts with 'cl' and uses 'ou': c-l-o-u-d"] },
+    { word: "truck", grade: 1, difficulty: "hard", points: 20, partOfSpeech: "noun", definition: "A big vehicle used for carrying heavy loads.", exampleSentence: "The red fire truck raced down the street.", hints: ["Starts with 'tr' and ends with 'ck'"] },
+    { word: "spoon", grade: 1, difficulty: "hard", points: 20, partOfSpeech: "noun", definition: "A utensil you use to eat soup or cereal.", exampleSentence: "She used a spoon to eat her warm oatmeal.", hints: ["Starts with 'sp' and has double 'oo'"] },
+    { word: "brush", grade: 1, difficulty: "hard", points: 20, partOfSpeech: "noun", definition: "A tool with bristles for painting or cleaning teeth.", exampleSentence: "Use your paint brush to add bright yellow stars.", hints: ["Starts with 'br' and ends with 'sh'"] },
+    { word: "snack", grade: 1, difficulty: "hard", points: 20, partOfSpeech: "noun", definition: "A small bite of food between meals.", exampleSentence: "We ate apple slices and cheese for our snack.", hints: ["Starts with 'sn' and ends with 'ck'"] },
+    { word: "shark", grade: 1, difficulty: "hard", points: 20, partOfSpeech: "noun", definition: "A large ocean fish with a fin on its back.", exampleSentence: "We saw a nurse shark at the aquarium.", hints: ["Starts with 'sh' and ends with 'ark'"] },
+    { word: "whale", grade: 1, difficulty: "hard", points: 20, partOfSpeech: "noun", definition: "A giant ocean mammal that breathes through a blowhole.", exampleSentence: "A blue whale spouted water in the ocean.", hints: ["Starts with 'wh' and ends with magic 'e'"] },
+    { word: "grape", grade: 1, difficulty: "hard", points: 20, partOfSpeech: "noun", definition: "A small round juicy fruit that grows in bunches.", exampleSentence: "He popped a sweet purple grape into his mouth.", hints: ["Starts with 'gr' and ends with magic 'e'"] },
+    { word: "house", grade: 1, difficulty: "hard", points: 20, partOfSpeech: "noun", definition: "A building where a family lives.", exampleSentence: "We painted a picture of our house and garden.", hints: ["Uses 'ou' and ends with 'se': h-o-u-s-e"] },
+    { word: "water", grade: 1, difficulty: "hard", points: 20, partOfSpeech: "noun", definition: "Clear liquid that falls as rain and fills rivers and cups.", exampleSentence: "Drink a cool glass of water after running.", hints: ["Starts with 'wa-' and ends with '-ter'"] },
+
+    // STRETCH (Big Kid 6-7 Letter Words for Age 4–5)
+    { word: "friend", grade: 2, difficulty: "stretch", points: 25, partOfSpeech: "noun", definition: "Someone you like to play and share with.", exampleSentence: "My friend and I built a tall block tower.", hints: ["Spelled f-r-i-e-n-d"] },
+    { word: "school", grade: 2, difficulty: "stretch", points: 25, partOfSpeech: "noun", definition: "The place where children go to learn and play.", exampleSentence: "She carried her new backpack to school.", hints: ["Starts with 'sch' and has double 'oo'"] },
+    { word: "yellow", grade: 2, difficulty: "stretch", points: 25, partOfSpeech: "adjective", definition: "The bright color of lemons, bananas, and sunflowers.", exampleSentence: "A yellow butterfly landed on the flower.", hints: ["Double 'l' in the middle, ends with 'ow'"] },
+    { word: "garden", grade: 2, difficulty: "stretch", points: 25, partOfSpeech: "noun", definition: "A patch of ground where flowers and vegetables grow.", exampleSentence: "Tomatoes and carrots are growing in our garden.", hints: ["Two syllables: gar-den"] },
+    { word: "rabbit", grade: 2, difficulty: "stretch", points: 25, partOfSpeech: "noun", definition: "A furry animal with long ears that loves carrots.", exampleSentence: "A white rabbit hopped into the clover patch.", hints: ["Double 'b' in the middle: rab-bit"] },
+    { word: "planet", grade: 2, difficulty: "stretch", points: 25, partOfSpeech: "noun", definition: "A large world in space that orbits a star, like Earth or Mars.", exampleSentence: "Earth is the blue planet that we call home.", hints: ["Two syllables: plan-et"] },
+    { word: "kitten", grade: 2, difficulty: "stretch", points: 25, partOfSpeech: "noun", definition: "A baby cat.", exampleSentence: "The playful kitten chased a ball of yarn.", hints: ["Double 't' in the middle: kit-ten"] },
+    { word: "purple", grade: 2, difficulty: "stretch", points: 25, partOfSpeech: "adjective", definition: "A color made by mixing red and blue.", exampleSentence: "She colored the plum with a purple crayon.", hints: ["Starts with 'pur-' and ends with '-ple'"] },
+    { word: "rocket", grade: 2, difficulty: "stretch", points: 25, partOfSpeech: "noun", definition: "A spacecraft that blasts off into outer space.", exampleSentence: "The silver rocket zoomed up toward the stars.", hints: ["Uses 'ck' in the middle: rock-et"] },
+    { word: "family", grade: 2, difficulty: "stretch", points: 25, partOfSpeech: "noun", definition: "Parents, children, and loved ones who care for each other.", exampleSentence: "Our whole family went for a walk on the beach.", hints: ["Three syllables: fam-i-ly"] },
+    { word: "summer", grade: 2, difficulty: "stretch", points: 25, partOfSpeech: "noun", definition: "The warmest season of the year.", exampleSentence: "We love swimming at the pool during summer.", hints: ["Double 'm' in the middle: sum-mer"] },
+    { word: "winter", grade: 2, difficulty: "stretch", points: 25, partOfSpeech: "noun", definition: "The coolest season of the year when snow falls.", exampleSentence: "We wear warm coats and mittens in winter.", hints: ["Two syllables: win-ter"] },
+    { word: "monkey", grade: 2, difficulty: "stretch", points: 25, partOfSpeech: "noun", definition: "A playful tree-climbing animal with a long tail.", exampleSentence: "The clever monkey swung from branch to branch.", hints: ["Starts with 'mon-' and ends with '-key'"] },
+    { word: "dragon", grade: 2, difficulty: "stretch", points: 25, partOfSpeech: "noun", definition: "A storybook creature with wings and scales.", exampleSentence: "The friendly dragon flew over the castle.", hints: ["Two syllables: drag-on"] },
+    { word: "castle", grade: 2, difficulty: "stretch", points: 25, partOfSpeech: "noun", definition: "A grand stone fortress with towers and a moat.", exampleSentence: "We built a giant sand castle by the waves.", hints: ["Silent 't' in the middle: cas-tle"] },
+    { word: "rainbow", grade: 2, difficulty: "stretch", points: 25, partOfSpeech: "noun", definition: "A colorful arch in the sky after rain.", exampleSentence: "A seven-color rainbow appeared after the rainstorm.", hints: ["Compound word: rain + bow"] }
+  ];
+
+  const TIER_ORDER = ['easy', 'medium', 'hard', 'stretch'];
+  const TIER_LABELS = {
+    easy: 'Easy',
+    medium: 'Medium',
+    hard: 'Hard',
+    stretch: 'Stretch'
+  };
+
   const TIER_POINTS = {
     easy: 10,
     medium: 15,
@@ -907,7 +997,9 @@
     streak: 'spellingbee_streak',
     tier: 'spellingbee_tier',
     theme: 'spellingbee_theme',
-    customWords: 'spellingbee_custom_words'
+    customWords: 'spellingbee_custom_words',
+    ageMode: 'spellingbee_age_mode',
+    mastery: 'spellingbee_mastery_v1'
   };
 
   const ROUND_LENGTH = 10;
@@ -915,6 +1007,7 @@
   // ================= Application State =================
   const state = {
     wordBank: [...EMBEDDED_WORD_BANK],
+    ageMode: 'age8_9',
     tier: 'easy',
     score: 0,
     streak: 0,
@@ -923,6 +1016,10 @@
     currentIndex: 0,
     submitted: false,
     missedInRound: [],
+    masteryByAge: {
+      age4_5: { tier: 'easy', mastered: [], missed: [] },
+      age8_9: { tier: 'easy', mastered: [], missed: [] }
+    },
     usedWordsByTier: {
       easy: new Set(),
       medium: new Set(),
@@ -935,6 +1032,7 @@
 
   // ================= DOM References =================
   const dom = {
+    ageButtons: Array.from(document.querySelectorAll('.age-mode-btn')),
     tierButtons: Array.from(document.querySelectorAll('.tier-btn')),
     statusReadout: document.getElementById('status-readout'),
     themeToggle: document.getElementById('theme-toggle'),
@@ -952,6 +1050,7 @@
     diffYours: document.getElementById('diff-yours'),
     diffCorrect: document.getElementById('diff-correct'),
     summaryStage: document.getElementById('summary-stage'),
+    summaryTitle: document.querySelector('.summary-title'),
     summaryScore: document.getElementById('summary-score'),
     summaryCorrect: document.getElementById('summary-correct'),
     summaryAccuracy: document.getElementById('summary-accuracy'),
@@ -961,6 +1060,37 @@
     nextRoundBtn: document.getElementById('next-round-btn'),
     touchKb: document.getElementById('sb-touch-kb')
   };
+
+  function getActiveWordBank() {
+    return state.ageMode === 'age4_5' ? AGE_4_5_WORD_BANK : state.wordBank;
+  }
+
+  function getActiveMasteryProfile() {
+    if (!state.masteryByAge[state.ageMode]) {
+      state.masteryByAge[state.ageMode] = { tier: 'easy', mastered: [], missed: [] };
+    }
+    return state.masteryByAge[state.ageMode];
+  }
+
+  function recordWordResult(wordStr, isCorrect) {
+    const key = (wordStr || '').trim().toLowerCase();
+    if (!key) return;
+    const prof = getActiveMasteryProfile();
+    if (!Array.isArray(prof.mastered)) prof.mastered = [];
+    if (!Array.isArray(prof.missed)) prof.missed = [];
+
+    if (isCorrect) {
+      if (!prof.mastered.includes(key)) {
+        prof.mastered.push(key);
+      }
+      prof.missed = prof.missed.filter((w) => w !== key);
+    } else {
+      if (!prof.missed.includes(key)) {
+        prof.missed.push(key);
+      }
+    }
+    savePersistedState();
+  }
 
   // ================= Persistence & URL Params =================
   function loadPersistedState() {
@@ -975,7 +1105,21 @@
         state.streak = savedStreak;
       }
 
-      const savedTier = localStorage.getItem(STORAGE_KEYS.tier);
+      const savedAge = localStorage.getItem(STORAGE_KEYS.ageMode);
+      if (savedAge === 'age4_5' || savedAge === 'age8_9') {
+        state.ageMode = savedAge;
+      }
+
+      const rawMastery = localStorage.getItem(STORAGE_KEYS.mastery);
+      if (rawMastery) {
+        const parsedMastery = JSON.parse(rawMastery);
+        if (parsedMastery && typeof parsedMastery === 'object') {
+          state.masteryByAge = Object.assign(state.masteryByAge, parsedMastery);
+        }
+      }
+
+      const activeProf = getActiveMasteryProfile();
+      const savedTier = activeProf.tier || localStorage.getItem(STORAGE_KEYS.tier);
       if (savedTier && TIER_POINTS[savedTier]) {
         state.tier = savedTier;
       }
@@ -1003,9 +1147,13 @@
 
   function savePersistedState() {
     try {
+      const activeProf = getActiveMasteryProfile();
+      activeProf.tier = state.tier;
       localStorage.setItem(STORAGE_KEYS.score, String(state.score));
       localStorage.setItem(STORAGE_KEYS.streak, String(state.streak));
       localStorage.setItem(STORAGE_KEYS.tier, state.tier);
+      localStorage.setItem(STORAGE_KEYS.ageMode, state.ageMode);
+      localStorage.setItem(STORAGE_KEYS.mastery, JSON.stringify(state.masteryByAge));
     } catch (_) {
       // Ignore storage write errors
     }
@@ -1318,16 +1466,38 @@
   }
 
   function pickRoundWordsForTier(tier, count) {
-    const tierPool = state.wordBank.filter((w) => w.difficulty === tier);
+    const bank = getActiveWordBank();
+    const tierPool = bank.filter((w) => w.difficulty === tier);
+    const prof = getActiveMasteryProfile();
+    const masteredSet = new Set(Array.isArray(prof.mastered) ? prof.mastered : []);
+    const missedSet = new Set(Array.isArray(prof.missed) ? prof.missed : []);
     const usedSet = state.usedWordsByTier[tier] || new Set();
 
-    let unseen = tierPool.filter((w) => !usedSet.has(w.word));
-    if (unseen.length < count) {
+    // 1. Prioritize up to 3 previously missed words from this tier so the child masters them
+    const dueMissed = tierPool.filter((w) => missedSet.has(w.word.toLowerCase()));
+    const reviewPick = shuffleArray(dueMissed).slice(0, Math.min(3, count));
+    const pickedWords = new Set(reviewPick.map((w) => w.word.toLowerCase()));
+
+    // 2. Next, pick from unmastered & unseen words in this tier
+    let unmastered = tierPool.filter(
+      (w) => !masteredSet.has(w.word.toLowerCase()) && !pickedWords.has(w.word.toLowerCase())
+    );
+    let unseenUnmastered = unmastered.filter((w) => !usedSet.has(w.word));
+
+    const remainingNeeded = count - reviewPick.length;
+    let freshPool = unseenUnmastered.length >= remainingNeeded ? unseenUnmastered : unmastered;
+
+    // 3. If the child has mastered almost the entire tier, top up with shuffled words from the tier
+    if (freshPool.length < remainingNeeded) {
       usedSet.clear();
-      unseen = [...tierPool];
+      const fallback = tierPool.filter((w) => !pickedWords.has(w.word.toLowerCase()));
+      freshPool = [
+        ...freshPool,
+        ...shuffleArray(fallback.filter((w) => !freshPool.includes(w)))
+      ];
     }
 
-    const picked = shuffleArray(unseen).slice(0, Math.min(count, tierPool.length));
+    const picked = [...reviewPick, ...shuffleArray(freshPool).slice(0, remainingNeeded)];
     picked.forEach((w) => usedSet.add(w.word));
     return picked;
   }
@@ -1335,12 +1505,28 @@
   function updateTopBar() {
     const totalInRound = state.roundWords.length || ROUND_LENGTH;
     const currentNum = Math.min(state.currentIndex + 1, totalInRound);
-    dom.statusReadout.textContent = `Score: ${state.score} · ${currentNum}/${totalInRound}`;
+    const prof = getActiveMasteryProfile();
+    const masteredSet = new Set(Array.isArray(prof.mastered) ? prof.mastered : []);
+    const bank = getActiveWordBank();
+    const totalMastered = bank.filter((w) => masteredSet.has(w.word.toLowerCase())).length;
+
+    dom.statusReadout.textContent = `Score: ${state.score} · ★ ${totalMastered} Mastered · ${currentNum}/${totalInRound}`;
+
+    if (dom.ageButtons) {
+      dom.ageButtons.forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.age === state.ageMode);
+      });
+    }
 
     dom.tierButtons.forEach((btn) => {
-      const isMatch = btn.dataset.tier === state.tier;
+      const t = btn.dataset.tier;
+      const isMatch = t === state.tier;
       btn.classList.toggle('active', isMatch);
       btn.setAttribute('aria-selected', isMatch ? 'true' : 'false');
+      const tierWords = bank.filter((w) => w.difficulty === t);
+      const tierMastered = tierWords.filter((w) => masteredSet.has(w.word.toLowerCase())).length;
+      const baseLabel = TIER_LABELS[t] || t;
+      btn.textContent = tierMastered > 0 ? `${baseLabel} (${tierMastered}/${tierWords.length})` : baseLabel;
     });
   }
 
@@ -1420,7 +1606,7 @@
       state.streak += 1;
       state.score += earned;
       state.roundScore += earned;
-      savePersistedState();
+      recordWordResult(currentWord.word, true);
       updateTopBar();
 
       dom.feedbackText.textContent =
@@ -1430,7 +1616,8 @@
       dom.diffContainer.hidden = true;
     } else {
       state.streak = 0;
-      savePersistedState();
+      recordWordResult(currentWord.word, false);
+      updateTopBar();
 
       state.missedInRound.push({
         wordObj: currentWord,
@@ -1461,6 +1648,32 @@
     const totalWords = state.roundWords.length || ROUND_LENGTH;
     const correctCount = totalWords - state.missedInRound.length;
     const accuracyPct = Math.round((correctCount / totalWords) * 100);
+
+    // Auto-advance tier if child achieved >= 80% accuracy on a full round and has mastered >= 60% of current tier
+    const bank = getActiveWordBank();
+    const prof = getActiveMasteryProfile();
+    const masteredSet = new Set(Array.isArray(prof.mastered) ? prof.mastered : []);
+    const tierWords = bank.filter((w) => w.difficulty === state.tier);
+    const tierMastered = tierWords.filter((w) => masteredSet.has(w.word.toLowerCase())).length;
+    const curTierIdx = TIER_ORDER.indexOf(state.tier);
+
+    if (
+      totalWords >= 8 &&
+      accuracyPct >= 80 &&
+      tierMastered >= Math.ceil(tierWords.length * 0.5) &&
+      curTierIdx >= 0 &&
+      curTierIdx < TIER_ORDER.length - 1
+    ) {
+      const nextTier = TIER_ORDER[curTierIdx + 1];
+      state.tier = nextTier;
+      savePersistedState();
+      updateTopBar();
+      if (dom.summaryTitle) {
+        dom.summaryTitle.textContent = `🚀 Level Up! Next: ${TIER_LABELS[nextTier]} Words!`;
+      }
+    } else if (dom.summaryTitle) {
+      dom.summaryTitle.textContent = accuracyPct >= 80 ? 'Awesome Round! 🎉' : 'Round Summary';
+    }
 
     dom.summaryScore.textContent = `${state.score} (+${state.roundScore})`;
     dom.summaryCorrect.textContent = `${correctCount} / ${totalWords}`;
@@ -1592,6 +1805,20 @@
   // ================= Event Listeners =================
   function bindEvents() {
     initTouchKeyboard();
+
+    if (dom.ageButtons) {
+      dom.ageButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const newAge = btn.dataset.age;
+          if (!newAge || newAge === state.ageMode) return;
+          state.ageMode = newAge;
+          const prof = getActiveMasteryProfile();
+          state.tier = (prof && TIER_POINTS[prof.tier]) ? prof.tier : 'easy';
+          savePersistedState();
+          startRound();
+        });
+      });
+    }
 
     dom.tierButtons.forEach((btn) => {
       btn.addEventListener('click', () => {

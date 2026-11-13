@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Spelling Bee</title>
   <meta name="description" content="Minimalist 3rd Grade Spelling Bee preparation web app with browser speech synthesis and LCS character diff.">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2">
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7BM4FSL4YP"></script>
   <script>
@@ -17,7 +17,13 @@
 </head>
 <body>
   <header class="top-bar">
-    <div class="brand" aria-label="Spelling Bee">🐝 Spelling Bee</div>
+    <div class="brand-group">
+      <div class="brand" aria-label="Spelling Bee">🐝 Spelling Bee</div>
+      <div class="age-pill-group" role="group" aria-label="Age Mode">
+        <button type="button" class="age-mode-btn" data-age="age4_5" id="age-btn-4-5">👧 Age 4–5</button>
+        <button type="button" class="age-mode-btn active" data-age="age8_9" id="age-btn-8-9">👦 Age 8–9</button>
+      </div>
+    </div>
 
     <nav class="difficulty-pill" role="tablist" aria-label="Difficulty Tier">
       <button type="button" role="tab" class="tier-btn active" data-tier="easy" aria-selected="true">Easy</button>
@@ -112,6 +118,6 @@
     </section>
   </main>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>
