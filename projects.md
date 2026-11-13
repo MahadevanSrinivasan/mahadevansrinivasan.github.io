@@ -4,6 +4,8 @@ title: Projects
 permalink: /projects/
 ---
 
+- #### [Super Leo City: Hero Patrol & Stunt Sandbox](/super-leo-city/) ([GitHub](https://github.com/MahadevanSrinivasan/super-leo-city))
+A wholesome, non-violent 2.5D open-world driving, rescue, and stunt sandbox for kids! Run around the city on foot as Junior Mayor Leo or hop in and out of **8 vehicles + 1 rideable Dino** (**Comet GT Sports Car**, **Big Red Fire Engine** with working Water Cannon, **Hero Patrol Cruiser**, **Melody Ice Cream Van**, **Rocket Pizza Buggy**, **Monster Bounce Truck**, **Aqua-Jet Speedboat**, **Sky-Rescue Helicopter**, and **Emerald Rex**) across 5 rotating Hero Missions, mega stunt ramps, and a Central Park car-soccer pitch—playable on the web and natively on RetroPie.
 - #### [Excitebike (Classic 1984 NES 8-Bit Edition)](/super-dirt-bike-hd/) ([GitHub](https://github.com/MahadevanSrinivasan/super-dirt-bike-hd))
 An authentic 8-bit pixel-art recreation of the 1984 NES classic *Excitebike*—featuring the original green/tan 4-lane stadium track, discrete trapezoidal ramps with diagonal red/white & blue/yellow striped skirts (Obstacles A–I), mud pits, cooling arrows (`>>`), the bottom `TEMP` bar with `OVER HEAT` stalls, rider recovery from the grass shoulder, and all three original modes (**Selection A**, **Selection B** vs. CPU rivals, and **Design** mode)—playable on the web and natively on RetroPie.
 - #### [Super Leo World HD: Dino Island](/super-leo-world-hd/) ([GitHub](https://github.com/MahadevanSrinivasan/super-leo-world-hd))
