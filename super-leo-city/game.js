@@ -1,1403 +1,1987 @@
-/*
- * SUPER LEO CITY: HERO PATROL & STUNT SANDBOX (HTML5 Canvas 60FPS Edition)
- * Wholesome, non-violent open-world driving & rescue sandbox for kids!
- *
- * Features:
- *  - Walk on foot as Junior Mayor Leo OR hop into 8 vehicles + 1 Rideable Dino (`E` / `Enter` / `X`)
- *  - Smart Kid-Friendly Driving: Works with BOTH directional steering (press the arrow direction you
- *    want to go!) AND classic Up=Gas / Left-Right=Steer!
- *  - 2.5D Extruded City Buildings, Sunny Beach Marina, Stunt Airport Helipad, Central Park Soccer Field,
- *    and Dino Safari Reserve!
- *  - 5 Rotating Hero Missions (Fire Rescue, Pizza Express, Ice Cream Party, Robo-Pup Tag, Stunt Show)
- *    + Giant Park Soccer Ball with Goal Nets!
- */
+// ============================================================================
+// SUPER LEO CITY 3D — OPEN-WORLD HERO & STUNT SANDBOX (WebGL / Three.js)
+// Wholesome, non-violent 3D GTA / LEGO City Undercover style open-world game
+// ============================================================================
 
-(function () {
-  "use strict";
+(() => {
+  'use strict';
 
-  const canvas = document.getElementById("gameCanvas");
-  const ctx = canvas.getContext("2d");
-  const W = 1280;
-  const H = 720;
-  const WORLD_W = 3600;
-  const WORLD_H = 3600;
-
-  // Input State
-  const keys = {};
-  const prevKeys = {};
-  window.addEventListener("keydown", (e) => {
-    keys[e.code] = true;
-    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space", "Enter"].includes(e.code)) {
-      e.preventDefault();
+  // --- AUDIO SYNTHESIZER (Web Audio API) ---
+  class SoundEngine {
+    constructor() {
+      this.ctx = null;
+      this.muted = false;
+      this.sirenTimer = 0;
+      this.jingleStep = 0;
     }
-    initAudio();
+    init() {
+      if (!this.ctx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) this.ctx = new AC();
+      }
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+    }
+    tone(freq, dur = 0.12, type = 'triangle', vol = 0.12, slideTo = null) {
+      if (this.muted || !this.ctx) return;
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        if (slideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(20, slideTo), now + dur);
+        gain.gain.setValueAtTime(vol, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + dur);
+      } catch (e) {}
+    }
+    playBoost() {
+      this.tone(140, 0.25, 'sawtooth', 0.14, 420);
+    }
+    playSplash() {
+      this.tone(320, 0.09, 'sine', 0.08, 120);
+    }
+    playJump() {
+      this.tone(240, 0.3, 'triangle', 0.15, 620);
+    }
+    playRoar() {
+      this.tone(95, 0.45, 'sawtooth', 0.22, 48);
+    }
+    playHorn() {
+      this.tone(440, 0.15, 'square', 0.1, 440);
+      setTimeout(() => this.tone(554, 0.22, 'square', 0.1, 554), 90);
+    }
+    playFanfare() {
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((n, i) => setTimeout(() => this.tone(n, 0.22, 'triangle', 0.18), i * 95));
+    }
+    playSmash() {
+      this.tone(190, 0.09, 'square', 0.08, 70);
+    }
+    updateSpecialAudio(dt, vehType, speed) {
+      if (this.muted || !this.ctx) return;
+      this.sirenTimer += dt;
+      if ((vehType === 'police' || vehType === 'firetruck') && Math.abs(speed) > 8) {
+        if (this.sirenTimer > 0.45) {
+          this.sirenTimer = 0;
+          this.jingleStep = (this.jingleStep + 1) % 2;
+          this.tone(this.jingleStep ? 680 : 510, 0.35, 'sine', 0.05);
+        }
+      } else if (vehType === 'icecream' && Math.abs(speed) > 4) {
+        if (this.sirenTimer > 0.28) {
+          this.sirenTimer = 0;
+          const melody = [523, 659, 784, 659, 880, 784, 659, 587];
+          this.jingleStep = (this.jingleStep + 1) % melody.length;
+          this.tone(melody[this.jingleStep], 0.2, 'triangle', 0.06);
+        }
+      }
+    }
+  }
+
+  const sfx = new SoundEngine();
+
+  // --- VEHICLE CATALOG (9 RIDES + LEO ON FOOT) ---
+  const VEHICLE_CATALOG = [
+    {
+      id: 'supercar',
+      key: '1',
+      name: 'Comet GT Supercar',
+      emoji: '🏎️',
+      sub: 'SPACE: Twin-Turbo Nitro • Z: Sport Horn',
+      color: 0xef233c,
+      accent: 0xffd166,
+      maxSpeed: 88,
+      accel: 58,
+      turnRate: 2.5,
+      grip: 0.92,
+      mass: 1.2
+    },
+    {
+      id: 'police',
+      key: '2',
+      name: 'Hero Patrol Interceptor',
+      emoji: '🚓',
+      sub: 'SPACE: Pursuit Boost • Z: Siren Strobe',
+      color: 0x1e293b,
+      accent: 0x38bdf8,
+      maxSpeed: 84,
+      accel: 54,
+      turnRate: 2.55,
+      grip: 0.93,
+      mass: 1.35
+    },
+    {
+      id: 'firetruck',
+      key: '3',
+      name: 'Big Red Fire Engine',
+      emoji: '🚒',
+      sub: 'Z / F: High-Pressure 3D Water Cannon!',
+      color: 0xd90429,
+      accent: 0xfef08a,
+      maxSpeed: 68,
+      accel: 42,
+      turnRate: 2.05,
+      grip: 0.9,
+      mass: 2.2
+    },
+    {
+      id: 'monster',
+      key: '4',
+      name: 'Monster Crush 4x4',
+      emoji: '🛻',
+      sub: 'Z / F: Hydraulic Mega-Bounce • 2x Ramp Air!',
+      color: 0x2563eb,
+      accent: 0x4ade80,
+      maxSpeed: 72,
+      accel: 48,
+      turnRate: 2.35,
+      grip: 0.88,
+      mass: 2.0
+    },
+    {
+      id: 'icecream',
+      key: '5',
+      name: 'Melody Ice Cream Van',
+      emoji: '🍦',
+      sub: 'Z / F: Launch Rainbow Cones • Plays Jingle!',
+      color: 0xf472b6,
+      accent: 0x67e8f9,
+      maxSpeed: 64,
+      accel: 40,
+      turnRate: 2.25,
+      grip: 0.9,
+      mass: 1.5
+    },
+    {
+      id: 'pizza',
+      key: '6',
+      name: 'Rocket Pizza Buggy',
+      emoji: '🍕',
+      sub: 'Z / F: Launch Hot Pizzas • SPACE: Rocket Boost',
+      color: 0xf59e0b,
+      accent: 0xef4444,
+      maxSpeed: 78,
+      accel: 55,
+      turnRate: 2.65,
+      grip: 0.91,
+      mass: 1.0
+    },
+    {
+      id: 'helicopter',
+      key: '7',
+      name: 'Sky-Hawk Rescue Heli',
+      emoji: '🚁',
+      sub: 'SPACE: Climb Up • Z/F: Descend • Fly Anywhere!',
+      color: 0x0284c7,
+      accent: 0xfacc15,
+      maxSpeed: 95,
+      accel: 52,
+      turnRate: 2.4,
+      grip: 0.96,
+      mass: 1.4,
+      isFlying: true
+    },
+    {
+      id: 'speedboat',
+      key: '8',
+      name: 'Aqua-Jet Speedboat',
+      emoji: '🚤',
+      sub: 'Carves Ocean Waves + Amphibious Hydro-Ski!',
+      color: 0x06b6d4,
+      accent: 0xffffff,
+      maxSpeed: 86,
+      accel: 54,
+      turnRate: 2.4,
+      grip: 0.86,
+      mass: 1.3,
+      isBoat: true
+    },
+    {
+      id: 'trex',
+      key: '9',
+      name: 'Emerald Rex (3D Dino)',
+      emoji: '🦖',
+      sub: 'Z / F: Ground-Shaking Dino Roar • SPACE: Leap!',
+      color: 0x16a34a,
+      accent: 0x86efac,
+      maxSpeed: 62,
+      accel: 50,
+      turnRate: 2.7,
+      grip: 0.94,
+      mass: 2.4,
+      isDino: true
+    }
+  ];
+
+  // --- PROCEDURAL HIGH-RES TEXTURE GENERATOR ---
+  function makeCanvasTexture(w, h, drawFn, repeatX = 1, repeatY = 1) {
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    const ctx = c.getContext('2d');
+    drawFn(ctx, w, h);
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(repeatX, repeatY);
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.needsUpdate = true;
+    return tex;
+  }
+
+  const TEXTURES = {
+    roadN: makeCanvasTexture(512, 512, (ctx, w, h) => {
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(0, 0, w, h);
+      // Sidewalks & bold red/white racing curbs
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillRect(0, 0, 44, h);
+      ctx.fillRect(w - 44, 0, 44, h);
+      for (let y = 0; y < h; y += 128) {
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(28, y, 18, 64);
+        ctx.fillRect(w - 46, y, 18, 64);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(28, y + 64, 18, 64);
+        ctx.fillRect(w - 46, y + 64, 18, 64);
+      }
+      // Bold double yellow center line
+      ctx.fillStyle = '#facc15';
+      ctx.fillRect(w / 2 - 16, 0, 11, h);
+      ctx.fillRect(w / 2 + 5, 0, 11, h);
+      // Bold white dashed lane dividers
+      ctx.fillStyle = '#ffffff';
+      for (let y = 24; y < h; y += 128) {
+        ctx.fillRect(w * 0.27, y, 12, 72);
+        ctx.fillRect(w * 0.73 - 12, y, 12, 72);
+      }
+    }, 1, 18),
+
+    roadE: makeCanvasTexture(512, 512, (ctx, w, h) => {
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillRect(0, 0, w, 44);
+      ctx.fillRect(0, h - 44, w, 44);
+      ctx.fillStyle = '#facc15';
+      ctx.fillRect(0, h / 2 - 16, w, 11);
+      ctx.fillRect(0, h / 2 + 5, w, 11);
+      ctx.fillStyle = '#ffffff';
+      for (let x = 24; x < w; x += 128) {
+        ctx.fillRect(x, h * 0.27, 72, 12);
+        ctx.fillRect(x, h * 0.73 - 12, 72, 12);
+      }
+    }, 18, 1),
+
+    buildingGlass: makeCanvasTexture(256, 512, (ctx, w, h) => {
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, '#0f172a');
+      grad.addColorStop(1, '#1e3a5f');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+      const cols = 8, rows = 16;
+      const padX = 6, padY = 6;
+      const cw = w / cols, ch = h / rows;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const lit = Math.random() > 0.32;
+          if (lit) {
+            ctx.fillStyle = Math.random() > 0.25 ? '#bae6fd' : '#fef08a';
+          } else {
+            ctx.fillStyle = '#1e293b';
+          }
+          ctx.fillRect(c * cw + padX, r * ch + padY, cw - padX * 2, ch - padY * 2);
+        }
+      }
+    }),
+
+    buildingWarm: makeCanvasTexture(256, 512, (ctx, w, h) => {
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(0, 0, w, h);
+      const cols = 6, rows = 14;
+      const cw = w / cols, ch = h / rows;
+      for (let r = 0; r < rows; r++) {
+        ctx.fillStyle = 'rgba(0,0,0,0.22)';
+        ctx.fillRect(0, r * ch, w, 3);
+        for (let c = 0; c < cols; c++) {
+          ctx.fillStyle = Math.random() > 0.3 ? '#fde68a' : '#475569';
+          ctx.fillRect(c * cw + 8, r * ch + 8, cw - 16, ch - 16);
+        }
+      }
+    }),
+
+    rampTex: makeCanvasTexture(256, 256, (ctx, w, h) => {
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.moveTo(20, h - 30);
+      ctx.lineTo(w / 2, 40);
+      ctx.lineTo(w - 20, h - 30);
+      ctx.lineTo(w - 55, h - 30);
+      ctx.lineTo(w / 2, 95);
+      ctx.lineTo(55, h - 30);
+      ctx.closePath();
+      ctx.fill();
+    }, 0.05, 0.05),
+
+    grass: makeCanvasTexture(256, 256, (ctx, w, h) => {
+      ctx.fillStyle = '#22c55e';
+      ctx.fillRect(0, 0, w, h);
+      for (let i = 0; i < 1800; i++) {
+        ctx.fillStyle = i % 2 ? '#16a34a' : '#4ade80';
+        ctx.fillRect(Math.random() * w, Math.random() * h, 3, 3);
+      }
+    }, 30, 30),
+
+    soccerPitch: makeCanvasTexture(512, 512, (ctx, w, h) => {
+      for (let i = 0; i < 10; i++) {
+        ctx.fillStyle = i % 2 === 0 ? '#16a34a' : '#22c55e';
+        ctx.fillRect(0, (i * h) / 10, w, h / 10);
+      }
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 8;
+      ctx.strokeRect(20, 20, w - 40, h - 40);
+      ctx.beginPath();
+      ctx.moveTo(20, h / 2);
+      ctx.lineTo(w - 20, h / 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(w / 2, h / 2, 62, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeRect(w * 0.25, 20, w * 0.5, 85);
+      ctx.strokeRect(w * 0.25, h - 105, w * 0.5, 85);
+    })
+  };
+
+  // --- THREE.JS SCENE, CAMERA & RENDERER ---
+  const canvas = document.getElementById('gameCanvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x60a5fa);
+  scene.fog = new THREE.FogExp2(0x7dd3fc, 0.0014);
+
+  const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.5, 1200);
+  camera.position.set(0, 12, -25);
+
+  // --- LIGHTING (DAY / SUNSET / NEON NIGHT) ---
+  const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x1e293b, 0.78);
+  scene.add(hemiLight);
+
+  const sunLight = new THREE.DirectionalLight(0xfffbeb, 1.35);
+  sunLight.position.set(160, 240, 140);
+  sunLight.castShadow = true;
+  sunLight.shadow.mapSize.width = 2048;
+  sunLight.shadow.mapSize.height = 2048;
+  sunLight.shadow.camera.near = 10;
+  sunLight.shadow.camera.far = 650;
+  const d = 240;
+  sunLight.shadow.camera.left = -d;
+  sunLight.shadow.camera.right = d;
+  sunLight.shadow.camera.top = d;
+  sunLight.shadow.camera.bottom = -d;
+  sunLight.shadow.bias = -0.0005;
+  scene.add(sunLight);
+
+  let timeMode = 0; // 0 = Sunny Day, 1 = Golden Sunset, 2 = Neon Night
+  const TIME_PRESETS = [
+    { name: '☀️ Day (T)', bg: 0x38bdf8, fog: 0x7dd3fc, hemi: 0.82, sun: 1.35, sunCol: 0xfffbeb, exposure: 1.1 },
+    { name: '🌅 Sunset (T)', bg: 0xf97316, fog: 0xfb923c, hemi: 0.65, sun: 1.15, sunCol: 0xfde047, exposure: 1.05 },
+    { name: '🌙 Night (T)', bg: 0x090d16, fog: 0x0f172a, hemi: 0.34, sun: 0.28, sunCol: 0x60a5fa, exposure: 0.95 }
+  ];
+
+  // --- WORLD GEOMETRY & COLLIDERS ---
+  const buildingColliders = []; // { minX, maxX, minZ, maxZ, height }
+  const ramps = [];             // { x, z, w, l, h, dir }
+  const physicsProps = [];      // Smashable cones, crates, beachballs
+  const clouds = [];
+  const waterDrops = [];        // 3D water cannon stream particles
+  const projectiles = [];       // Launched pizzas / ice cream cones
+  let ferrisWheelGroup = null;
+
+  function buildWorld() {
+    // 1. Massive Main Island Ground + Surrounding Ocean Bay
+    const oceanGeo = new THREE.PlaneGeometry(2400, 2400);
+    const oceanMat = new THREE.MeshStandardMaterial({
+      color: 0x0284c7,
+      roughness: 0.18,
+      metalness: 0.35
+    });
+    const ocean = new THREE.Mesh(oceanGeo, oceanMat);
+    ocean.rotation.x = -Math.PI / 2;
+    ocean.position.y = -1.2;
+    ocean.receiveShadow = true;
+    scene.add(ocean);
+
+    // Main grassy island landmass (-340..340 X, -340..240 Z)
+    const landGeo = new THREE.BoxGeometry(680, 3, 580);
+    const landMat = new THREE.MeshStandardMaterial({ map: TEXTURES.grass, roughness: 0.85 });
+    const land = new THREE.Mesh(landGeo, landMat);
+    land.position.set(0, -1.5, -50);
+    land.receiveShadow = true;
+    scene.add(land);
+
+    // Sandy Beach Strip along South Bay (Z = 200..265)
+    const beachGeo = new THREE.BoxGeometry(680, 2.6, 75);
+    const beachMat = new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.9 });
+    const beach = new THREE.Mesh(beachGeo, beachMat);
+    beach.position.set(0, -1.55, 235);
+    beach.receiveShadow = true;
+    scene.add(beach);
+
+    //Marina Wooden Pier extending into South Ocean Bay
+    const pierGeo = new THREE.BoxGeometry(36, 2.5, 110);
+    const pierMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.8 });
+    const pier = new THREE.Mesh(pierGeo, pierMat);
+    pier.position.set(120, 0.4, 305);
+    pier.castShadow = true;
+    pier.receiveShadow = true;
+    scene.add(pier);
+
+    // 2. Road Network Grid (Avenues & Cross Streets)
+    const roadXCoords = [-220, -110, 0, 110, 220];
+    const roadZCoords = [-260, -140, -20, 100, 200];
+
+    roadXCoords.forEach(rx => {
+      const rGeo = new THREE.PlaneGeometry(26, 560);
+      const rMat = new THREE.MeshStandardMaterial({ map: TEXTURES.roadN, roughness: 0.7 });
+      const mesh = new THREE.Mesh(rGeo, rMat);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.position.set(rx, 0.06, -50);
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+    });
+
+    roadZCoords.forEach(rz => {
+      const rGeo = new THREE.PlaneGeometry(660, 26);
+      const rMat = new THREE.MeshStandardMaterial({ map: TEXTURES.roadE, roughness: 0.7 });
+      const mesh = new THREE.Mesh(rGeo, rMat);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.position.set(0, 0.04, rz);
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+    });
+
+    // Boulevard Neon Welcome Archways & Streetlamps along Central Ave (X = 0)
+    [-85, 25].forEach(az => {
+      const archGroup = new THREE.Group();
+      const pillarMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.5, roughness: 0.3 });
+      [-14, 14].forEach(ax => {
+        const p = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.1, 18, 12), pillarMat);
+        p.position.set(ax, 9, az);
+        p.castShadow = true;
+        archGroup.add(p);
+      });
+      const banner = new THREE.Mesh(
+        new THREE.BoxGeometry(30, 3.2, 1.8),
+        new THREE.MeshBasicMaterial({ color: az < 0 ? 0x38bdf8 : 0xf59e0b })
+      );
+      banner.position.set(0, 17.5, az);
+      archGroup.add(banner);
+      scene.add(archGroup);
+    });
+
+    // Distant 3D Mountain Range Horizon around the Island
+    const mtnMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 });
+    const snowMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 });
+    for (let i = 0; i < 24; i++) {
+      const ang = (i / 24) * Math.PI * 2;
+      const dist = 540 + (i % 3) * 60;
+      const h = 95 + (i % 4) * 38;
+      const mtn = new THREE.Group();
+      const base = new THREE.Mesh(new THREE.ConeGeometry(85, h, 7), mtnMat);
+      base.position.y = h / 2 - 2;
+      const cap = new THREE.Mesh(new THREE.ConeGeometry(34, h * 0.4, 7), snowMat);
+      cap.position.y = h * 0.8 - 2;
+      mtn.add(base, cap);
+      mtn.position.set(Math.cos(ang) * dist, 0, Math.sin(ang) * dist - 40);
+      scene.add(mtn);
+    }
+
+    // 3. Golden Gate Style Suspension Bridge (X = -110, Z = 220..440)
+    const bridgeDeck = new THREE.Mesh(
+      new THREE.BoxGeometry(26, 1.5, 220),
+      new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 })
+    );
+    bridgeDeck.position.set(-110, 0.6, 330);
+    bridgeDeck.receiveShadow = true;
+    scene.add(bridgeDeck);
+
+    const towerMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.45, metalness: 0.3 });
+    [275, 385].forEach(tz => {
+      [-122, -98].forEach(tx => {
+        const pillar = new THREE.Mesh(new THREE.BoxGeometry(3.2, 58, 3.2), towerMat);
+        pillar.position.set(tx, 27, tz);
+        pillar.castShadow = true;
+        scene.add(pillar);
+      });
+      // Crossbeams
+      [26, 48].forEach(by => {
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(26, 2.6, 2.6), towerMat);
+        beam.position.set(-110, by, tz);
+        beam.castShadow = true;
+        scene.add(beam);
+      });
+    });
+
+    // 4. Downtown Skyscrapers & City Blocks
+    const blockPlots = [
+      // Northwest Downtown High-Rises
+      { x: -165, z: -200, w: 42, d: 42, h: 78, tint: 0x38bdf8, helipad: true },
+      { x: -165, z: -80,  w: 38, d: 44, h: 62, tint: 0x818cf8 },
+      { x: -55,  z: -200, w: 44, d: 40, h: 92, tint: 0x60a5fa, helipad: true, title: 'LEO TOWER' },
+      { x: -55,  z: -80,  w: 36, d: 36, h: 52, tint: 0xf472b6 },
+      { x: 55,   z: -200, w: 42, d: 40, h: 70, tint: 0x34d399 },
+      { x: 55,   z: -80,  w: 38, d: 38, h: 48, tint: 0xfbbf24 },
+      { x: 165,  z: -200, w: 44, d: 42, h: 64, tint: 0xa78bfa },
+      { x: 165,  z: -80,  w: 36, d: 36, h: 42, tint: 0xf87171 },
+      // Mid-City Storefronts & Hero HQ
+      { x: -165, z: 40,   w: 44, d: 36, h: 42, tint: 0xef4444, title: 'FIRE HQ' },
+      { x: -165, z: 150,  w: 38, d: 34, h: 36, tint: 0x3b82f6, title: 'POLICE HQ' },
+      { x: -45,  z: 40,   w: 36, d: 36, h: 54, tint: 0x38bdf8 },
+      { x: -45,  z: 150,  w: 38, d: 34, h: 44, tint: 0xa855f7 },
+      { x: 55,   z: 150,  w: 40, d: 34, h: 48, tint: 0x22c55e },
+      { x: 165,  z: 40,   w: 40, d: 38, h: 46, tint: 0xf59e0b, title: 'PIZZA CO' },
+      { x: 165,  z: 150,  w: 38, d: 36, h: 40, tint: 0xf43f5e },
+      // North Skyline Mega Towers
+      { x: 0,    z: -305, w: 52, d: 44, h: 118, tint: 0x38bdf8 },
+      { x: -110, z: -305, w: 46, d: 42, h: 96,  tint: 0xfacc15 },
+      { x: 110,  z: -305, w: 46, d: 42, h: 102, tint: 0xf472b6 },
+      // Outer West & East Towers
+      { x: -275, z: -195, w: 40, d: 55, h: 58, tint: 0x2dd4bf },
+      { x: -275, z: -80,  w: 40, d: 55, h: 46, tint: 0xfb7185 },
+      { x: -275, z: 40,   w: 40, d: 50, h: 38, tint: 0x60a5fa },
+      { x: 275,  z: -195, w: 42, d: 55, h: 66, tint: 0x818cf8 },
+      { x: 275,  z: -80,  w: 42, d: 50, h: 44, tint: 0xfacc15 }
+    ];
+
+    blockPlots.forEach((b, idx) => {
+      const tex = idx % 2 === 0 ? TEXTURES.buildingGlass : TEXTURES.buildingWarm;
+      const mat = new THREE.MeshStandardMaterial({
+        map: tex,
+        roughness: 0.35,
+        metalness: 0.25
+      });
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, b.d), mat);
+      mesh.position.set(b.x, b.h / 2, b.z);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+
+      // Glowing Neon Roof Crown
+      const crown = new THREE.Mesh(
+        new THREE.BoxGeometry(b.w + 1.2, 1.8, b.d + 1.2),
+        new THREE.MeshBasicMaterial({ color: b.tint })
+      );
+      crown.position.set(b.x, b.h + 0.9, b.z);
+      scene.add(crown);
+
+      if (b.helipad) {
+        const pad = new THREE.Mesh(
+          new THREE.CylinderGeometry(11, 11, 0.6, 24),
+          new THREE.MeshStandardMaterial({ color: 0x1e293b })
+        );
+        pad.position.set(b.x, b.h + 1.9, b.z);
+        scene.add(pad);
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(7.5, 9, 24),
+          new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide })
+        );
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.set(b.x, b.h + 2.25, b.z);
+        scene.add(ring);
+      }
+
+      buildingColliders.push({
+        minX: b.x - b.w / 2 - 1.5,
+        maxX: b.x + b.w / 2 + 1.5,
+        minZ: b.z - b.d / 2 - 1.5,
+        maxZ: b.z + b.d / 2 + 1.5,
+        height: b.h + 2
+      });
+    });
+
+    // 5. 3D Car-Soccer Stadium (Center Plaza: X = -55..55, Z = 10..85)
+    const pitchMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(76, 56),
+      new THREE.MeshStandardMaterial({ map: TEXTURES.soccerPitch, roughness: 0.8 })
+    );
+    pitchMesh.rotation.x = -Math.PI / 2;
+    pitchMesh.rotation.z = Math.PI / 2;
+    pitchMesh.position.set(55, 0.08, 42);
+    pitchMesh.receiveShadow = true;
+    scene.add(pitchMesh);
+
+    // Goal Nets at X = 17 and X = 93 (Z = 42)
+    [17, 93].forEach((gx, gi) => {
+      const goalColor = gi === 0 ? 0x38bdf8 : 0xf43f5e;
+      const postMat = new THREE.MeshBasicMaterial({ color: goalColor });
+      const crossbar = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 18), postMat);
+      crossbar.position.set(gx, 7.5, 42);
+      scene.add(crossbar);
+      [-8.5, 8.5].forEach(gz => {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 7.5, 12), postMat);
+        post.position.set(gx, 3.75, 42 + gz);
+        scene.add(post);
+      });
+    });
+
+    // 6. Rotating 3D Ferris Wheel on the Beach Boardwalk (X = 120, Z = 235)
+    const standMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.4, roughness: 0.3 });
+    [-5, 5].forEach(oz => {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.2, 34, 10), standMat);
+      leg.position.set(120, 16, 235 + oz);
+      leg.rotation.x = oz > 0 ? -0.18 : 0.18;
+      scene.add(leg);
+    });
+    ferrisWheelGroup = new THREE.Group();
+    ferrisWheelGroup.position.set(120, 31, 235);
+    const rim = new THREE.Mesh(
+      new THREE.TorusGeometry(22, 0.8, 12, 36),
+      new THREE.MeshBasicMaterial({ color: 0xf472b6 })
+    );
+    ferrisWheelGroup.add(rim);
+    const gondolaColors = [0xef4444, 0xf59e0b, 0xeab308, 0x22c55e, 0x06b6d4, 0x3b82f6, 0xa855f7, 0xec4899];
+    for (let i = 0; i < 12; i++) {
+      const ang = (i / 12) * Math.PI * 2;
+      const spoke = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.22, 0.22, 44, 6),
+        new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+      );
+      spoke.rotation.z = ang;
+      ferrisWheelGroup.add(spoke);
+
+      const cab = new THREE.Mesh(
+        new THREE.SphereGeometry(2.2, 12, 12),
+        new THREE.MeshStandardMaterial({ color: gondolaColors[i % gondolaColors.length], roughness: 0.3 })
+      );
+      cab.position.set(Math.cos(ang) * 22, Math.sin(ang) * 22, 0);
+      ferrisWheelGroup.add(cab);
+    }
+    scene.add(ferrisWheelGroup);
+
+    // 7. 18 Mega Stunt Ramps + Sky Rings
+    const rampLocations = [
+      { x: 0,    z: -75,  w: 12, l: 24, h: 6.5, dir: 'N' },
+      { x: 0,    z: 35,   w: 12, l: 24, h: 6.0, dir: 'N' }, // Right ahead of player start, sloping UP toward Downtown!
+      { x: -110, z: -60,  w: 12, l: 22, h: 7.0, dir: 'N' },
+      { x: -110, z: 185,  w: 14, l: 24, h: 7.5, dir: 'S' }, // Jump onto Golden Gate Bridge!
+      { x: 110,  z: -60,  w: 12, l: 22, h: 7.0, dir: 'N' },
+      { x: 110,  z: 170,  w: 14, l: 24, h: 8.0, dir: 'S' }, // Jump toward Ferris Wheel & Marina!
+      { x: -55,  z: -20,  w: 12, l: 20, h: 6.5, dir: 'E' },
+      { x: 55,   z: -20,  w: 12, l: 20, h: 6.5, dir: 'W' },
+      { x: -55,  z: -140, w: 12, l: 22, h: 7.0, dir: 'E' },
+      { x: 55,   z: -140, w: 12, l: 22, h: 7.0, dir: 'W' },
+      { x: 220,  z: 30,   w: 16, l: 28, h: 9.5, dir: 'N' }, // Monster Truck Mega Ramp!
+      { x: -220, z: 30,   w: 16, l: 28, h: 9.5, dir: 'S' }
+    ];
+
+    rampLocations.forEach(r => {
+      // Build a true sloped wedge geometry so cars drive smoothly up the incline
+      const shape = new THREE.Shape();
+      shape.moveTo(-r.l / 2, 0);
+      shape.lineTo(r.l / 2, 0);
+      shape.lineTo(r.l / 2, r.h);
+      shape.closePath();
+
+      const extrudeGeo = new THREE.ExtrudeGeometry(shape, { depth: r.w, bevelEnabled: false });
+      extrudeGeo.center();
+      const rampMesh = new THREE.Mesh(
+        extrudeGeo,
+        new THREE.MeshStandardMaterial({ map: TEXTURES.rampTex, roughness: 0.5 })
+      );
+      rampMesh.position.set(r.x, r.h / 2, r.z);
+      if (r.dir === 'N') rampMesh.rotation.y = Math.PI / 2;
+      else if (r.dir === 'S') rampMesh.rotation.y = -Math.PI / 2;
+      else if (r.dir === 'W') rampMesh.rotation.y = Math.PI;
+      rampMesh.castShadow = true;
+      rampMesh.receiveShadow = true;
+      scene.add(rampMesh);
+
+      // Glowing Gold Sky Ring above the ramp apex
+      const skyRing = new THREE.Mesh(
+        new THREE.TorusGeometry(6.5, 0.55, 12, 28),
+        new THREE.MeshBasicMaterial({ color: 0xfacc15 })
+      );
+      const offsetZ = r.dir === 'N' ? -18 : r.dir === 'S' ? 18 : 0;
+      const offsetX = r.dir === 'E' ? 18 : r.dir === 'W' ? -18 : 0;
+      skyRing.position.set(r.x + offsetX, r.h + 8, r.z + offsetZ);
+      if (r.dir === 'E' || r.dir === 'W') skyRing.rotation.y = Math.PI / 2;
+      scene.add(skyRing);
+
+      ramps.push(r);
+    });
+
+    // 8. Trees, Palm Trees & Streetlamps
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
+    const leafMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.7 });
+    for (let i = 0; i < 95; i++) {
+      const tx = (Math.random() - 0.5) * 600;
+      const tz = (Math.random() - 0.5) * 480;
+      // Avoid roads & buildings
+      if (roadXCoords.some(rx => Math.abs(tx - rx) < 18)) continue;
+      if (roadZCoords.some(rz => Math.abs(tz - rz) < 18)) continue;
+      if (buildingColliders.some(b => tx > b.minX - 4 && tx < b.maxX + 4 && tz > b.minZ - 4 && tz < b.maxZ + 4)) continue;
+      if (tx > 10 && tx < 100 && tz > 5 && tz < 80) continue; // Keep soccer pitch clear
+
+      const tree = new THREE.Group();
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.9, 6, 7), trunkMat);
+      trunk.position.y = 3;
+      trunk.castShadow = true;
+      tree.add(trunk);
+
+      const crown1 = new THREE.Mesh(new THREE.ConeGeometry(4.2, 8, 8), leafMat);
+      crown1.position.y = 8;
+      crown1.castShadow = true;
+      tree.add(crown1);
+
+      const crown2 = new THREE.Mesh(new THREE.ConeGeometry(3.1, 6.5, 8), leafMat);
+      crown2.position.y = 11.5;
+      crown2.castShadow = true;
+      tree.add(crown2);
+
+      tree.position.set(tx, 0, tz);
+      scene.add(tree);
+    }
+
+    // 9. Knockable 3D Physics Props (Cones, Crates, Beachballs)
+    const coneGeo = new THREE.ConeGeometry(0.85, 2.2, 10);
+    const coneMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.4 });
+    const crateGeo = new THREE.BoxGeometry(1.8, 1.8, 1.8);
+    const crateMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.7 });
+
+    for (let i = 0; i < 90; i++) {
+      const isCone = i % 3 !== 0;
+      const mesh = new THREE.Mesh(isCone ? coneGeo : crateGeo, isCone ? coneMat : crateMat);
+      const rx = roadXCoords[i % roadXCoords.length] + (i % 2 === 0 ? 10 : -10);
+      const rz = -220 + (i * 5.2) % 420;
+      mesh.position.set(rx, isCone ? 1.1 : 0.9, rz);
+      mesh.castShadow = true;
+      scene.add(mesh);
+      physicsProps.push({
+        mesh,
+        vx: 0,
+        vy: 0,
+        vz: 0,
+        hitCooldown: 0,
+        baseY: isCone ? 1.1 : 0.9
+      });
+    }
+
+    // 10. Fluffy 3D Sky Clouds
+    const cloudMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95 });
+    for (let i = 0; i < 26; i++) {
+      const cg = new THREE.Group();
+      for (let j = 0; j < 4; j++) {
+        const puff = new THREE.Mesh(new THREE.SphereGeometry(8 + Math.random() * 6, 10, 10), cloudMat);
+        puff.position.set(j * 7 - 10, Math.random() * 3, (Math.random() - 0.5) * 6);
+        puff.scale.y = 0.55;
+        cg.add(puff);
+      }
+      cg.position.set((Math.random() - 0.5) * 900, 105 + Math.random() * 45, (Math.random() - 0.5) * 900);
+      scene.add(cg);
+      clouds.push(cg);
+    }
+  }
+
+  // --- 3D ARTICULATED VEHICLE BUILDER ---
+  function createVehicleMesh(spec) {
+    const root = new THREE.Group();
+    const bodyGroup = new THREE.Group(); // Tilts with suspension pitch & roll
+    root.add(bodyGroup);
+
+    const wheels = [];
+    let rotorMain = null;
+    let rotorTail = null;
+    const dinoLegs = [];
+
+    const mainMat = new THREE.MeshStandardMaterial({
+      color: spec.color,
+      roughness: 0.25,
+      metalness: 0.45
+    });
+    const accentMat = new THREE.MeshStandardMaterial({
+      color: spec.accent,
+      roughness: 0.3,
+      metalness: 0.3
+    });
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: 0x0f172a,
+      roughness: 0.1,
+      metalness: 0.85
+    });
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.8 });
+    const rimMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.7, roughness: 0.2 });
+
+    if (spec.isDino) {
+      // 3D Articulated Emerald T-Rex!
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.6, 5.6), mainMat);
+      torso.position.set(0, 4.2, 0);
+      torso.castShadow = true;
+      bodyGroup.add(torso);
+
+      const head = new THREE.Mesh(new THREE.BoxGeometry(2.8, 2.6, 3.8), mainMat);
+      head.position.set(0, 6.8, 2.8);
+      head.castShadow = true;
+      bodyGroup.add(head);
+
+      const jaw = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.8, 3.2), accentMat);
+      jaw.position.set(0, 5.2, 2.9);
+      bodyGroup.add(jaw);
+
+      // Glowing Dino Eyes
+      [-1.42, 1.42].forEach(ex => {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), new THREE.MeshBasicMaterial({ color: 0xfef08a }));
+        eye.position.set(ex, 7.2, 3.6);
+        bodyGroup.add(eye);
+      });
+
+      const tail = new THREE.Mesh(new THREE.ConeGeometry(1.4, 6.5, 8), mainMat);
+      tail.rotation.x = -Math.PI / 2.2;
+      tail.position.set(0, 4.0, -5.2);
+      bodyGroup.add(tail);
+
+      // Two stomping legs
+      [-1.4, 1.4].forEach(lx => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(1.2, 3.6, 1.8), mainMat);
+        leg.position.set(lx, 1.8, 0);
+        leg.castShadow = true;
+        bodyGroup.add(leg);
+        dinoLegs.push(leg);
+      });
+    } else if (spec.isFlying) {
+      // 3D Sky-Hawk Rescue Helicopter
+      const fuselage = new THREE.Mesh(new THREE.BoxGeometry(3.8, 3.2, 7.5), mainMat);
+      fuselage.position.set(0, 2.8, 0);
+      fuselage.castShadow = true;
+      bodyGroup.add(fuselage);
+
+      const cockpit = new THREE.Mesh(new THREE.SphereGeometry(2.1, 16, 12), glassMat);
+      cockpit.position.set(0, 2.9, 2.6);
+      bodyGroup.add(cockpit);
+
+      const tailBoom = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.2, 6.5), accentMat);
+      tailBoom.position.set(0, 3.1, -6.2);
+      bodyGroup.add(tailBoom);
+
+      // Landing Skids
+      [-1.8, 1.8].forEach(sx => {
+        const skid = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 7.5, 8), rimMat);
+        skid.rotation.x = Math.PI / 2;
+        skid.position.set(sx, 0.5, 0.5);
+        bodyGroup.add(skid);
+      });
+
+      // Spinning Main Rotor & Tail Rotor
+      rotorMain = new THREE.Group();
+      rotorMain.position.set(0, 4.8, 0);
+      const blade1 = new THREE.Mesh(new THREE.BoxGeometry(13.5, 0.12, 0.7), wheelMat);
+      const blade2 = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.12, 13.5), wheelMat);
+      rotorMain.add(blade1, blade2);
+      bodyGroup.add(rotorMain);
+
+      rotorTail = new THREE.Mesh(new THREE.BoxGeometry(0.15, 2.8, 0.4), accentMat);
+      rotorTail.position.set(0.65, 3.3, -9.2);
+      bodyGroup.add(rotorTail);
+    } else if (spec.isBoat) {
+      // 3D Aqua-Jet Speedboat
+      const hull = new THREE.Mesh(new THREE.BoxGeometry(4.0, 1.5, 8.6), mainMat);
+      hull.position.set(0, 1.1, 0);
+      hull.castShadow = true;
+      bodyGroup.add(hull);
+
+      const bow = new THREE.Mesh(new THREE.ConeGeometry(2.8, 4.2, 4), accentMat);
+      bow.rotation.x = Math.PI / 2;
+      bow.rotation.y = Math.PI / 4;
+      bow.position.set(0, 1.2, 5.8);
+      bodyGroup.add(bow);
+
+      const windshield = new THREE.Mesh(new THREE.BoxGeometry(3.3, 1.1, 2.2), glassMat);
+      windshield.position.set(0, 2.1, 1.2);
+      bodyGroup.add(windshield);
+    } else {
+      // 3D Wheeled Cars / Trucks (Supercar, Police, Fire Engine, Monster Truck, Ice Cream, Pizza)
+      const isTruck = spec.id === 'firetruck' || spec.id === 'icecream';
+      const isMonster = spec.id === 'monster';
+      const chassisH = isTruck ? 2.8 : 1.35;
+      const chassisL = isTruck ? 9.2 : 7.2;
+      const chassisW = isMonster ? 4.2 : 3.8;
+      const liftY = isMonster ? 2.4 : 1.15;
+
+      const chassis = new THREE.Mesh(new THREE.BoxGeometry(chassisW, chassisH, chassisL), mainMat);
+      chassis.position.set(0, liftY + chassisH / 2, 0);
+      chassis.castShadow = true;
+      bodyGroup.add(chassis);
+
+      // Side Accent Stripe
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(chassisW + 0.1, 0.45, chassisL * 0.88), accentMat);
+      stripe.position.set(0, liftY + chassisH * 0.45, 0);
+      bodyGroup.add(stripe);
+
+      // Cabin & Tinted Windshield
+      const cabL = isTruck ? chassisL * 0.72 : chassisL * 0.52;
+      const cabH = isTruck ? 1.8 : 1.25;
+      const cabin = new THREE.Mesh(new THREE.BoxGeometry(chassisW * 0.86, cabH, cabL), glassMat);
+      cabin.position.set(0, liftY + chassisH + cabH / 2 - 0.1, isTruck ? 0.4 : -0.3);
+      cabin.castShadow = true;
+      bodyGroup.add(cabin);
+
+      // Roof Top matching paint
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(chassisW * 0.82, 0.25, cabL * 0.88), mainMat);
+      roof.position.set(0, liftY + chassisH + cabH, isTruck ? 0.4 : -0.3);
+      bodyGroup.add(roof);
+
+      // Vehicle-specific 3D Details
+      if (spec.id === 'supercar') {
+        // Rear Aerodynamic Wing Spoiler
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.22, 1.1), accentMat);
+        wing.position.set(0, liftY + chassisH + 0.85, -chassisL / 2 + 0.5);
+        bodyGroup.add(wing);
+      } else if (spec.id === 'police' || spec.id === 'firetruck') {
+        // Flashing Red & Blue 3D Roof Lightbar
+        const barRed = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.45, 0.6), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+        barRed.position.set(-0.75, liftY + chassisH + cabH + 0.3, 0.4);
+        const barBlue = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.45, 0.6), new THREE.MeshBasicMaterial({ color: 0x3b82f6 }));
+        barBlue.position.set(0.75, liftY + chassisH + cabH + 0.3, 0.4);
+        bodyGroup.add(barRed, barBlue);
+
+        if (spec.id === 'firetruck') {
+          // White Extending Turntable Fire Ladder on Roof
+          const ladder = new THREE.Mesh(
+            new THREE.BoxGeometry(1.2, 0.5, 7.6),
+            new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.4 })
+          );
+          ladder.position.set(0, liftY + chassisH + cabH + 0.55, -0.5);
+          bodyGroup.add(ladder);
+        }
+      } else if (spec.id === 'icecream') {
+        // Giant 3D Ice Cream Cone on Roof!
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(0.95, 2.4, 12), new THREE.MeshStandardMaterial({ color: 0xf59e0b }));
+        cone.rotation.x = Math.PI * 0.78;
+        cone.position.set(0, liftY + chassisH + cabH + 1.1, 0.2);
+        const scoop = new THREE.Mesh(new THREE.SphereGeometry(1.05, 14, 14), new THREE.MeshStandardMaterial({ color: 0xf472b6 }));
+        scoop.position.set(0, liftY + chassisH + cabH + 2.1, 0.8);
+        bodyGroup.add(cone, scoop);
+      } else if (spec.id === 'pizza') {
+        // Glowing Pizza Sign on Roof
+        const pie = new THREE.Mesh(new THREE.CylinderGeometry(1.35, 1.35, 0.35, 18), new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
+        pie.position.set(0, liftY + chassisH + cabH + 0.35, -0.3);
+        bodyGroup.add(pie);
+      }
+
+      // Glowing Headlights & Brake Lights
+      const hlMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+      const tlMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+      [-1.25, 1.25].forEach(lx => {
+        const hl = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.45, 0.2), hlMat);
+        hl.position.set(lx, liftY + 0.7, chassisL / 2 + 0.05);
+        const tl = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.4, 0.2), tlMat);
+        tl.position.set(lx, liftY + 0.75, -chassisL / 2 - 0.05);
+        bodyGroup.add(hl, tl);
+      });
+
+      // 4 Independent 3D Wheels (Steer & Spin)
+      const wheelRadius = isMonster ? 1.55 : 0.95;
+      const wheelWidth = isMonster ? 1.15 : 0.65;
+      const wheelX = chassisW / 2 + wheelWidth * 0.32;
+      const wheelZ = chassisL * 0.33;
+
+      [
+        { x: -wheelX, z: wheelZ, front: true },
+        { x: wheelX, z: wheelZ, front: true },
+        { x: -wheelX, z: -wheelZ, front: false },
+        { x: wheelX, z: -wheelZ, front: false }
+      ].forEach(wp => {
+        const wGroup = new THREE.Group();
+        wGroup.position.set(wp.x, wheelRadius, wp.z);
+        const tire = new THREE.Mesh(new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelWidth, 18), wheelMat);
+        tire.rotation.z = Math.PI / 2;
+        tire.castShadow = true;
+        const hub = new THREE.Mesh(new THREE.CylinderGeometry(wheelRadius * 0.55, wheelRadius * 0.55, wheelWidth + 0.05, 12), rimMat);
+        hub.rotation.z = Math.PI / 2;
+        wGroup.add(tire, hub);
+        root.add(wGroup);
+        wheels.push({ group: wGroup, tire, front: wp.front });
+      });
+    }
+
+    // 3D Nitro Flame Cones at Rear
+    const flameMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+    const flameGroup = new THREE.Group();
+    [-0.9, 0.9].forEach(fx => {
+      const f = new THREE.Mesh(new THREE.ConeGeometry(0.45, 2.6, 10), flameMat);
+      f.rotation.x = -Math.PI / 2;
+      f.position.set(fx, 1.2, -4.6);
+      flameGroup.add(f);
+    });
+    flameGroup.visible = false;
+    bodyGroup.add(flameGroup);
+
+    // Real Dynamic Headlight SpotLight for Sunset/Night
+    const headSpot = new THREE.SpotLight(0xfffbeb, 0.0, 85, Math.PI / 5, 0.45, 1.2);
+    headSpot.position.set(0, 2.4, 3.5);
+    headSpot.target.position.set(0, 0, 28);
+    bodyGroup.add(headSpot);
+    bodyGroup.add(headSpot.target);
+
+    scene.add(root);
+
+    return {
+      spec,
+      root,
+      bodyGroup,
+      wheels,
+      rotorMain,
+      rotorTail,
+      dinoLegs,
+      flameGroup,
+      headSpot,
+      x: 0,
+      y: 0,
+      z: 0,
+      vx: 0,
+      vy: 0,
+      vz: 0,
+      heading: 0,
+      speed: 0,
+      steerAngle: 0,
+      airTime: 0
+    };
+  }
+
+  // --- CREATE JUNIOR MAYOR LEO (3D CHARACTER WHEN WALKING ON FOOT) ---
+  function createLeoCharacter() {
+    const group = new THREE.Group();
+    const shirtMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.4 });
+    const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 });
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xfdba74, roughness: 0.5 });
+    const capMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 });
+
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.5, 0.8), shirtMat);
+    torso.position.y = 2.1;
+    torso.castShadow = true;
+    group.add(torso);
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.65, 14, 14), skinMat);
+    head.position.y = 3.45;
+    head.castShadow = true;
+    group.add(head);
+
+    const cap = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.35, 1.35), capMat);
+    cap.position.set(0, 3.95, 0.15);
+    group.add(cap);
+
+    const legL = new THREE.Mesh(new THREE.BoxGeometry(0.48, 1.3, 0.52), pantsMat);
+    legL.position.set(-0.32, 0.7, 0);
+    const legR = new THREE.Mesh(new THREE.BoxGeometry(0.48, 1.3, 0.52), pantsMat);
+    legR.position.set(0.32, 0.7, 0);
+    group.add(legL, legR);
+
+    group.visible = false;
+    scene.add(group);
+    return { group, legL, legR, x: 0, y: 0, z: 0, vy: 0, heading: 0, speed: 0 };
+  }
+
+  // --- BUILD WORLD & SPAWN ALL 9 VEHICLES + SOCCER BALL ---
+  buildWorld();
+
+  const worldVehicles = [];
+  const spawnPositions = [
+    { x: 0,    z: 75,   h: Math.PI },     // 1: Comet GT Supercar (Facing Downtown!)
+    { x: -110, z: 120,  h: Math.PI },     // 2: Hero Patrol Interceptor
+    { x: -110, z: 20,   h: 0 },           // 3: Big Red Fire Engine
+    { x: 220,  z: -15,  h: 0 },           // 4: Monster Crush 4x4
+    { x: 0,    z: 115,  h: Math.PI / 2 }, // 5: Melody Ice Cream Van
+    { x: 110,  z: 20,   h: -Math.PI / 2 },// 6: Rocket Pizza Buggy
+    { x: -55,  z: -200, h: 0, y: 94.5 },  // 7: Sky-Hawk Helicopter (Also summonable with [7]!)
+    { x: 120,  z: 345,  h: 0 },           // 8: Aqua-Jet Speedboat at Marina Bay
+    { x: 110,  z: -120, h: Math.PI }      // 9: Emerald Rex (3D T-Rex)
+  ];
+
+  VEHICLE_CATALOG.forEach((spec, i) => {
+    const v = createVehicleMesh(spec);
+    const sp = spawnPositions[i];
+    v.x = sp.x;
+    v.y = sp.y || 0;
+    v.z = sp.z;
+    v.heading = sp.h;
+    v.root.position.set(v.x, v.y, v.z);
+    v.root.rotation.y = v.heading;
+    worldVehicles.push(v);
   });
-  window.addEventListener("keyup", (e) => {
+
+  // Giant 3D Bouncy Soccer Ball in Stadium (X = 55, Z = 42)
+  const soccerBallMesh = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(2.8, 2),
+    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3, wireframe: false })
+  );
+  // Add black pentagon wireframe overlay so it looks like a classic 3D soccer ball
+  const soccerWire = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(2.83, 1),
+    new THREE.MeshBasicMaterial({ color: 0x111827, wireframe: true })
+  );
+  soccerBallMesh.add(soccerWire);
+  soccerBallMesh.castShadow = true;
+  scene.add(soccerBallMesh);
+  const soccerBall = { mesh: soccerBallMesh, x: 55, y: 2.8, z: 42, vx: 0, vy: 0, vz: 0 };
+
+  // AI Traffic Cars Cruising Avenues
+  const aiCars = [];
+  const aiColors = [0x38bdf8, 0xa855f7, 0x22c55e, 0xfacc15, 0xf43f5e, 0xf97316];
+  for (let i = 0; i < 14; i++) {
+    const g = new THREE.Group();
+    const b = new THREE.Mesh(
+      new THREE.BoxGeometry(3.4, 1.5, 6.4),
+      new THREE.MeshStandardMaterial({ color: aiColors[i % aiColors.length], roughness: 0.35 })
+    );
+    b.position.y = 1.3;
+    b.castShadow = true;
+    const t = new THREE.Mesh(
+      new THREE.BoxGeometry(2.9, 1.1, 3.4),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.2 })
+    );
+    t.position.y = 2.4;
+    g.add(b, t);
+    const rx = [-220, -110, 110, 220][i % 4];
+    const dir = i % 2 === 0 ? 1 : -1;
+    const rz = -220 + (i * 32) % 380;
+    g.position.set(rx + (dir > 0 ? 5.5 : -5.5), 0, rz);
+    g.rotation.y = dir > 0 ? 0 : Math.PI;
+    scene.add(g);
+    aiCars.push({ group: g, x: rx + (dir > 0 ? 5.5 : -5.5), z: rz, dir, speed: 24 + (i % 4) * 5 });
+  }
+
+  // --- HERO MISSIONS & 3D OBJECTIVE BEACON ---
+  const MISSIONS = [
+    {
+      title: '🔥 Fire Rescue at Central Avenue!',
+      desc: 'Drive into the golden beacon or spray it with the Fire Engine [3] Water Cannon [Z]!',
+      x: -110,
+      z: -20,
+      type: 'fire',
+      prefVeh: 'firetruck'
+    },
+    {
+      title: '🍕 Hot Pizza Rush to Marina Pier!',
+      desc: 'Race to the Sunny Beach Marina Pier (press [6] for Rocket Pizza Buggy or drive there)!',
+      x: 120,
+      z: 270,
+      type: 'delivery',
+      prefVeh: 'pizza'
+    },
+    {
+      title: '🚁 Sky-High Rooftop Helipad Rescue!',
+      desc: 'Press [7] for the Sky-Hawk Helicopter (or hit a Mega Ramp) to reach Leo Tower Rooftop!',
+      x: -55,
+      z: -200,
+      y: 94,
+      type: 'rooftop',
+      prefVeh: 'helicopter'
+    },
+    {
+      title: '🍦 Ice Cream Party at Soccer Plaza!',
+      desc: 'Bring sweet treats to the Central Stadium entrance (press [5] for Ice Cream Van)!',
+      x: 0,
+      z: 42,
+      type: 'icecream',
+      prefVeh: 'icecream'
+    },
+    {
+      title: '🌉 Golden Gate Bridge Stunt Sprint!',
+      desc: 'Blast across the red Golden Gate Suspension Bridge beacon at full turbo speed!',
+      x: -110,
+      z: 330,
+      type: 'bridge',
+      prefVeh: 'supercar'
+    }
+  ];
+
+  let missionIdx = 0;
+  const beaconGroup = new THREE.Group();
+  const beaconCylinder = new THREE.Mesh(
+    new THREE.CylinderGeometry(7, 7, 65, 24, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.28, side: THREE.DoubleSide })
+  );
+  beaconCylinder.position.y = 32.5;
+  const beaconRing = new THREE.Mesh(
+    new THREE.TorusGeometry(7.2, 0.5, 12, 32),
+    new THREE.MeshBasicMaterial({ color: 0xfde047 })
+  );
+  beaconRing.rotation.x = Math.PI / 2;
+  beaconRing.position.y = 0.6;
+
+  // 3D Fire visual inside beacon for Fire Missions
+  const fireGroup = new THREE.Group();
+  for (let i = 0; i < 5; i++) {
+    const fCone = new THREE.Mesh(
+      new THREE.ConeGeometry(1.8, 5.5, 8),
+      new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0xef4444 : 0xf97316 })
+    );
+    fCone.position.set((Math.random() - 0.5) * 4, 2.7, (Math.random() - 0.5) * 4);
+    fireGroup.add(fCone);
+  }
+  beaconGroup.add(beaconCylinder, beaconRing, fireGroup);
+  scene.add(beaconGroup);
+
+  function syncMissionUI() {
+    const m = MISSIONS[missionIdx];
+    document.getElementById('missionTitle').textContent = m.title;
+    document.getElementById('missionDesc').textContent = m.desc;
+    beaconGroup.position.set(m.x, m.y || 0, m.z);
+    fireGroup.visible = m.type === 'fire';
+  }
+  syncMissionUI();
+
+  // --- PLAYER STATE & CONTROLS ---
+  const leo = createLeoCharacter();
+  let activeVehicle = worldVehicles[0]; // Start in Comet GT Supercar
+  let gameStarted = false;
+  let score = 0;
+  let stars = 0;
+  let nitro = 100;
+  let cameraMode = 0; // 0 = Chase, 1 = Close Action, 2 = High Helicopter View
+  const CAM_NAMES = ['🎥 Cam: Chase (C)', '🎥 Cam: Close (C)', '🎥 Cam: Aerial (C)'];
+
+  const keys = {};
+  window.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if (!gameStarted && (e.code === 'Enter' || e.code === 'Space')) {
+      startGame();
+      return;
+    }
+    if (e.code === 'KeyC') cycleCamera();
+    if (e.code === 'KeyT') cycleTimeOfDay();
+    if (e.code === 'KeyM') toggleMute();
+    if (e.code === 'KeyE' || e.code === 'Enter') toggleEnterExitVehicle();
+    if (e.code === 'KeyZ' || e.code === 'KeyF') triggerVehicleGadget();
+
+    // Instant Vehicle Summon Keys 1..9
+    if (e.code.startsWith('Digit')) {
+      const num = parseInt(e.code.replace('Digit', ''), 10);
+      if (num >= 1 && num <= VEHICLE_CATALOG.length) {
+        summonAndBoardVehicle(num - 1);
+      }
+    }
+  });
+  window.addEventListener('keyup', e => {
     keys[e.code] = false;
   });
 
-  document.querySelectorAll(".tbtn").forEach((btn) => {
-    const k = btn.getAttribute("data-key");
-    btn.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      initAudio();
-      keys[k] = true;
+  // Build Bottom Vehicle Quick-Spawner Dock
+  const dockEl = document.getElementById('vehicleDock');
+  VEHICLE_CATALOG.forEach((spec, idx) => {
+    const btn = document.createElement('div');
+    btn.className = 'dock-item' + (idx === 0 ? ' active' : '');
+    btn.innerHTML = `<span class="dock-key">[${spec.key}]</span><span class="dock-emoji">${spec.emoji}</span><span class="dock-label">${spec.name.split(' ')[0]}</span>`;
+    btn.addEventListener('click', () => {
+      sfx.init();
+      summonAndBoardVehicle(idx);
     });
-    btn.addEventListener("pointerup", (e) => {
-      e.preventDefault();
-      keys[k] = false;
-    });
-    btn.addEventListener("pointerleave", () => {
-      keys[k] = false;
-    });
+    dockEl.appendChild(btn);
   });
 
-  function justPressed(code) {
-    return !!keys[code] && !prevKeys[code];
-  }
-
-  // Web Audio Synthesizer (Sirens, Ice Cream Jingle, Splash, Engine, Goal Horn!)
-  let audioCtx = null;
-  function initAudio() {
-    if (!audioCtx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (AC) audioCtx = new AC();
-    }
-    if (audioCtx && audioCtx.state === "suspended") {
-      audioCtx.resume();
-    }
-  }
-
-  function playTone(freq, endFreq, dur, type = "square", gainVal = 0.08) {
-    if (!audioCtx) return;
-    try {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-      if (endFreq !== freq) {
-        osc.frequency.linearRampToValueAtTime(endFreq, audioCtx.currentTime + dur);
-      }
-      gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + dur);
-    } catch (_) {}
-  }
-
-  function sfxHopIn() {
-    playTone(330, 660, 0.16, "triangle", 0.12);
-    setTimeout(() => playTone(660, 880, 0.14, "triangle", 0.12), 90);
-  }
-  function sfxSplash() {
-    playTone(520, 180, 0.12, "sine", 0.07);
-  }
-  function sfxThrow() {
-    playTone(400, 780, 0.14, "triangle", 0.1);
-  }
-  function sfxCoin() {
-    playTone(987.77, 1318.5, 0.18, "square", 0.08);
-  }
-  function sfxRamp() {
-    playTone(260, 880, 0.35, "sawtooth", 0.09);
-  }
-  function sfxGoal() {
-    [523.25, 659.25, 783.99, 1046.5].forEach((n, i) => {
-      setTimeout(() => playTone(n, n, 0.22, "sawtooth", 0.11), i * 110);
+  function updateVehicleHUD() {
+    const items = dockEl.querySelectorAll('.dock-item');
+    items.forEach((el, idx) => {
+      el.classList.toggle('active', activeVehicle === worldVehicles[idx]);
     });
-  }
-
-  // Vehicle Catalog
-  const VEH_TYPES = {
-    SPORTS: {
-      id: "SPORTS",
-      name: "Comet GT Sports Car",
-      w: 68, h: 36,
-      maxSpeed: 10.5, accel: 0.42, turn: 0.075,
-      color: "#ef4444", stripe: "#ffffff",
-      actionName: "HONK & TURBO DRIFT",
-      siren: false, canFly: false, canSwim: false
-    },
-    FIRE: {
-      id: "FIRE",
-      name: "Big Red Fire Engine",
-      w: 88, h: 42,
-      maxSpeed: 8.2, accel: 0.30, turn: 0.062,
-      color: "#dc2626", stripe: "#facc15",
-      actionName: "WATER CANNON [Z]",
-      siren: true, canFly: false, canSwim: false
-    },
-    POLICE: {
-      id: "POLICE",
-      name: "Hero Patrol Cruiser",
-      w: 70, h: 36,
-      maxSpeed: 9.8, accel: 0.38, turn: 0.072,
-      color: "#1d4ed8", stripe: "#f8fafc",
-      actionName: "SIREN & RESCUE BEAM [Z]",
-      siren: true, canFly: false, canSwim: false
-    },
-    ICECREAM: {
-      id: "ICECREAM",
-      name: "Melody Ice Cream Van",
-      w: 74, h: 40,
-      maxSpeed: 7.8, accel: 0.28, turn: 0.065,
-      color: "#f472b6", stripe: "#38bdf8",
-      actionName: "TOSS ICE CREAM [Z]",
-      siren: false, jingle: true, canFly: false, canSwim: false
-    },
-    PIZZA: {
-      id: "PIZZA",
-      name: "Rocket Pizza Buggy",
-      w: 62, h: 34,
-      maxSpeed: 9.2, accel: 0.38, turn: 0.078,
-      color: "#f97316", stripe: "#fde047",
-      actionName: "LAUNCH HOT PIZZA [Z]",
-      siren: false, canFly: false, canSwim: false
-    },
-    MONSTER: {
-      id: "MONSTER",
-      name: "Monster Bounce Truck",
-      w: 82, h: 48,
-      maxSpeed: 8.6, accel: 0.34, turn: 0.068,
-      color: "#8b5cf6", stripe: "#4ade80",
-      actionName: "MEGA BOUNCE JUMP [Z]",
-      siren: false, canFly: false, canSwim: false, monster: true
-    },
-    BOAT: {
-      id: "BOAT",
-      name: "Aqua-Jet Speedboat",
-      w: 78, h: 38,
-      maxSpeed: 10.2, accel: 0.36, turn: 0.070,
-      color: "#06b6d4", stripe: "#ffffff",
-      actionName: "WATER FOUNTAIN [Z]",
-      siren: false, canFly: false, canSwim: true
-    },
-    HELI: {
-      id: "HELI",
-      name: "Sky-Rescue Helicopter",
-      w: 76, h: 44,
-      maxSpeed: 11.0, accel: 0.40, turn: 0.080,
-      color: "#f59e0b", stripe: "#ffffff",
-      actionName: "WATER DROP [Z]",
-      siren: false, canFly: true, canSwim: true
-    },
-    DINO: {
-      id: "DINO",
-      name: "Emerald Rex Dino",
-      w: 66, h: 40,
-      maxSpeed: 9.0, accel: 0.40, turn: 0.085,
-      color: "#10b981", stripe: "#ef4444",
-      actionName: "DINO ROAR & LEAP [Z]",
-      siren: false, canFly: false, canSwim: true
-    }
-  };
-
-  // City Buildings (2.5D Extruded Blocks)
-  const buildings = [
-    // Downtown Core
-    { x: 420, y: 420, w: 320, h: 240, roof: "#3b82f6", wall: "#1d4ed8", label: "CITY HALL", height: 34 },
-    { x: 1020, y: 420, w: 300, h: 240, roof: "#ef4444", wall: "#b91c1c", label: "FIRE & RESCUE HQ", height: 30 },
-    { x: 1620, y: 420, w: 320, h: 240, roof: "#2563eb", wall: "#1e40af", label: "HERO POLICE HQ", height: 30 },
-    { x: 420, y: 1020, w: 320, h: 260, roof: "#f97316", wall: "#c2410c", label: "ROCKET PIZZERIA", height: 26 },
-    { x: 1620, y: 1020, w: 320, h: 260, roof: "#ec4899", wall: "#be185d", label: "ICE CREAM PALACE", height: 26 },
-    { x: 420, y: 1620, w: 320, h: 260, roof: "#8b5cf6", wall: "#5b21b6", label: "TOY & ROBOT LAB", height: 32 },
-    { x: 1020, y: 1620, w: 300, h: 260, roof: "#14b8a6", wall: "#0f766e", label: "MEGA ARCADE", height: 28 },
-    { x: 1620, y: 1620, w: 320, h: 260, roof: "#eab308", wall: "#a16207", label: "MONSTER GARAGE", height: 28 },
-    // Airport Terminal (Northwest of Airport)
-    { x: 2260, y: 420, w: 340, h: 220, roof: "#0284c7", wall: "#0369a1", label: "STUNT AIRPORT", height: 28 },
-    // Dino Visitor Center
-    { x: 2260, y: 1620, w: 320, h: 220, roof: "#16a34a", wall: "#15803d", label: "DINO SAFARI PARK", height: 24 }
-  ];
-
-  // Stunt Ramps & Boost Pads
-  const ramps = [
-    { x: 860, y: 800, w: 90, h: 52, dir: 0, label: "JUMP" },
-    { x: 1460, y: 800, w: 90, h: 52, dir: 0, label: "JUMP" },
-    { x: 860, y: 1420, w: 90, h: 52, dir: 0, label: "JUMP" },
-    { x: 2040, y: 900, w: 110, h: 60, dir: 0, label: "RIVER JUMP" },
-    { x: 2040, y: 1500, w: 110, h: 60, dir: 0, label: "RIVER JUMP" },
-    { x: 2780, y: 720, w: 70, h: 120, dir: -Math.PI / 2, label: "SKY RAMP" },
-    { x: 2780, y: 1220, w: 70, h: 120, dir: -Math.PI / 2, label: "SKY RAMP" },
-    { x: 1150, y: 2180, w: 110, h: 60, dir: 0, label: "BEACH JUMP" }
-  ];
-
-  // Game State
-  let gameState = "title"; // "title" | "playing"
-  let tick = 0;
-  let coins = 0;
-  let score = 0;
-  let stuntsDone = 0;
-  let missionsDone = 0;
-  let bannerText = "WELCOME TO SUPER LEO CITY! PRESS E OR ENTER NEAR ANY VEHICLE TO DRIVE!";
-  let bannerTimer = 320;
-
-  const player = {
-    x: 920,
-    y: 780,
-    vx: 0,
-    vy: 0,
-    angle: 0,
-    z: 0,
-    vz: 0,
-    inVehicle: null,
-    anim: 0,
-    nitroTimer: 0
-  };
-
-  const camera = { x: 300, y: 300 };
-
-  // Vehicles in the world
-  const vehicles = [];
-  function spawnVehicle(typeKey, x, y, angle = 0, aiPatrol = false) {
-    const def = VEH_TYPES[typeKey];
-    vehicles.push({
-      type: def,
-      x, y,
-      vx: 0, vy: 0,
-      speed: 0,
-      angle,
-      z: 0, vz: 0,
-      rotorAngle: 0,
-      sirenOn: def.siren,
-      aiPatrol,
-      aiTargetAngle: angle
-    });
-  }
-
-  // Bouncy Props (Cones, Hydrants, Beach Balls) & Park Soccer Ball
-  const props = [];
-  const soccerBall = {
-    x: 1170, y: 1150,
-    vx: 0, vy: 0,
-    r: 22
-  };
-  const soccerGoalLeft  = { x: 980,  y: 1090, w: 36, h: 120 };
-  const soccerGoalRight = { x: 1324, y: 1090, w: 36, h: 120 };
-
-  // Projectiles (Water droplets, Ice Cream cones, Pizzas) & Particles
-  const projectiles = [];
-  const particles = [];
-  const tireMarks = [];
-
-  // Active Hero Mission
-  let mission = {
-    index: 0,
-    title: "",
-    desc: "",
-    targets: [],
-    progress: 0,
-    goal: 3
-  };
-
-  function addParticle(x, y, vx, vy, color, size, life, text = "") {
-    particles.push({ x, y, vx, vy, color, size, life, maxLife: life, text });
-  }
-
-  function showBanner(msg, dur = 240) {
-    bannerText = msg;
-    bannerTimer = dur;
-  }
-
-  function setupCity() {
-    vehicles.length = 0;
-    props.length = 0;
-    projectiles.length = 0;
-    particles.length = 0;
-    tireMarks.length = 0;
-
-    // Parked Hero Vehicles at each Station + Right next to Leo at start!
-    spawnVehicle("SPORTS",   960,  720, 0, false);          // Right beside Leo at Start!
-    spawnVehicle("FIRE",     1160, 710, 0, false);          // Fire HQ
-    spawnVehicle("POLICE",   1760, 710, Math.PI, false);    // Police HQ
-    spawnVehicle("PIZZA",    580,  1340, 0, false);         // Rocket Pizzeria
-    spawnVehicle("ICECREAM", 1760, 1340, Math.PI, false);   // Ice Cream Palace
-    spawnVehicle("MONSTER",  1760, 1940, 0, false);         // Monster Garage
-    spawnVehicle("HELI",     2960, 560, 0, false);          // Airport Helipad
-    spawnVehicle("BOAT",     1420, 2720, 0, false);         // Sunny Beach Marina Dock
-    spawnVehicle("DINO",     2520, 1940, 0, false);         // Dino Safari Park
-
-    // Friendly AI City Traffic cruising the avenues
-    spawnVehicle("SPORTS",   800,  1360, 0, true);
-    spawnVehicle("ICECREAM", 1420, 900, Math.PI / 2, true);
-    spawnVehicle("PIZZA",    840,  1960, 0, true);
-    spawnVehicle("POLICE",   1980, 1360, -Math.PI / 2, true);
-
-    // Fire Hydrants & Traffic Cones along avenues + Beach Balls on the beach
-    for (let x = 460; x <= 2000; x += 260) {
-      props.push({ type: "hydrant", x, y: 690, vx: 0, vy: 0, r: 12, geyserTimer: 0 });
-      props.push({ type: "cone", x: x + 90, y: 1310, vx: 0, vy: 0, r: 10 });
-    }
-    for (let x = 600; x <= 1900; x += 220) {
-      props.push({ type: "beachball", x, y: 2420 + (x % 3) * 40, vx: 0, vy: 0, r: 16 });
-    }
-
-    startMission(0);
-  }
-
-  function startMission(idx) {
-    mission.index = idx % 5;
-    mission.targets = [];
-    mission.progress = 0;
-
-    if (mission.index === 0) {
-      mission.title = "MISSION 1: FIRE BRIGADE RESCUE!";
-      mission.desc = "Spray water [Z] on 3 Overheated Popcorn Carts! (Fire Truck or Water Blaster)";
-      mission.goal = 3;
-      mission.targets = [
-        { x: 760,  y: 960,  r: 36, hp: 25, maxHp: 25, type: "fire", done: false },
-        { x: 1480, y: 740,  r: 36, hp: 25, maxHp: 25, type: "fire", done: false },
-        { x: 1460, y: 1520, r: 36, hp: 25, maxHp: 25, type: "fire", done: false }
-      ];
-    } else if (mission.index === 1) {
-      mission.title = "MISSION 2: ROCKET PIZZA EXPRESS!";
-      mission.desc = "Drive or launch Pizzas [Z] into 3 Hungry Picnic Zones!";
-      mission.goal = 3;
-      mission.targets = [
-        { x: 620,  y: 740,  r: 48, type: "pizza_zone", done: false },
-        { x: 1180, y: 980,  r: 48, type: "pizza_zone", done: false },
-        { x: 1840, y: 1540, r: 48, type: "pizza_zone", done: false }
-      ];
-    } else if (mission.index === 2) {
-      mission.title = "MISSION 3: ICE CREAM PARK PARTY!";
-      mission.desc = "Toss treats [Z] or drive up to 4 Cheering Kids around the City!";
-      mission.goal = 4;
-      mission.targets = [
-        { x: 1040, y: 1020, r: 42, type: "kid", done: false },
-        { x: 1320, y: 1240, r: 42, type: "kid", done: false },
-        { x: 920,  y: 2340, r: 42, type: "kid", done: false },
-        { x: 1540, y: 2340, r: 42, type: "kid", done: false }
-      ];
-    } else if (mission.index === 3) {
-      mission.title = "MISSION 4: CATCH THE BOUNCY ROBO-PUP!";
-      mission.desc = "Professor Gear's toy Robo-Pup is zooming around! Drive close to rescue it!";
-      mission.goal = 3;
-      mission.targets = [
-        { x: 1380, y: 820,  vx: 3.4, vy: 0, r: 34, type: "robopup", done: false },
-        { x: 840,  y: 1480, vx: 0, vy: 3.4, r: 34, type: "robopup", done: false },
-        { x: 1960, y: 1180, vx: -3.2, vy: 2.2, r: 34, type: "robopup", done: false }
-      ];
+    if (activeVehicle) {
+      document.getElementById('vehIcon').textContent = activeVehicle.spec.emoji;
+      document.getElementById('vehName').textContent = activeVehicle.spec.name;
+      document.getElementById('vehSub').textContent = activeVehicle.spec.sub;
     } else {
-      mission.title = "MISSION 5: SUPER STUNT SHOW!";
-      mission.desc = "Launch off any 3 Yellow Stunt Ramps in the city!";
-      mission.goal = 3;
-      mission.targets = ramps.slice(0, 3).map((rm) => ({
-        x: rm.x + rm.w / 2,
-        y: rm.y + rm.h / 2,
-        r: 55,
-        type: "stunt_ring",
-        done: false
-      }));
-    }
-    showBanner(mission.title + " — " + mission.desc, 300);
-  }
-
-  function completeMissionTarget(t) {
-    if (t.done) return;
-    t.done = true;
-    mission.progress++;
-    coins += 10;
-    score += 500;
-    sfxCoin();
-    addParticle(t.x, t.y - 20, 0, -2.5, "#fde047", 18, 55, "+500 HERO BONUS!");
-
-    if (mission.progress >= mission.goal) {
-      missionsDone++;
-      score += 2000;
-      coins += 25;
-      sfxGoal();
-      addParticle(player.x, player.y - 40, 0, -2.0, "#4ade80", 22, 80, "MISSION COMPLETE! +2000");
-      setTimeout(() => startMission(mission.index + 1), 1600);
+      document.getElementById('vehIcon').textContent = '🏃';
+      document.getElementById('vehName').textContent = 'Junior Mayor Leo (On Foot)';
+      document.getElementById('vehSub').textContent = 'Press [E] near any ride or [1-9] to summon!';
     }
   }
 
-  function isWaterAt(x, y) {
-    // Southern Ocean Bay (y > 2560) or East River Canal (x between 2090 and 2210, y < 2560)
-    if (y > 2560) return true;
-    if (x > 2090 && x < 2210 && y < 2560) {
-      // Allow crossing over the 2 river bridges!
-      if ((y > 840 && y < 980) || (y > 1440 && y < 1580)) return false;
-      return true;
-    }
-    return false;
+  function summonAndBoardVehicle(index) {
+    const targetVeh = worldVehicles[index];
+    const refPos = activeVehicle ? activeVehicle : leo;
+    // Bring summoned vehicle right to player's current location & heading!
+    targetVeh.x = refPos.x;
+    targetVeh.z = refPos.z;
+    targetVeh.y = Math.max(0, refPos.y);
+    targetVeh.heading = refPos.heading;
+    targetVeh.speed = activeVehicle ? activeVehicle.speed * 0.7 : 0;
+    targetVeh.root.position.set(targetVeh.x, targetVeh.y, targetVeh.z);
+    targetVeh.root.rotation.y = targetVeh.heading;
+
+    activeVehicle = targetVeh;
+    leo.group.visible = false;
+    sfx.playJump();
+    showStuntBanner(targetVeh.spec.emoji + ' ' + targetVeh.spec.name.toUpperCase(), 'READY TO ROLL!');
+    updateVehicleHUD();
   }
 
-  function collideBuildings(x, y, radius, isFlying, isMonster) {
-    if (isFlying) return { x, y, hit: false };
-    let hit = false;
-    for (let i = 0; i < buildings.length; i++) {
-      const b = buildings[i];
-      const cx = Math.max(b.x, Math.min(x, b.x + b.w));
-      const cy = Math.max(b.y, Math.min(y, b.y + b.h));
-      const dx = x - cx;
-      const dy = y - cy;
-      const distSq = dx * dx + dy * dy;
-      if (distSq < radius * radius) {
-        const dist = Math.sqrt(distSq) || 1;
-        const push = radius - dist;
-        x += (dx / dist) * push;
-        y += (dy / dist) * push;
-        hit = true;
+  function toggleEnterExitVehicle() {
+    sfx.init();
+    if (activeVehicle) {
+      // Hop out as Leo right beside the door
+      leo.x = activeVehicle.x - Math.cos(activeVehicle.heading) * 4.5;
+      leo.z = activeVehicle.z + Math.sin(activeVehicle.heading) * 4.5;
+      leo.y = Math.max(0, activeVehicle.y);
+      leo.heading = activeVehicle.heading;
+      leo.group.position.set(leo.x, leo.y, leo.z);
+      leo.group.visible = true;
+      activeVehicle = null;
+      sfx.playJump();
+      updateVehicleHUD();
+    } else {
+      // Find closest vehicle
+      let best = null;
+      let bestDist = 22;
+      worldVehicles.forEach(v => {
+        const d = Math.hypot(v.x - leo.x, v.z - leo.z);
+        if (d < bestDist) {
+          bestDist = d;
+          best = v;
+        }
+      });
+      if (best) {
+        activeVehicle = best;
+        leo.group.visible = false;
+        sfx.playJump();
+        showStuntBanner(best.spec.emoji + ' ' + best.spec.name.toUpperCase(), 'HOPPED IN!');
+        updateVehicleHUD();
       }
     }
-    return { x, y, hit };
   }
 
-  function fireActionWeapon() {
-    const v = player.inVehicle;
-    const angle = v ? v.angle : player.angle;
-    const px = player.x + Math.cos(angle) * 34;
-    const py = player.y + Math.sin(angle) * 34;
+  let bannerTimeout = null;
+  function showStuntBanner(mainText, subText) {
+    const banner = document.getElementById('stuntBanner');
+    document.getElementById('stuntMain').textContent = mainText;
+    document.getElementById('stuntSub').textContent = subText;
+    banner.classList.add('active');
+    if (bannerTimeout) clearTimeout(bannerTimeout);
+    bannerTimeout = setTimeout(() => banner.classList.remove('active'), 2100);
+  }
 
-    if (!v || v.type.id === "FIRE" || v.type.id === "BOAT" || v.type.id === "HELI") {
-      // Spray stream of refreshing water droplets!
-      sfxSplash();
-      for (let i = 0; i < 3; i++) {
-        const spread = (Math.random() - 0.5) * 0.28;
-        const spd = 11 + Math.random() * 4;
-        projectiles.push({
-          kind: "water",
-          x: px, y: py,
-          vx: Math.cos(angle + spread) * spd,
-          vy: Math.sin(angle + spread) * spd,
-          r: 10,
-          color: "#38bdf8",
-          life: 34
+  function addScore(pts) {
+    score += pts;
+    document.getElementById('scoreVal').textContent = score.toLocaleString() + ' PTS';
+  }
+
+  // --- VEHICLE GADGETS (Z / F KEY) ---
+  function triggerVehicleGadget() {
+    sfx.init();
+    if (!activeVehicle) {
+      leo.vy = 16;
+      sfx.playJump();
+      return;
+    }
+    const id = activeVehicle.spec.id;
+    const fwdX = Math.sin(activeVehicle.heading);
+    const fwdZ = Math.cos(activeVehicle.heading);
+
+    if (id === 'firetruck') {
+      // Spray burst of 3D pressurized water droplets!
+      sfx.playSplash();
+      for (let i = 0; i < 14; i++) {
+        const drop = new THREE.Mesh(
+          new THREE.SphereGeometry(0.55, 8, 8),
+          new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+        );
+        drop.position.set(activeVehicle.x + fwdX * 3, activeVehicle.y + 4.8, activeVehicle.z + fwdZ * 3);
+        scene.add(drop);
+        waterDrops.push({
+          mesh: drop,
+          vx: fwdX * (45 + Math.random() * 15) + (Math.random() - 0.5) * 8,
+          vy: 12 + Math.random() * 6,
+          vz: fwdZ * (45 + Math.random() * 15) + (Math.random() - 0.5) * 8,
+          life: 1.1
         });
       }
-    } else if (v.type.id === "ICECREAM") {
-      sfxThrow();
-      projectiles.push({
-        kind: "icecream",
-        x: px, y: py,
-        vx: Math.cos(angle) * 11,
-        vy: Math.sin(angle) * 11,
-        r: 13,
-        color: "#f472b6",
-        life: 48
-      });
-    } else if (v.type.id === "PIZZA") {
-      sfxThrow();
-      projectiles.push({
-        kind: "pizza",
-        x: px, y: py,
-        vx: Math.cos(angle) * 12,
-        vy: Math.sin(angle) * 12,
-        r: 14,
-        color: "#facc15",
-        life: 48
-      });
-    } else if (v.type.id === "MONSTER" || v.type.id === "DINO") {
-      if (v.z <= 1) {
-        v.vz = 11.5;
-        sfxRamp();
-        addParticle(v.x, v.y, 0, -2, "#4ade80", 16, 40, v.type.id === "DINO" ? "ROOOAR!!" : "BOING!!");
+    } else if (id === 'monster') {
+      if (activeVehicle.y <= 0.5) {
+        activeVehicle.vy = 26;
+        sfx.playJump();
+        showStuntBanner('🛻 HYDRAULIC MEGA-HOP!', '+150 STUNT PTS');
+        addScore(150);
       }
+    } else if (id === 'trex') {
+      sfx.playRoar();
+      showStuntBanner('🦖 T-REX MEGA ROAR!!', '+200 DINO POWER');
+      addScore(200);
+      // Launch nearby physics props into the air!
+      physicsProps.forEach(p => {
+        const d = Math.hypot(p.mesh.position.x - activeVehicle.x, p.mesh.position.z - activeVehicle.z);
+        if (d < 32) {
+          p.vy = 18 + Math.random() * 10;
+          p.vx = (p.mesh.position.x - activeVehicle.x) * 1.8;
+          p.vz = (p.mesh.position.z - activeVehicle.z) * 1.8;
+        }
+      });
+    } else if (id === 'pizza' || id === 'icecream') {
+      sfx.playJump();
+      const isPizza = id === 'pizza';
+      const proj = new THREE.Mesh(
+        isPizza ? new THREE.CylinderGeometry(1.1, 1.1, 0.3, 12) : new THREE.SphereGeometry(0.9, 10, 10),
+        new THREE.MeshBasicMaterial({ color: isPizza ? 0xfacc15 : 0xf472b6 })
+      );
+      proj.position.set(activeVehicle.x + fwdX * 4, activeVehicle.y + 3.2, activeVehicle.z + fwdZ * 4);
+      scene.add(proj);
+      projectiles.push({
+        mesh: proj,
+        vx: fwdX * 55,
+        vy: 10,
+        vz: fwdZ * 55,
+        life: 1.4
+      });
+      addScore(50);
     } else {
-      // Honk Horn + Speed Boost!
-      playTone(440, 587.33, 0.18, "sawtooth", 0.1);
-      player.nitroTimer = 35;
-      addParticle(v.x, v.y - 24, 0, -1.5, "#fde047", 14, 30, "BEEP BEEP!");
+      sfx.playHorn();
     }
   }
 
-  function toggleVehicleHop() {
-    if (player.inVehicle) {
-      // Hop Out safely beside the vehicle
-      const v = player.inVehicle;
-      v.speed = 0;
-      player.x = v.x - Math.sin(v.angle) * 48;
-      player.y = v.y + Math.cos(v.angle) * 48;
-      player.z = 0;
-      player.vz = 0;
-      player.inVehicle = null;
-      sfxHopIn();
-      showBanner("ON FOOT! WALK TO ANY CAR, BOAT, HELICOPTER OR DINO AND PRESS E / ENTER!", 180);
+  function cycleCamera() {
+    cameraMode = (cameraMode + 1) % CAM_NAMES.length;
+    document.getElementById('btnCam').textContent = CAM_NAMES[cameraMode];
+  }
+  function cycleTimeOfDay() {
+    timeMode = (timeMode + 1) % TIME_PRESETS.length;
+    const p = TIME_PRESETS[timeMode];
+    document.getElementById('btnTime').textContent = p.name;
+    scene.background.setHex(p.bg);
+    scene.fog.color.setHex(p.fog);
+    hemiLight.intensity = p.hemi;
+    sunLight.intensity = p.sun;
+    sunLight.color.setHex(p.sunCol);
+    renderer.toneMappingExposure = p.exposure;
+    const spotInt = timeMode === 0 ? 0.0 : timeMode === 1 ? 1.5 : 3.5;
+    worldVehicles.forEach(v => {
+      if (v.headSpot) v.headSpot.intensity = spotInt;
+    });
+  }
+  function toggleMute() {
+    sfx.muted = !sfx.muted;
+    document.getElementById('btnMute').textContent = sfx.muted ? '🔇 Muted' : '🔊 Audio';
+  }
+
+  document.getElementById('btnCam').addEventListener('click', cycleCamera);
+  document.getElementById('btnTime').addEventListener('click', cycleTimeOfDay);
+  document.getElementById('btnMute').addEventListener('click', toggleMute);
+  document.getElementById('interactPrompt').addEventListener('click', toggleEnterExitVehicle);
+
+  function startGame() {
+    sfx.init();
+    gameStarted = true;
+    document.getElementById('titleOverlay').style.display = 'none';
+    sfx.playFanfare();
+  }
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  if (window.location.search.includes('autostart=1')) startGame();
+
+  // --- CELEBRATION CONFETTI BURST ---
+  const confettiList = [];
+  function spawnConfetti(x, y, z) {
+    const colors = [0xfacc15, 0x38bdf8, 0xf43f5e, 0x4ade80, 0xa855f7];
+    for (let i = 0; i < 36; i++) {
+      const m = new THREE.Mesh(
+        new THREE.BoxGeometry(0.7, 0.7, 0.7),
+        new THREE.MeshBasicMaterial({ color: colors[i % colors.length] })
+      );
+      m.position.set(x, y + 3, z);
+      scene.add(m);
+      confettiList.push({
+        mesh: m,
+        vx: (Math.random() - 0.5) * 36,
+        vy: 14 + Math.random() * 20,
+        vz: (Math.random() - 0.5) * 36,
+        life: 1.8
+      });
+    }
+  }
+
+  // --- MAIN PHYSICS & GAMEPLAY LOOP ---
+  const minimapCtx = document.getElementById('minimapCanvas').getContext('2d');
+  let lastTime = performance.now();
+  let titleOrbitAngle = 0;
+
+  function update(dt) {
+    // Animate Ferris Wheel & Clouds
+    if (ferrisWheelGroup) ferrisWheelGroup.rotation.z += dt * 0.35;
+    clouds.forEach(c => {
+      c.position.x += dt * 4.5;
+      if (c.position.x > 480) c.position.x = -480;
+    });
+    beaconRing.scale.setScalar(1 + Math.sin(performance.now() * 0.006) * 0.14);
+
+    // If Title Screen is still up, orbit camera smoothly around Downtown Leo City
+    if (!gameStarted) {
+      titleOrbitAngle += dt * 0.22;
+      camera.position.set(
+        Math.sin(titleOrbitAngle) * 145,
+        58 + Math.sin(titleOrbitAngle * 2) * 12,
+        Math.cos(titleOrbitAngle) * 145 - 40
+      );
+      camera.lookAt(0, 18, -40);
       return;
     }
 
-    // Find closest vehicle within 95px
-    let best = null;
-    let bestDist = 95;
-    for (const v of vehicles) {
-      const d = Math.hypot(v.x - player.x, v.y - player.y);
-      if (d < bestDist) {
-        bestDist = d;
-        best = v;
+    // Read Input Axes
+    const throttle = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) - (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
+    const steer = (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0) - (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0);
+    const boostPressed = keys['Space'] || keys['ShiftLeft'] || keys['ShiftRight'];
+
+    if (activeVehicle) {
+      const v = activeVehicle;
+      const spec = v.spec;
+
+      // Continuous Water Spray when driving Fire Engine & holding Z/F
+      if (spec.id === 'firetruck' && (keys['KeyZ'] || keys['KeyF']) && Math.random() < 0.45) {
+        triggerVehicleGadget();
       }
-    }
-    if (best) {
-      best.aiPatrol = false;
-      player.inVehicle = best;
-      player.x = best.x;
-      player.y = best.y;
-      sfxHopIn();
-      showBanner("DRIVING " + best.type.name.toUpperCase() + "!  " + best.type.actionName + "  |  SPACE = NITRO!", 240);
-    } else {
-      showBanner("WALK CLOSER TO A VEHICLE AND PRESS E / ENTER TO HOP IN!", 140);
-    }
-  }
 
-  function updateGame() {
-    tick++;
-    if (bannerTimer > 0) bannerTimer--;
+      if (spec.isFlying) {
+        // 3D Helicopter Flight Controls
+        v.heading += steer * spec.turnRate * dt;
+        const targetSpeed = throttle * spec.maxSpeed;
+        v.speed += (targetSpeed - v.speed) * 3.5 * dt;
+        if (boostPressed) v.y = Math.min(145, v.y + 32 * dt);
+        else if (keys['KeyZ'] || keys['KeyF']) v.y = Math.max(0, v.y - 32 * dt);
 
-    if (justPressed("KeyE") || justPressed("Enter") || justPressed("KeyX")) {
-      toggleVehicleHop();
-    }
-    if (justPressed("KeyM")) {
-      startMission(mission.index + 1);
-    }
+        v.x += Math.sin(v.heading) * v.speed * dt;
+        v.z += Math.cos(v.heading) * v.speed * dt;
 
-    // Directional Input Vector (Smart Kid-Friendly Steering!)
-    let dx = 0;
-    let dy = 0;
-    if (keys["ArrowLeft"]  || keys["KeyA"]) dx -= 1;
-    if (keys["ArrowRight"] || keys["KeyD"]) dx += 1;
-    if (keys["ArrowUp"]    || keys["KeyW"]) dy -= 1;
-    if (keys["ArrowDown"]  || keys["KeyS"]) dy += 1;
-
-    const actPressed = keys["KeyZ"] || keys["ShiftLeft"] || keys["ShiftRight"];
-    const nitroPressed = keys["Space"];
-    if (player.nitroTimer > 0) player.nitroTimer--;
-
-    if (actPressed && tick % 7 === 0) {
-      fireActionWeapon();
-    }
-
-    if (player.inVehicle) {
-      const v = player.inVehicle;
-      const def = v.type;
-
-      // Smart Kid Steering: simply hold the arrow keys in the direction you want to drive!
-      if (dx !== 0 || dy !== 0) {
-        const targetAngle = Math.atan2(dy, dx);
-        let diff = targetAngle - v.angle;
-        while (diff > Math.PI) diff -= Math.PI * 2;
-        while (diff < -Math.PI) diff += Math.PI * 2;
-        v.angle += Math.max(-def.turn * 1.45, Math.min(def.turn * 1.45, diff * 0.28));
-
-        const topSpd = def.maxSpeed * ((nitroPressed || player.nitroTimer > 0) ? 1.38 : 1.0);
-        v.speed = Math.min(topSpd, v.speed + def.accel);
-
-        // Leave drift tire marks when turning sharply at high speed
-        if (Math.abs(diff) > 0.45 && v.z <= 1 && !def.canFly && !def.canSwim && tick % 2 === 0) {
-          tireMarks.push({ x: v.x, y: v.y, life: 180 });
-          if (tireMarks.length > 140) tireMarks.shift();
-        }
+        // Helicopter pitch & bank tilt
+        v.bodyGroup.rotation.x = (v.speed / spec.maxSpeed) * 0.26;
+        v.bodyGroup.rotation.z = -steer * 0.28;
+        if (v.rotorMain) v.rotorMain.rotation.y += dt * 28;
+        if (v.rotorTail) v.rotorTail.rotation.x += dt * 32;
       } else {
-        v.speed *= 0.92;
-        if (Math.abs(v.speed) < 0.08) v.speed = 0;
-      }
-
-      // Helicopter altitude control
-      if (def.canFly) {
-        const targetZ = (dx !== 0 || dy !== 0 || nitroPressed) ? 65 : 18;
-        v.z += (targetZ - v.z) * 0.08;
-        v.rotorAngle += 0.45;
-      } else {
-        // Gravity & Jump Physics
-        if (v.z > 0 || v.vz !== 0) {
-          v.z += v.vz;
-          v.vz -= 0.52;
-          if (v.z <= 0) {
-            v.z = 0;
-            v.vz = 0;
-          }
+        // Ground & Amphibious Vehicle Arcade Physics
+        let maxSpd = spec.maxSpeed;
+        let acc = spec.accel;
+        if (boostPressed && nitro > 2) {
+          maxSpd *= 1.38;
+          acc *= 1.65;
+          nitro = Math.max(0, nitro - 28 * dt);
+          v.flameGroup.visible = true;
+          if (Math.random() < 0.12) sfx.playBoost();
+        } else {
+          nitro = Math.min(100, nitro + 16 * dt);
+          v.flameGroup.visible = false;
         }
-      }
 
-      let nx = v.x + Math.cos(v.angle) * v.speed;
-      let ny = v.y + Math.sin(v.angle) * v.speed;
+        if (throttle !== 0) {
+          v.speed += throttle * acc * dt;
+        } else {
+          // Natural coasting drag
+          v.speed *= Math.pow(0.22, dt);
+        }
+        v.speed = Math.max(-maxSpd * 0.45, Math.min(maxSpd, v.speed));
 
-      // Water check for non-amphibious vehicles
-      if (!def.canFly && !def.canSwim && v.z <= 4 && isWaterAt(nx, ny)) {
-        v.speed *= -0.4;
-        nx = v.x;
-        ny = v.y;
-        showBanner("SPLASH! GRAB THE SPEEDBOAT AT THE MARINA OR HELICOPTER TO CROSS WATER!", 150);
-      }
+        // Responsive steering
+        const turnFactor = Math.abs(v.speed) > 2 ? Math.sign(v.speed) : 1;
+        v.steerAngle = steer * 0.45;
+        if (Math.abs(v.speed) > 0.8) {
+          v.heading += steer * spec.turnRate * turnFactor * dt;
+        }
 
-      const col = collideBuildings(nx, ny, 28, def.canFly || v.z > 28, def.monster);
-      if (col.hit) v.speed *= 0.65;
-      v.x = Math.max(40, Math.min(WORLD_W - 40, col.x));
-      v.y = Math.max(40, Math.min(WORLD_H - 40, col.y));
+        const nextX = v.x + Math.sin(v.heading) * v.speed * dt;
+        const nextZ = v.z + Math.cos(v.heading) * v.speed * dt;
 
-      // Check Stunt Ramps
-      if (!def.canFly && v.z <= 2 && v.speed > 4.5) {
-        for (const rm of ramps) {
-          if (v.x > rm.x && v.x < rm.x + rm.w && v.y > rm.y && v.y < rm.y + rm.h) {
-            v.vz = def.monster ? 14.5 : 11.5;
-            v.speed = Math.min(def.maxSpeed * 1.45, v.speed + 3.5);
-            stuntsDone++;
-            score += 300;
-            coins += 5;
-            sfxRamp();
-            addParticle(v.x, v.y - 20, 0, -2.2, "#38bdf8", 18, 50, "MEGA STUNT JUMP! +300");
-            if (mission.index === 4) {
-              for (const mt of mission.targets) {
-                if (!mt.done && Math.hypot(v.x - mt.x, v.y - mt.y) < 90) {
-                  completeMissionTarget(mt);
-                }
-              }
+        // Building Collision Check (Allow rooftop landing if high enough!)
+        let blocked = false;
+        for (let i = 0; i < buildingColliders.length; i++) {
+          const b = buildingColliders[i];
+          if (nextX > b.minX && nextX < b.maxX && nextZ > b.minZ && nextZ < b.maxZ) {
+            if (v.y < b.height - 2.5) {
+              blocked = true;
+              v.speed *= -0.35;
+              break;
             }
           }
         }
-      }
-
-      // Musical Ice Cream Jingle / Siren Audio
-      if (def.jingle && v.speed > 1 && tick % 18 === 0) {
-        const notes = [523.25, 659.25, 783.99, 1046.5, 783.99, 659.25];
-        playTone(notes[(tick / 18) % notes.length | 0], notes[(tick / 18) % notes.length | 0], 0.12, "triangle", 0.05);
-      }
-
-      player.x = v.x;
-      player.y = v.y;
-      player.z = v.z;
-      player.angle = v.angle;
-    } else {
-      // Walking on Foot as Leo
-      if (dx !== 0 || dy !== 0) {
-        const len = Math.hypot(dx, dy) || 1;
-        const spd = nitroPressed ? 6.2 : 4.5;
-        player.vx = (dx / len) * spd;
-        player.vy = (dy / len) * spd;
-        player.angle = Math.atan2(player.vy, player.vx);
-        player.anim += 0.25;
-      } else {
-        player.vx *= 0.7;
-        player.vy *= 0.7;
-      }
-      let nx = player.x + player.vx;
-      let ny = player.y + player.vy;
-      if (!isWaterAt(nx, ny)) {
-        const col = collideBuildings(nx, ny, 16, false, false);
-        player.x = Math.max(30, Math.min(WORLD_W - 30, col.x));
-        player.y = Math.max(30, Math.min(WORLD_H - 30, col.y));
-      }
-    }
-
-    // Update Friendly AI Patrol Vehicles
-    for (const v of vehicles) {
-      if (v === player.inVehicle) continue;
-      if (v.type.id === "HELI") v.rotorAngle += 0.12;
-      if (!v.aiPatrol) continue;
-
-      v.speed = 3.2;
-      let nx = v.x + Math.cos(v.angle) * v.speed;
-      let ny = v.y + Math.sin(v.angle) * v.speed;
-      const col = collideBuildings(nx, ny, 32, false, false);
-      if (col.hit || nx < 220 || nx > 2020 || ny < 220 || ny > 2350 || isWaterAt(nx, ny)) {
-        v.angle += Math.PI / 2;
-      } else {
-        v.x = nx;
-        v.y = ny;
-      }
-    }
-
-    // Update Bouncy City Props (Hydrants, Cones, Beach Balls)
-    for (const pr of props) {
-      if (pr.geyserTimer > 0) pr.geyserTimer--;
-      const d = Math.hypot(player.x - pr.x, player.y - pr.y);
-      if (d < pr.r + 28 && player.z < 20) {
-        const ang = Math.atan2(pr.y - player.y, pr.x - player.x);
-        pr.vx = Math.cos(ang) * 9.5;
-        pr.vy = Math.sin(ang) * 9.5;
-        if (pr.type === "hydrant" && pr.geyserTimer === 0) {
-          pr.geyserTimer = 240;
-          score += 50;
-          coins += 1;
-          sfxSplash();
-          addParticle(pr.x, pr.y - 16, 0, -2, "#38bdf8", 14, 35, "FOUNTAIN! +50");
-        } else {
-          playTone(320, 520, 0.08, "sine", 0.06);
+        if (!blocked) {
+          v.x = Math.max(-330, Math.min(330, nextX));
+          v.z = Math.max(-330, Math.min(430, nextZ));
         }
-      }
-      pr.x += pr.vx;
-      pr.y += pr.vy;
-      pr.vx *= 0.88;
-      pr.vy *= 0.88;
-    }
 
-    // Update Central Park Giant Soccer Ball & Goal Detection!
-    {
-      const d = Math.hypot(player.x - soccerBall.x, player.y - soccerBall.y);
-      if (d < soccerBall.r + 30 && player.z < 25) {
-        const ang = Math.atan2(soccerBall.y - player.y, soccerBall.x - player.x);
-        const kickSpd = player.inVehicle ? Math.max(10, player.inVehicle.speed * 1.5) : 9;
-        soccerBall.vx = Math.cos(ang) * kickSpd;
-        soccerBall.vy = Math.sin(ang) * kickSpd;
-        playTone(180, 90, 0.12, "triangle", 0.12);
-      }
-      soccerBall.x += soccerBall.vx;
-      soccerBall.y += soccerBall.vy;
-      soccerBall.vx *= 0.96;
-      soccerBall.vy *= 0.96;
-
-      // Keep ball inside Park pitch bounds (960..1380, 960..1320)
-      if (soccerBall.x < 980)  { soccerBall.x = 980;  soccerBall.vx = Math.abs(soccerBall.vx); }
-      if (soccerBall.x > 1360) { soccerBall.x = 1360; soccerBall.vx = -Math.abs(soccerBall.vx); }
-      if (soccerBall.y < 960)  { soccerBall.y = 960;  soccerBall.vy = Math.abs(soccerBall.vy); }
-      if (soccerBall.y > 1320) { soccerBall.y = 1320; soccerBall.vy = -Math.abs(soccerBall.vy); }
-
-      // Check Left or Right Goal Net!
-      const inLeftGoal = (soccerBall.x < soccerGoalLeft.x + soccerGoalLeft.w &&
-                          soccerBall.y > soccerGoalLeft.y && soccerBall.y < soccerGoalLeft.y + soccerGoalLeft.h);
-      const inRightGoal = (soccerBall.x > soccerGoalRight.x &&
-                           soccerBall.y > soccerGoalRight.y && soccerBall.y < soccerGoalRight.y + soccerGoalRight.h);
-      if (inLeftGoal || inRightGoal) {
-        score += 1000;
-        coins += 15;
-        sfxGoal();
-        addParticle(soccerBall.x, soccerBall.y - 20, 0, -2.5, "#fde047", 24, 75, "GOOOOOOAL!! +1000");
-        for (let k = 0; k < 24; k++) {
-          const a = (k / 24) * Math.PI * 2;
-          addParticle(soccerBall.x, soccerBall.y, Math.cos(a) * 6, Math.sin(a) * 6,
-                      ["#ef4444", "#38bdf8", "#facc15", "#4ade80"][k % 4], 7, 45);
-        }
-        soccerBall.x = 1170;
-        soccerBall.y = 1150;
-        soccerBall.vx = 0;
-        soccerBall.vy = 0;
-      }
-    }
-
-    // Update Projectiles
-    for (let i = projectiles.length - 1; i >= 0; i--) {
-      const p = projectiles[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.life--;
-
-      for (const mt of mission.targets) {
-        if (mt.done) continue;
-        if (Math.hypot(p.x - mt.x, p.y - mt.y) < mt.r + p.r) {
-          if (mt.type === "fire" && p.kind === "water") {
-            mt.hp -= 4;
-            p.life = 0;
-            addParticle(mt.x, mt.y, (Math.random() - 0.5) * 3, -2, "#bae6fd", 8, 20);
-            if (mt.hp <= 0) completeMissionTarget(mt);
-          } else if (mt.type === "pizza_zone" && p.kind === "pizza") {
-            p.life = 0;
-            completeMissionTarget(mt);
-          } else if (mt.type === "kid" && p.kind === "icecream") {
-            p.life = 0;
-            completeMissionTarget(mt);
+        // Check Ramp Elevation & Stunt Launch!
+        let groundHeight = 0;
+        for (let i = 0; i < buildingColliders.length; i++) {
+          const b = buildingColliders[i];
+          if (v.x > b.minX && v.x < b.maxX && v.z > b.minZ && v.z < b.maxZ && v.y >= b.height - 3) {
+            groundHeight = b.height;
           }
         }
-      }
-      if (p.life <= 0) projectiles.splice(i, 1);
-    }
 
-    // Update Mission Targets (including direct drive-up delivery & Robo-Pup movement)
-    for (const mt of mission.targets) {
-      if (mt.done) continue;
-      if (mt.type === "robopup") {
-        mt.x += mt.vx;
-        mt.y += mt.vy;
-        if (mt.x < 350 || mt.x > 2000) mt.vx = -mt.vx;
-        if (mt.y < 350 || mt.y > 2200) mt.vy = -mt.vy;
-      }
-      const dist = Math.hypot(player.x - mt.x, player.y - mt.y);
-      if (dist < mt.r + 36) {
-        if (mt.type === "pizza_zone" || mt.type === "kid" || mt.type === "robopup") {
-          completeMissionTarget(mt);
+        for (let i = 0; i < ramps.length; i++) {
+          const r = ramps[i];
+          if (Math.abs(v.x - r.x) < r.w / 2 + 1 && Math.abs(v.z - r.z) < r.l / 2 + 1) {
+            let t = 0.5;
+            if (r.dir === 'N') t = (r.z + r.l / 2 - v.z) / r.l;
+            else if (r.dir === 'S') t = (v.z - (r.z - r.l / 2)) / r.l;
+            else if (r.dir === 'E') t = (v.x - (r.x - r.l / 2)) / r.l;
+            else if (r.dir === 'W') t = (r.x + r.l / 2 - v.x) / r.l;
+            t = Math.max(0, Math.min(1, t));
+            groundHeight = Math.max(groundHeight, t * r.h);
+
+            // Launch into the sky when hitting the top of the ramp at speed!
+            if (t > 0.78 && Math.abs(v.speed) > 32 && v.vy <= 2) {
+              const jumpMult = spec.id === 'monster' ? 1.45 : 1.0;
+              v.vy = Math.abs(v.speed) * 0.44 * jumpMult;
+              sfx.playJump();
+            }
+          }
+        }
+
+        // Gravity & Air Time
+        if (v.y > groundHeight || v.vy > 0) {
+          v.y += v.vy * dt;
+          v.vy -= 38 * dt;
+          v.airTime += dt;
+          if (v.y <= groundHeight) {
+            v.y = groundHeight;
+            v.vy = 0;
+            if (v.airTime > 0.65) {
+              const pts = Math.round(v.airTime * 350);
+              addScore(pts);
+              showStuntBanner('🚀 MEGA AIR STUNT!', `+${pts} STUNT BONUS`);
+              sfx.playFanfare();
+            }
+            v.airTime = 0;
+          }
+        } else {
+          v.y = groundHeight;
+          v.airTime = 0;
+        }
+
+        // Active 3D Suspension Body Roll & Pitch
+        const targetRoll = steer * Math.min(1, Math.abs(v.speed) / 40) * 0.14;
+        const targetPitch = v.y > groundHeight + 0.5 ? -v.vy * 0.018 : -throttle * 0.05;
+        v.bodyGroup.rotation.z += (targetRoll - v.bodyGroup.rotation.z) * 10 * dt;
+        v.bodyGroup.rotation.x += (targetPitch - v.bodyGroup.rotation.x) * 10 * dt;
+
+        // Spin & Steer 3D Wheels
+        v.wheels.forEach(w => {
+          w.tire.rotation.x += v.speed * dt * 0.8;
+          if (w.front) w.group.rotation.y = v.steerAngle;
+        });
+
+        // Animate T-Rex Stomping Legs
+        if (spec.isDino && v.dinoLegs.length === 2) {
+          const walkCycle = Math.sin(performance.now() * 0.015) * Math.min(1, Math.abs(v.speed) / 20);
+          v.dinoLegs[0].rotation.x = walkCycle * 0.6;
+          v.dinoLegs[1].rotation.x = -walkCycle * 0.6;
         }
       }
-    }
 
-    // Update Particles & Tire Marks
-    for (let i = particles.length - 1; i >= 0; i--) {
-      const pt = particles[i];
-      pt.x += pt.vx;
-      pt.y += pt.vy;
-      pt.life--;
-      if (pt.life <= 0) particles.splice(i, 1);
-    }
-    for (let i = tireMarks.length - 1; i >= 0; i--) {
-      if (--tireMarks[i].life <= 0) tireMarks.splice(i, 1);
-    }
+      v.root.position.set(v.x, v.y, v.z);
+      v.root.rotation.y = v.heading;
+      sfx.updateSpecialAudio(dt, spec.id, v.speed);
 
-    // Smooth Camera Follow with Velocity Lookahead
-    const targetCamX = player.x - W / 2 + (player.inVehicle ? Math.cos(player.angle) * player.inVehicle.speed * 10 : 0);
-    const targetCamY = player.y - H / 2 + (player.inVehicle ? Math.sin(player.angle) * player.inVehicle.speed * 10 : 0);
-    camera.x += (Math.max(0, Math.min(WORLD_W - W, targetCamX)) - camera.x) * 0.14;
-    camera.y += (Math.max(0, Math.min(WORLD_H - H, targetCamY)) - camera.y) * 0.14;
-  }
-
-  function drawVehicle(v) {
-    const sx = v.x - camera.x;
-    const sy = v.y - camera.y;
-    if (sx < -120 || sx > W + 120 || sy < -120 || sy > H + 120) return;
-
-    const def = v.type;
-    // Shadow on ground
-    ctx.save();
-    ctx.translate(sx, sy + 6);
-    ctx.rotate(v.angle);
-    ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
-    ctx.beginPath();
-    ctx.roundRect(-def.w / 2, -def.h / 2, def.w, def.h, 8);
-    ctx.fill();
-    ctx.restore();
-
-    // Vehicle Body raised by altitude z
-    const scale = 1 + v.z * 0.0045;
-    ctx.save();
-    ctx.translate(sx, sy - v.z);
-    ctx.scale(scale, scale);
-    ctx.rotate(v.angle);
-
-    if (def.id === "DINO") {
-      // Friendly Rideable Emerald Rex!
-      ctx.fillStyle = "#10b981";
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 28, 16, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#ef4444";
-      ctx.beginPath();
-      ctx.arc(-4, 0, 9, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#34d399";
-      ctx.beginPath();
-      ctx.arc(24, 0, 13, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#ffffff";
-      ctx.beginPath();
-      ctx.arc(28, -5, 4, 0, Math.PI * 2);
-      ctx.arc(28, 5, 4, 0, Math.PI * 2);
-      ctx.fill();
+      // Update Speedometer HUD
+      const mph = Math.round(Math.abs(v.speed) * 1.6);
+      document.getElementById('speedVal').textContent = mph;
+      document.getElementById('nitroFill').style.width = nitro + '%';
+      document.getElementById('interactPrompt').style.display = 'none';
     } else {
-      // Wheels (unless Boat or Heli)
-      if (!def.canSwim && !def.canFly) {
-        ctx.fillStyle = "#0f172a";
-        const ww = def.monster ? 18 : 12;
-        const wh = def.monster ? 10 : 6;
-        ctx.fillRect(-def.w * 0.35, -def.h / 2 - wh + 2, ww, wh);
-        ctx.fillRect(def.w * 0.20,  -def.h / 2 - wh + 2, ww, wh);
-        ctx.fillRect(-def.w * 0.35, def.h / 2 - 2, ww, wh);
-        ctx.fillRect(def.w * 0.20,  def.h / 2 - 2, ww, wh);
-      }
-
-      // Main Chassis
-      ctx.fillStyle = def.color;
-      ctx.beginPath();
-      ctx.roundRect(-def.w / 2, -def.h / 2, def.w, def.h, def.id === "BOAT" ? 18 : 9);
-      ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "#0f172a";
-      ctx.stroke();
-
-      // Racing Stripe / Trim
-      ctx.fillStyle = def.stripe;
-      ctx.fillRect(-def.w * 0.38, -5, def.w * 0.76, 10);
-
-      // Windshield
-      ctx.fillStyle = "#38bdf8";
-      ctx.beginPath();
-      ctx.roundRect(4, -def.h * 0.36, 16, def.h * 0.72, 4);
-      ctx.fill();
-
-      // Headlights
-      ctx.fillStyle = "#fef08a";
-      ctx.fillRect(def.w / 2 - 4, -def.h / 2 + 4, 4, 7);
-      ctx.fillRect(def.w / 2 - 4, def.h / 2 - 11, 4, 7);
-
-      // Flashing Siren Lightbar (Fire Engine & Police Cruiser)
-      if (def.siren) {
-        const flash = (tick >> 3) & 1;
-        ctx.fillStyle = flash ? "#ef4444" : "#3b82f6";
-        ctx.fillRect(-6, -def.h * 0.32, 8, def.h * 0.32);
-        ctx.fillStyle = flash ? "#3b82f6" : "#ef4444";
-        ctx.fillRect(-6, 0, 8, def.h * 0.32);
-      }
-
-      // Fire Engine Ladder
-      if (def.id === "FIRE") {
-        ctx.strokeStyle = "#e2e8f0";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(-def.w * 0.42, -7, def.w * 0.48, 14);
-      }
-
-      // Ice Cream Cone Roof Topper
-      if (def.id === "ICECREAM") {
-        ctx.fillStyle = "#fde047";
-        ctx.beginPath();
-        ctx.arc(-6, 0, 10, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#f43f5e";
-        ctx.beginPath();
-        ctx.arc(-6, 0, 5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Helicopter Spinning Rotor Blades
-      if (def.id === "HELI") {
-        ctx.save();
-        ctx.rotate(v.rotorAngle);
-        ctx.fillStyle = "rgba(248, 250, 252, 0.85)";
-        ctx.fillRect(-46, -3, 92, 6);
-        ctx.fillRect(-3, -46, 6, 92);
-        ctx.restore();
-      }
-    }
-    ctx.restore();
-
-    // Show "HOP IN [E]" prompt when Leo is on foot nearby
-    if (!player.inVehicle && Math.hypot(player.x - v.x, player.y - v.y) < 95) {
-      ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
-      ctx.beginPath();
-      ctx.roundRect(sx - 72, sy - 54, 144, 24, 6);
-      ctx.fill();
-      ctx.fillStyle = "#4ade80";
-      ctx.font = "bold 12px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("PRESS E: " + def.name.split(" ")[0].toUpperCase(), sx, sy - 38);
-    }
-  }
-
-  function renderGame() {
-    ctx.clearRect(0, 0, W, H);
-
-    // 1. Lush Green Park Grass Base
-    ctx.fillStyle = "#22c55e";
-    ctx.fillRect(0, 0, W, H);
-
-    ctx.save();
-    ctx.translate(-camera.x, -camera.y);
-
-    // 2. Sunny Beach Sand & Ocean Bay + East River Canal
-    ctx.fillStyle = "#fde68a"; // Golden Beach Sand
-    ctx.fillRect(0, 2300, WORLD_W, 300);
-
-    ctx.fillStyle = "#0284c7"; // Deep Ocean & River Water
-    ctx.fillRect(0, 2560, WORLD_W, WORLD_H - 2560);
-    ctx.fillRect(2090, 0, 120, 2560);
-
-    // Animated Water Waves
-    ctx.fillStyle = "#38bdf8";
-    for (let wy = 2600; wy < WORLD_H; wy += 90) {
-      for (let wx = 100; wx < WORLD_W; wx += 160) {
-        const shift = Math.sin(tick * 0.05 + wy) * 18;
-        ctx.fillRect(wx + shift, wy, 48, 6);
-      }
-    }
-
-    // Wooden Marina Dock
-    ctx.fillStyle = "#92400e";
-    ctx.fillRect(1360, 2500, 120, 240);
-
-    // 3. Paved City Road Network & Stunt Airport Runway
-    ctx.fillStyle = "#334155";
-    const roadAvenuesX = [280, 820, 1400, 2020];
-    const roadStreetsY = [280, 740, 1340, 1940, 2260];
-    for (const rx of roadAvenuesX) ctx.fillRect(rx - 70, 200, 140, 2120);
-    for (const ry of roadStreetsY) ctx.fillRect(200, ry - 65, 2650, 130);
-
-    // River Bridges
-    ctx.fillStyle = "#64748b";
-    ctx.fillRect(2070, 840, 160, 140);
-    ctx.fillRect(2070, 1440, 160, 140);
-
-    // Stunt Airport Tarmac & Helipad (East of River)
-    ctx.fillStyle = "#475569";
-    ctx.fillRect(2680, 380, 460, 1400);
-    ctx.strokeStyle = "#facc15";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(2880, 480, 160, 160);
-    ctx.fillStyle = "#facc15";
-    ctx.font = "bold 64px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("H", 2960, 582);
-
-    // Dashed Yellow Road Center Lines
-    ctx.strokeStyle = "#facc15";
-    ctx.lineWidth = 3;
-    ctx.setLineDash([22, 22]);
-    for (const rx of roadAvenuesX) {
-      ctx.beginPath();
-      ctx.moveTo(rx, 240);
-      ctx.lineTo(rx, 2280);
-      ctx.stroke();
-    }
-    for (const ry of roadStreetsY) {
-      ctx.beginPath();
-      ctx.moveTo(240, ry);
-      ctx.lineTo(2640, ry);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
-
-    // 4. Central Park Soccer Field (x: 960..1380, y: 960..1320)
-    ctx.fillStyle = "#16a34a";
-    ctx.fillRect(960, 960, 420, 360);
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(980, 980, 380, 320);
-    ctx.beginPath();
-    ctx.arc(1170, 1140, 46, 0, Math.PI * 2);
-    ctx.stroke();
-    // Goal Nets
-    ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
-    ctx.fillRect(soccerGoalLeft.x, soccerGoalLeft.y, soccerGoalLeft.w, soccerGoalLeft.h);
-    ctx.fillRect(soccerGoalRight.x, soccerGoalRight.y, soccerGoalRight.w, soccerGoalRight.h);
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 14px sans-serif";
-    ctx.fillText("SOCCER PARK - KICK OR RAM BALL INTO GOAL!", 1170, 974);
-
-    // 5. Drift Tire Marks
-    ctx.fillStyle = "rgba(15, 23, 42, 0.35)";
-    for (const tm of tireMarks) {
-      ctx.beginPath();
-      ctx.arc(tm.x, tm.y, 6, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // 6. Yellow Stunt Ramps
-    for (const rm of ramps) {
-      ctx.fillStyle = "#facc15";
-      ctx.fillRect(rm.x, rm.y, rm.w, rm.h);
-      ctx.strokeStyle = "#ca8a04";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(rm.x, rm.y, rm.w, rm.h);
-      ctx.fillStyle = "#dc2626";
-      ctx.font = "bold 12px sans-serif";
-      ctx.fillText("▲ " + rm.label + " ▲", rm.x + rm.w / 2, rm.y + rm.h / 2 + 4);
-    }
-
-    // 7. Mission Targets
-    for (const mt of mission.targets) {
-      if (mt.done) continue;
-      const pulse = 1 + Math.sin(tick * 0.12) * 0.12;
-      ctx.save();
-      ctx.translate(mt.x, mt.y);
-      if (mt.type === "fire") {
-        // Smoking Popcorn Cart!
-        ctx.fillStyle = "#dc2626";
-        ctx.fillRect(-20, -14, 40, 28);
-        ctx.fillStyle = (tick & 4) ? "#f97316" : "#facc15";
-        ctx.beginPath();
-        ctx.arc(0, -18, 18 * pulse, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 12px sans-serif";
-        ctx.fillText("SPRAY WATER [Z]!", 0, -40);
-      } else if (mt.type === "pizza_zone") {
-        ctx.strokeStyle = "#4ade80";
-        ctx.lineWidth = 5;
-        ctx.beginPath();
-        ctx.arc(0, 0, mt.r * pulse, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.fillStyle = "#fef08a";
-        ctx.font = "bold 13px sans-serif";
-        ctx.fillText("PIZZA DROP ZONE", 0, -mt.r - 10);
-      } else if (mt.type === "kid") {
-        ctx.fillStyle = "#38bdf8";
-        ctx.beginPath();
-        ctx.arc(0, 0, 14, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "#f472b6";
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.arc(0, 0, mt.r * pulse, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 12px sans-serif";
-        ctx.fillText("ICE CREAM PLEASE!", 0, -26);
-      } else if (mt.type === "robopup") {
-        ctx.fillStyle = "#f59e0b";
-        ctx.beginPath();
-        ctx.roundRect(-18, -14, 36, 28, 8);
-        ctx.fill();
-        ctx.fillStyle = "#38bdf8";
-        ctx.font = "bold 12px sans-serif";
-        ctx.fillText("ROBO-PUP!", 0, -22);
-      } else if (mt.type === "stunt_ring") {
-        ctx.strokeStyle = "#38bdf8";
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.arc(0, 0, 42 * pulse, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    // 8. Props & Giant Soccer Ball
-    for (const pr of props) {
-      if (pr.type === "hydrant") {
-        ctx.fillStyle = "#ef4444";
-        ctx.beginPath();
-        ctx.arc(pr.x, pr.y, 9, 0, Math.PI * 2);
-        ctx.fill();
-        if (pr.geyserTimer > 0) {
-          ctx.fillStyle = "rgba(56, 189, 248, 0.75)";
-          ctx.beginPath();
-          ctx.arc(pr.x, pr.y - 18, 16 + Math.sin(tick * 0.3) * 5, 0, Math.PI * 2);
-          ctx.fill();
+      // Walking on Foot as Junior Mayor Leo
+      leo.heading += steer * 3.2 * dt;
+      leo.speed = throttle * 24;
+      leo.x += Math.sin(leo.heading) * leo.speed * dt;
+      leo.z += Math.cos(leo.heading) * leo.speed * dt;
+      if (leo.y > 0 || leo.vy > 0) {
+        leo.y += leo.vy * dt;
+        leo.vy -= 42 * dt;
+        if (leo.y < 0) {
+          leo.y = 0;
+          leo.vy = 0;
         }
-      } else if (pr.type === "cone") {
-        ctx.fillStyle = "#f97316";
-        ctx.beginPath();
-        ctx.arc(pr.x, pr.y, 8, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (pr.type === "beachball") {
-        ctx.fillStyle = "#f43f5e";
-        ctx.beginPath();
-        ctx.arc(pr.x, pr.y, 15, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#fef08a";
-        ctx.beginPath();
-        ctx.arc(pr.x - 4, pr.y - 4, 6, 0, Math.PI * 2);
-        ctx.fill();
       }
-    }
+      const swing = Math.sin(performance.now() * 0.018) * (Math.abs(leo.speed) > 1 ? 0.6 : 0);
+      leo.legL.rotation.x = swing;
+      leo.legR.rotation.x = -swing;
+      leo.group.position.set(leo.x, leo.y, leo.z);
+      leo.group.rotation.y = leo.heading;
 
-    // Giant Park Soccer Ball
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath();
-    ctx.arc(soccerBall.x, soccerBall.y, soccerBall.r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "#0f172a";
-    ctx.stroke();
-    ctx.fillStyle = "#0f172a";
-    ctx.beginPath();
-    ctx.arc(soccerBall.x, soccerBall.y, 8, 0, Math.PI * 2);
-    ctx.fill();
+      document.getElementById('speedVal').textContent = Math.round(Math.abs(leo.speed));
 
-    // 9. Vehicles
-    for (const v of vehicles) {
-      drawVehicle(v);
-    }
-
-    // 10. Hero Leo on Foot (when not inside a vehicle)
-    if (!player.inVehicle) {
-      ctx.save();
-      ctx.translate(player.x, player.y);
-      ctx.rotate(player.angle);
-      // Red Hero Cape/Scarf
-      ctx.fillStyle = "#ef4444";
-      ctx.fillRect(-16, -7, 12, 14);
-      // Blue Overalls & Red Cap
-      ctx.fillStyle = "#2563eb";
-      ctx.beginPath();
-      ctx.arc(0, 0, 13, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#fde047";
-      ctx.beginPath();
-      ctx.arc(4, 0, 8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#ef4444";
-      ctx.beginPath();
-      ctx.arc(2, 0, 9, -1.2, 1.2);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // 11. 2.5D Extruded City Buildings
-    for (const b of buildings) {
-      // Drop shadow
-      ctx.fillStyle = "rgba(0, 0, 0, 0.28)";
-      ctx.fillRect(b.x + 14, b.y + 18, b.w, b.h);
-      // Front 3D Facade Wall
-      ctx.fillStyle = b.wall;
-      ctx.fillRect(b.x, b.y, b.w, b.h);
-      // Extruded Roof
-      ctx.fillStyle = b.roof;
-      ctx.fillRect(b.x, b.y - b.height, b.w, b.h - 14);
-      ctx.strokeStyle = "rgba(255,255,255,0.25)";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(b.x, b.y - b.height, b.w, b.h - 14);
-
-      // Building Label Sign
-      ctx.fillStyle = "rgba(15, 23, 42, 0.78)";
-      ctx.beginPath();
-      ctx.roundRect(b.x + b.w / 2 - 95, b.y + b.h / 2 - 28, 190, 32, 8);
-      ctx.fill();
-      ctx.fillStyle = "#f8fafc";
-      ctx.font = "bold 15px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(b.label, b.x + b.w / 2, b.y + b.h / 2 - 7);
-    }
-
-    // 12. Projectiles & Floating Particles
-    for (const p of projectiles) {
-      ctx.fillStyle = p.color;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    for (const pt of particles) {
-      if (pt.text) {
-        ctx.fillStyle = pt.color;
-        ctx.font = "bold 18px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(pt.text, pt.x, pt.y);
+      // Show prompt when near any vehicle
+      let nearVeh = null;
+      worldVehicles.forEach(v => {
+        if (Math.hypot(v.x - leo.x, v.z - leo.z) < 16) nearVeh = v;
+      });
+      const promptEl = document.getElementById('interactPrompt');
+      if (nearVeh) {
+        promptEl.style.display = 'block';
+        promptEl.textContent = `Press [E] or Click to Drive ${nearVeh.spec.emoji} ${nearVeh.spec.name}!`;
       } else {
-        ctx.fillStyle = pt.color;
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
-        ctx.fill();
+        promptEl.style.display = 'none';
       }
     }
 
-    ctx.restore();
+    const playerObj = activeVehicle || leo;
 
-    // 13. Golden Mission Compass Arrow pointing to next active Mission Target!
-    const nextTarget = mission.targets.find((t) => !t.done);
-    if (nextTarget) {
-      const ang = Math.atan2(nextTarget.y - player.y, nextTarget.x - player.x);
-      const dist = Math.hypot(nextTarget.x - player.x, nextTarget.y - player.y);
-      if (dist > 140) {
-        const ax = W / 2 + Math.cos(ang) * 150;
-        const ay = H / 2 + Math.sin(ang) * 120;
-        ctx.save();
-        ctx.translate(ax, ay);
-        ctx.rotate(ang);
-        ctx.fillStyle = "#facc15";
-        ctx.beginPath();
-        ctx.moveTo(22, 0);
-        ctx.lineTo(-12, -13);
-        ctx.lineTo(-6, 0);
-        ctx.lineTo(-12, 13);
-        ctx.closePath();
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "#0f172a";
-        ctx.stroke();
-        ctx.restore();
-      }
+    // --- 3D CHASE CAMERA FOLLOW ---
+    const camPresets = [
+      { dist: 21, height: 8.5, lookAhead: 12 },
+      { dist: 14, height: 5.2, lookAhead: 16 },
+      { dist: 38, height: 22.0, lookAhead: 8 }
+    ];
+    const cp = camPresets[cameraMode];
+    const targetCamX = playerObj.x - Math.sin(playerObj.heading) * cp.dist;
+    const targetCamZ = playerObj.z - Math.cos(playerObj.heading) * cp.dist;
+    const targetCamY = playerObj.y + cp.height;
+
+    camera.position.x += (targetCamX - camera.position.x) * Math.min(1, dt * 8.5);
+    camera.position.z += (targetCamZ - camera.position.z) * Math.min(1, dt * 8.5);
+    camera.position.y += (targetCamY - camera.position.y) * Math.min(1, dt * 7.5);
+
+    // Dynamic FOV boost when firing Nitro!
+    const targetFov = boostPressed && activeVehicle && Math.abs(activeVehicle.speed) > 40 ? 74 : 62;
+    if (Math.abs(camera.fov - targetFov) > 0.2) {
+      camera.fov += (targetFov - camera.fov) * dt * 6;
+      camera.updateProjectionMatrix();
     }
 
-    // 14. Top HUD Bar & Mini-Map Radar
-    ctx.fillStyle = "rgba(15, 23, 42, 0.86)";
-    ctx.beginPath();
-    ctx.roundRect(16, 12, W - 220, 56, 14);
-    ctx.fill();
-
-    ctx.fillStyle = "#fde047";
-    ctx.font = "bold 18px sans-serif";
-    ctx.textAlign = "left";
-    const curRide = player.inVehicle ? player.inVehicle.type.name : "On Foot (Junior Mayor Leo)";
-    ctx.fillText(`⭐ SCORE: ${score}   🪙 COINS: ${coins}   🚗 RIDE: ${curRide}`, 32, 36);
-
-    ctx.fillStyle = "#38bdf8";
-    ctx.font = "bold 14px sans-serif";
-    ctx.fillText(`${mission.title} (${mission.progress}/${mission.goal}) — ${mission.desc}   [Press M: Next Mission]`, 32, 58);
-
-    // Top-Right Mini-Map Radar (170x170)
-    const mapX = W - 186;
-    const mapY = 12;
-    const mapS = 170;
-    ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
-    ctx.beginPath();
-    ctx.roundRect(mapX, mapY, mapS, mapS, 12);
-    ctx.fill();
-    ctx.strokeStyle = "#38bdf8";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    const mScale = mapS / WORLD_W;
-    // Mini buildings
-    ctx.fillStyle = "#64748b";
-    for (const b of buildings) {
-      ctx.fillRect(mapX + b.x * mScale, mapY + b.y * mScale, b.w * mScale, b.h * mScale);
-    }
-    // Mini vehicles
-    ctx.fillStyle = "#ffffff";
-    for (const v of vehicles) {
-      ctx.fillRect(mapX + v.x * mScale - 2, mapY + v.y * mScale - 2, 4, 4);
-    }
-    // Mini mission targets
-    ctx.fillStyle = "#facc15";
-    for (const mt of mission.targets) {
-      if (!mt.done) {
-        ctx.beginPath();
-        ctx.arc(mapX + mt.x * mScale, mapY + mt.y * mScale, 4, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-    // Player dot on Mini-Map
-    ctx.fillStyle = "#4ade80";
-    ctx.beginPath();
-    ctx.arc(mapX + player.x * mScale, mapY + player.y * mScale, 5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Bottom Banner / Controls Guide
-    ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
-    ctx.beginPath();
-    ctx.roundRect(W / 2 - 430, H - 46, 860, 34, 10);
-    ctx.fill();
-    ctx.fillStyle = bannerTimer > 0 ? "#4ade80" : "#e2e8f0";
-    ctx.font = "bold 14px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(
-      bannerTimer > 0
-        ? bannerText
-        : "ARROWS/WASD: Drive Anywhere  |  E / ENTER: Hop In/Out of Vehicle  |  Z: Water Cannon / Treats  |  SPACE: Nitro",
-      W / 2,
-      H - 24
+    camera.lookAt(
+      playerObj.x + Math.sin(playerObj.heading) * cp.lookAhead,
+      playerObj.y + 3.2,
+      playerObj.z + Math.cos(playerObj.heading) * cp.lookAhead
     );
 
-    // Title Screen Overlay
-    if (gameState === "title") {
-      ctx.fillStyle = "rgba(9, 13, 22, 0.82)";
-      ctx.fillRect(0, 0, W, H);
-
-      ctx.fillStyle = "#1e293b";
-      ctx.beginPath();
-      ctx.roundRect(W / 2 - 360, H / 2 - 210, 720, 420, 24);
-      ctx.fill();
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = "#facc15";
-      ctx.stroke();
-
-      ctx.fillStyle = "#fde047";
-      ctx.font = "900 44px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("SUPER LEO CITY", W / 2, H / 2 - 140);
-
-      ctx.fillStyle = "#38bdf8";
-      ctx.font = "bold 20px sans-serif";
-      ctx.fillText("HERO PATROL, 8 VEHICLES, RIDEABLE DINO & STUNT SANDBOX!", W / 2, H / 2 - 102);
-
-      const lines = [
-        "🏎️  Hop In & Out of Sports Cars, Fire Trucks, Police Cruisers & Monster Trucks!",
-        "🚁  Fly the Rescue Helicopter at the Airport or drive the Speedboat in the Bay!",
-        "🦖  Visit Dino Safari Park to ride Emerald Rex right down Main Street!",
-        "🚒  Spray the Fire Engine Water Cannon, deliver Pizzas & score Soccer Goals!",
-        "🎮  Controls: ARROWS/WASD = Drive  |  E / ENTER = Hop In/Out  |  Z = Action  |  SPACE = Nitro"
-      ];
-      ctx.fillStyle = "#f8fafc";
-      ctx.font = "bold 16px sans-serif";
-      lines.forEach((ln, idx) => {
-        ctx.fillText(ln, W / 2, H / 2 - 45 + idx * 34);
-      });
-
-      ctx.fillStyle = "#4ade80";
-      ctx.font = "900 24px sans-serif";
-      ctx.fillText("PRESS ENTER OR SPACE TO PLAY!", W / 2, H / 2 + 165);
-    }
-  }
-
-  function loop() {
-    if (gameState === "title") {
-      tick++;
-      if (justPressed("Enter") || justPressed("Space") || justPressed("KeyE")) {
-        initAudio();
-        gameState = "playing";
-        sfxGoal();
+    // --- SMASHABLE 3D PHYSICS PROPS ---
+    physicsProps.forEach(p => {
+      if (p.hitCooldown > 0) p.hitCooldown -= dt;
+      const dx = p.mesh.position.x - playerObj.x;
+      const dz = p.mesh.position.z - playerObj.z;
+      if (dx * dx + dz * dz < 14 && p.hitCooldown <= 0 && Math.abs(playerObj.speed) > 6) {
+        p.hitCooldown = 1.2;
+        p.vx = Math.sin(playerObj.heading) * Math.abs(playerObj.speed) * 0.9 + (Math.random() - 0.5) * 14;
+        p.vz = Math.cos(playerObj.heading) * Math.abs(playerObj.speed) * 0.9 + (Math.random() - 0.5) * 14;
+        p.vy = 14 + Math.random() * 10;
+        addScore(25);
+        sfx.playSmash();
       }
-      renderGame();
-    } else {
-      updateGame();
-      renderGame();
+      if (p.mesh.position.y > p.baseY || Math.abs(p.vx) > 0.2 || Math.abs(p.vz) > 0.2) {
+        p.mesh.position.x += p.vx * dt;
+        p.mesh.position.z += p.vz * dt;
+        p.mesh.position.y += p.vy * dt;
+        p.vy -= 36 * dt;
+        p.mesh.rotation.x += p.vz * dt * 0.4;
+        p.mesh.rotation.z += p.vx * dt * 0.4;
+        if (p.mesh.position.y <= p.baseY) {
+          p.mesh.position.y = p.baseY;
+          p.vy *= -0.4;
+          p.vx *= 0.65;
+          p.vz *= 0.65;
+        }
+      }
+    });
+
+    // --- 3D CAR-SOCCER BALL PHYSICS & GOAL DETECTION ---
+    const bdx = soccerBall.x - playerObj.x;
+    const bdz = soccerBall.z - playerObj.z;
+    const bDist = Math.hypot(bdx, bdz);
+    if (bDist < 6.2) {
+      const pushSpd = Math.max(28, Math.abs(playerObj.speed) * 1.35);
+      soccerBall.vx = (bdx / (bDist || 1)) * pushSpd;
+      soccerBall.vz = (bdz / (bDist || 1)) * pushSpd;
+      soccerBall.vy = 14;
+      sfx.playSmash();
     }
-    Object.assign(prevKeys, keys);
-    requestAnimationFrame(loop);
+    soccerBall.x += soccerBall.vx * dt;
+    soccerBall.z += soccerBall.vz * dt;
+    soccerBall.y += soccerBall.vy * dt;
+    if (soccerBall.y > 2.8) {
+      soccerBall.vy -= 34 * dt;
+    } else {
+      soccerBall.y = 2.8;
+      if (Math.abs(soccerBall.vy) > 3) soccerBall.vy *= -0.55;
+      else soccerBall.vy = 0;
+    }
+    soccerBall.vx *= Math.pow(0.45, dt);
+    soccerBall.vz *= Math.pow(0.45, dt);
+
+    // Keep ball inside stadium bounds & check Goal Nets (X = 17 or X = 93, Z = 33..51)
+    if (Math.abs(soccerBall.z - 42) < 9 && (Math.abs(soccerBall.x - 17) < 4.5 || Math.abs(soccerBall.x - 93) < 4.5)) {
+      addScore(1000);
+      stars += 1;
+      document.getElementById('starsVal').textContent = `⭐ ${stars} HERO BADGES`;
+      showStuntBanner('⚽ GOOOOOOAL!!', '+1,000 STADIUM BONUS!');
+      sfx.playFanfare();
+      spawnConfetti(soccerBall.x, 4, soccerBall.z);
+      soccerBall.x = 55;
+      soccerBall.z = 42;
+      soccerBall.vx = 0;
+      soccerBall.vz = 0;
+    }
+    soccerBall.mesh.position.set(soccerBall.x, soccerBall.y, soccerBall.z);
+    soccerBall.mesh.rotation.x += soccerBall.vz * dt * 0.35;
+    soccerBall.mesh.rotation.z -= soccerBall.vx * dt * 0.35;
+
+    // --- UPDATE WATER CANNON DROPS, PROJECTILES & CONFETTI ---
+    for (let i = waterDrops.length - 1; i >= 0; i--) {
+      const w = waterDrops[i];
+      w.life -= dt;
+      w.mesh.position.x += w.vx * dt;
+      w.mesh.position.y += w.vy * dt;
+      w.mesh.position.z += w.vz * dt;
+      w.vy -= 30 * dt;
+
+      // Check if water hits Fire Mission beacon!
+      const m = MISSIONS[missionIdx];
+      if (m.type === 'fire' && Math.hypot(w.mesh.position.x - m.x, w.mesh.position.z - m.z) < 14) {
+        completeCurrentMission();
+      }
+      if (w.life <= 0 || w.mesh.position.y < 0) {
+        scene.remove(w.mesh);
+        waterDrops.splice(i, 1);
+      }
+    }
+
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+      const p = projectiles[i];
+      p.life -= dt;
+      p.mesh.position.x += p.vx * dt;
+      p.mesh.position.y += p.vy * dt;
+      p.mesh.position.z += p.vz * dt;
+      p.vy -= 28 * dt;
+      if (p.life <= 0 || p.mesh.position.y < 0) {
+        scene.remove(p.mesh);
+        projectiles.splice(i, 1);
+      }
+    }
+
+    for (let i = confettiList.length - 1; i >= 0; i--) {
+      const c = confettiList[i];
+      c.life -= dt;
+      c.mesh.position.x += c.vx * dt;
+      c.mesh.position.y += c.vy * dt;
+      c.mesh.position.z += c.vz * dt;
+      c.vy -= 26 * dt;
+      c.mesh.rotation.x += 5 * dt;
+      c.mesh.rotation.y += 5 * dt;
+      if (c.life <= 0) {
+        scene.remove(c.mesh);
+        confettiList.splice(i, 1);
+      }
+    }
+
+    // --- AI TRAFFIC CARS ---
+    aiCars.forEach(ai => {
+      ai.z += ai.dir * ai.speed * dt;
+      if (ai.z > 220) ai.z = -260;
+      if (ai.z < -260) ai.z = 220;
+      ai.group.position.z = ai.z;
+    });
+
+    // --- CHECK HERO MISSION COMPLETION & COMPASS ---
+    const curM = MISSIONS[missionIdx];
+    const distToMission = Math.hypot(curM.x - playerObj.x, curM.z - playerObj.z);
+    const heightDiff = Math.abs((curM.y || 0) - playerObj.y);
+
+    if (distToMission < 14 && heightDiff < 18) {
+      completeCurrentMission();
+    }
+
+    const angleToTarget = Math.atan2(curM.x - playerObj.x, curM.z - playerObj.z) - playerObj.heading;
+    const deg = -(angleToTarget * 180) / Math.PI;
+    document.getElementById('compassArrow').style.transform = `rotate(${deg}deg)`;
+    document.getElementById('compassDist').textContent = `${Math.round(distToMission)}m to Objective`;
+
+    // --- RENDER TOP-RIGHT RADAR MINI-MAP ---
+    drawMinimap(playerObj, curM);
   }
 
-  setupCity();
-  requestAnimationFrame(loop);
+  function completeCurrentMission() {
+    addScore(1500);
+    stars += 1;
+    document.getElementById('starsVal').textContent = `⭐ ${stars} HERO BADGES`;
+    const m = MISSIONS[missionIdx];
+    showStuntBanner('🌟 HERO MISSION COMPLETE!', '+1,500 PTS & HERO BADGE!');
+    sfx.playFanfare();
+    spawnConfetti(m.x, m.y || 2, m.z);
+    missionIdx = (missionIdx + 1) % MISSIONS.length;
+    syncMissionUI();
+  }
+
+  function drawMinimap(playerObj, mission) {
+    const ctx = minimapCtx;
+    const w = 176, h = 176, cx = w / 2, cy = h / 2;
+    ctx.clearRect(0, 0, w, h);
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(playerObj.heading - Math.PI);
+    const scale = 0.25;
+
+    // Draw avenues on radar
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
+    ctx.lineWidth = 4;
+    [-220, -110, 0, 110, 220].forEach(rx => {
+      const x = (rx - playerObj.x) * scale;
+      ctx.beginPath();
+      ctx.moveTo(x, (-300 - playerObj.z) * scale);
+      ctx.lineTo(x, (350 - playerObj.z) * scale);
+      ctx.stroke();
+    });
+    [-260, -140, -20, 100, 200].forEach(rz => {
+      const z = (rz - playerObj.z) * scale;
+      ctx.beginPath();
+      ctx.moveTo((-300 - playerObj.x) * scale, z);
+      ctx.lineTo((300 - playerObj.x) * scale, z);
+      ctx.stroke();
+    });
+
+    // Draw parked vehicles
+    worldVehicles.forEach(v => {
+      if (v === activeVehicle) return;
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.arc((v.x - playerObj.x) * scale, (v.z - playerObj.z) * scale, 3.2, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Draw Golden Mission Beacon
+    ctx.fillStyle = '#facc15';
+    ctx.beginPath();
+    ctx.arc((mission.x - playerObj.x) * scale, (mission.z - playerObj.z) * scale, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+
+    // Player Arrow in Center
+    ctx.fillStyle = '#4ade80';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 7);
+    ctx.lineTo(cx - 5, cy + 6);
+    ctx.lineTo(cx + 5, cy + 6);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  function animate(now) {
+    requestAnimationFrame(animate);
+    const dt = Math.min(0.05, (now - lastTime) / 1000);
+    lastTime = now;
+    update(dt);
+    renderer.render(scene, camera);
+  }
+  requestAnimationFrame(animate);
 })();
