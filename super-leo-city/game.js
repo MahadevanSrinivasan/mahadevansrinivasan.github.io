@@ -1,6 +1,6 @@
 // ============================================================================
-// SUPER LEO CITY 3D — CUSTOM ZIP CODE OPENSTREETMAP, TERRAIN & STUNT SANDBOX
-// Wholesome, non-violent 3D GTA / LEGO City Undercover style open-world game
+// SUPER LEO CITY 3D — MASSIVE 6-DISTRICT OPEN-WORLD & CUSTOM ZIP CODE SANDBOX
+// Connected Highways, Stunt Airport, Mountain Pass, Resort Island & OSM Town
 // ============================================================================
 
 (() => {
@@ -75,6 +75,17 @@
 
   const sfx = new SoundEngine();
 
+  // --- 6 INTERCONNECTED WORLD DISTRICTS ---
+  const WORLD_DISTRICTS = [
+    { id: 'downtown', name: '🏙️ Downtown', x: 0, y: 0, z: 75, h: Math.PI, desc: 'Grand Boulevard & Hometown Streets' },
+    { id: 'airport', name: '✈️ Stunt Airport', x: 920, y: 0, z: 360, h: Math.PI, desc: '1km Runway, Jumbo Jets & Hangar Jumps' },
+    { id: 'mountain', name: '🏔️ Summit Pass', x: 0, y: 38, z: -1020, h: 0, desc: 'High-Altitude Plateau & Mega Ski-Jump' },
+    { id: 'island', name: '🏖️ Resort Island', x: 0, y: 0, z: 820, h: Math.PI, desc: 'Ocean Causeway, Ferris Wheel & Marina' },
+    { id: 'canyon', name: '🦖 Dino Canyon', x: -900, y: 0, z: 180, h: Math.PI, desc: 'Red Rock Archways & Off-Road Rally' },
+    { id: 'stadium', name: '⚽ Soccer Arena', x: 55, y: 0, z: 82, h: Math.PI, desc: '3D Car-Soccer Pitch & Goal Nets' }
+  ];
+  let currentDistrictIdx = 0;
+
   // --- VEHICLE CATALOG (9 RIDES + LEO ON FOOT) ---
   const VEHICLE_CATALOG = [
     {
@@ -85,8 +96,8 @@
       sub: 'SPACE: Twin-Turbo Nitro • Z: Sport Horn',
       color: 0xef233c,
       accent: 0xffd166,
-      maxSpeed: 88,
-      accel: 58,
+      maxSpeed: 98,
+      accel: 64,
       turnRate: 2.5,
       grip: 0.92,
       mass: 1.2
@@ -99,8 +110,8 @@
       sub: 'SPACE: Pursuit Boost • Z: Siren Strobe',
       color: 0x1e293b,
       accent: 0x38bdf8,
-      maxSpeed: 84,
-      accel: 54,
+      maxSpeed: 94,
+      accel: 60,
       turnRate: 2.55,
       grip: 0.93,
       mass: 1.35
@@ -113,8 +124,8 @@
       sub: 'Z / F: High-Pressure 3D Water Cannon!',
       color: 0xd90429,
       accent: 0xfef08a,
-      maxSpeed: 68,
-      accel: 42,
+      maxSpeed: 76,
+      accel: 48,
       turnRate: 2.05,
       grip: 0.9,
       mass: 2.2
@@ -124,11 +135,11 @@
       key: '4',
       name: 'Monster Crush 4x4',
       emoji: '🛻',
-      sub: 'Z / F: Hydraulic Mega-Bounce • 2x Ramp Air!',
+      sub: 'Z / F: Hydraulic Mega-Bounce • 1.5x Ramp Air!',
       color: 0x2563eb,
       accent: 0x4ade80,
-      maxSpeed: 72,
-      accel: 48,
+      maxSpeed: 82,
+      accel: 54,
       turnRate: 2.35,
       grip: 0.88,
       mass: 2.0
@@ -141,8 +152,8 @@
       sub: 'Z / F: Launch Rainbow Cones • Plays Jingle!',
       color: 0xf472b6,
       accent: 0x67e8f9,
-      maxSpeed: 64,
-      accel: 40,
+      maxSpeed: 72,
+      accel: 45,
       turnRate: 2.25,
       grip: 0.9,
       mass: 1.5
@@ -155,8 +166,8 @@
       sub: 'Z / F: Launch Hot Pizzas • SPACE: Rocket Boost',
       color: 0xf59e0b,
       accent: 0xef4444,
-      maxSpeed: 78,
-      accel: 55,
+      maxSpeed: 88,
+      accel: 60,
       turnRate: 2.65,
       grip: 0.91,
       mass: 1.0
@@ -169,8 +180,8 @@
       sub: 'SPACE: Climb Up • Z/F: Descend • Fly Anywhere!',
       color: 0x0284c7,
       accent: 0xfacc15,
-      maxSpeed: 95,
-      accel: 52,
+      maxSpeed: 115,
+      accel: 62,
       turnRate: 2.4,
       grip: 0.96,
       mass: 1.4,
@@ -184,8 +195,8 @@
       sub: 'Carves Ocean Waves + Amphibious Hydro-Ski!',
       color: 0x06b6d4,
       accent: 0xffffff,
-      maxSpeed: 86,
-      accel: 54,
+      maxSpeed: 96,
+      accel: 58,
       turnRate: 2.4,
       grip: 0.86,
       mass: 1.3,
@@ -199,8 +210,8 @@
       sub: 'Z / F: Ground-Shaking Dino Roar • SPACE: Leap!',
       color: 0x16a34a,
       accent: 0x86efac,
-      maxSpeed: 62,
-      accel: 50,
+      maxSpeed: 70,
+      accel: 55,
       turnRate: 2.7,
       grip: 0.94,
       mass: 2.4,
@@ -225,7 +236,6 @@
     return tex;
   }
 
-  // Dynamic 3D Signboard Texture Builder (for Welcome Arch & Real OSM Street Signs)
   function makeSignTexture(text, subText = '', bgColor = '#065f46', borderColor = '#ffffff', textColor = '#ffffff') {
     return makeCanvasTexture(512, 160, (ctx, w, h) => {
       ctx.fillStyle = bgColor;
@@ -253,15 +263,15 @@
       ctx.fillStyle = '#1e293b';
       ctx.fillRect(0, 0, w, h);
       ctx.fillStyle = '#cbd5e1';
-      ctx.fillRect(0, 0, 44, h);
-      ctx.fillRect(w - 44, 0, 44, h);
+      ctx.fillRect(0, 0, 40, h);
+      ctx.fillRect(w - 40, 0, 40, h);
       for (let y = 0; y < h; y += 128) {
         ctx.fillStyle = '#ef4444';
-        ctx.fillRect(28, y, 18, 64);
-        ctx.fillRect(w - 46, y, 18, 64);
+        ctx.fillRect(26, y, 16, 64);
+        ctx.fillRect(w - 42, y, 16, 64);
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(28, y + 64, 18, 64);
-        ctx.fillRect(w - 46, y + 64, 18, 64);
+        ctx.fillRect(26, y + 64, 16, 64);
+        ctx.fillRect(w - 42, y + 64, 16, 64);
       }
       ctx.fillStyle = '#facc15';
       ctx.fillRect(w / 2 - 16, 0, 11, h);
@@ -271,14 +281,14 @@
         ctx.fillRect(w * 0.27, y, 12, 72);
         ctx.fillRect(w * 0.73 - 12, y, 12, 72);
       }
-    }, 1, 18),
+    }, 1, 24),
 
     roadE: makeCanvasTexture(512, 512, (ctx, w, h) => {
       ctx.fillStyle = '#1e293b';
       ctx.fillRect(0, 0, w, h);
       ctx.fillStyle = '#cbd5e1';
-      ctx.fillRect(0, 0, w, 44);
-      ctx.fillRect(0, h - 44, w, 44);
+      ctx.fillRect(0, 0, w, 40);
+      ctx.fillRect(0, h - 40, w, 40);
       ctx.fillStyle = '#facc15';
       ctx.fillRect(0, h / 2 - 16, w, 11);
       ctx.fillRect(0, h / 2 + 5, w, 11);
@@ -287,7 +297,22 @@
         ctx.fillRect(x, h * 0.27, 72, 12);
         ctx.fillRect(x, h * 0.73 - 12, 72, 12);
       }
-    }, 18, 1),
+    }, 24, 1),
+
+    runwayTex: makeCanvasTexture(512, 512, (ctx, w, h) => {
+      ctx.fillStyle = '#111827';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(18, 0, 12, h);
+      ctx.fillRect(w - 30, 0, 12, h);
+      for (let y = 20; y < h; y += 128) {
+        ctx.fillRect(w / 2 - 10, y, 20, 76);
+      }
+      ctx.fillStyle = '#facc15';
+      for (let x = 60; x < w - 60; x += 48) {
+        ctx.fillRect(x, 0, 20, 28);
+      }
+    }, 1, 14),
 
     buildingGlass: makeCanvasTexture(256, 512, (ctx, w, h) => {
       const grad = ctx.createLinearGradient(0, 0, 0, h);
@@ -344,7 +369,7 @@
         ctx.fillStyle = i % 2 ? '#16a34a' : '#4ade80';
         ctx.fillRect(Math.random() * w, Math.random() * h, 3, 3);
       }
-    }, 30, 30),
+    }, 80, 80),
 
     desertSand: makeCanvasTexture(256, 256, (ctx, w, h) => {
       ctx.fillStyle = '#e09f5a';
@@ -353,7 +378,7 @@
         ctx.fillStyle = i % 2 ? '#d97706' : '#fcd34d';
         ctx.fillRect(Math.random() * w, Math.random() * h, 3, 3);
       }
-    }, 30, 30),
+    }, 80, 80),
 
     snowGround: makeCanvasTexture(256, 256, (ctx, w, h) => {
       ctx.fillStyle = '#f1f5f9';
@@ -362,7 +387,7 @@
         ctx.fillStyle = i % 2 ? '#e2e8f0' : '#bae6fd';
         ctx.fillRect(Math.random() * w, Math.random() * h, 3, 3);
       }
-    }, 30, 30),
+    }, 80, 80),
 
     soccerPitch: makeCanvasTexture(512, 512, (ctx, w, h) => {
       for (let i = 0; i < 10; i++) {
@@ -396,9 +421,9 @@
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x38bdf8);
-  scene.fog = new THREE.FogExp2(0x7dd3fc, 0.0013);
+  scene.fog = new THREE.FogExp2(0x7dd3fc, 0.00055);
 
-  const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.5, 1300);
+  const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.5, 2600);
   camera.position.set(0, 12, -25);
 
   // --- LIGHTING (DAY / SUNSET / NEON NIGHT) ---
@@ -406,13 +431,13 @@
   scene.add(hemiLight);
 
   const sunLight = new THREE.DirectionalLight(0xfffbeb, 1.35);
-  sunLight.position.set(160, 240, 140);
+  sunLight.position.set(220, 360, 180);
   sunLight.castShadow = true;
   sunLight.shadow.mapSize.width = 2048;
   sunLight.shadow.mapSize.height = 2048;
   sunLight.shadow.camera.near = 10;
-  sunLight.shadow.camera.far = 650;
-  const d = 240;
+  sunLight.shadow.camera.far = 1200;
+  const d = 480;
   sunLight.shadow.camera.left = -d;
   sunLight.shadow.camera.right = d;
   sunLight.shadow.camera.top = d;
@@ -427,30 +452,30 @@
     { name: '🌙 Night (T)', bg: 0x090d16, fog: 0x0f172a, hemi: 0.34, sun: 0.28, sunCol: 0x60a5fa, exposure: 0.95 }
   ];
 
-  // --- WORLD STATE & DYNAMIC HOMETOWN GROUPS ---
+  // --- WORLD STATE & COLLIDERS ---
   const buildingColliders = [];
   const baseBuildingColliders = [];
-  const ramps = [];
+  const ramps = []; // { x, z, w, l, h, baseY, dir, isLanding }
   const physicsProps = [];
   const clouds = [];
   const waterDrops = [];
   const projectiles = [];
   const weatherParticles = [];
-  let weatherType = 'clear'; // 'clear' | 'snow' | 'rain'
+  let weatherType = 'clear';
   let ferrisWheelGroup = null;
+  let airportRadarMesh = null;
   let terrainGeo = null;
   let terrainMesh = null;
   let welcomeSignMeshN = null;
   let welcomeSignMeshS = null;
 
-  // Dynamic group that holds OpenStreetMap streets, OSM buildings, 3D street signs, biome flora & horizon peaks
   const hometownDynamicGroup = new THREE.Group();
   scene.add(hometownDynamicGroup);
 
-  const roadXCoords = [-220, -110, 0, 110, 220];
-  const roadZCoords = [-260, -140, -20, 100, 200];
+  // Full Connected Road Network Coordinates (spanning 3,000m x 3,000m!)
+  const roadXCoords = [-660, -440, -220, 0, 220, 440, 660];
+  const roadZCoords = [-660, -420, -260, -140, -20, 100, 220, 660];
 
-  // Current Hometown State
   const hometown = {
     zip: '94040',
     city: 'Mountain View',
@@ -458,7 +483,7 @@
     stateAbbr: 'CA',
     lat: 37.3855,
     lon: -122.088,
-    biome: 'coastal', // 'coastal' | 'alpine' | 'desert' | 'metro'
+    biome: 'coastal',
     biomeLabel: 'Coastal Bay',
     elevMin: 24,
     elevMax: 68,
@@ -468,41 +493,72 @@
     landmarks: ['Cuesta Park', 'Pioneer Park', 'Civic Center Plaza', 'Eagle Park', 'Rengstorff Park']
   };
 
-  // --- COMPUTE TERRAIN HEIGHT AT (X, Z) ---
-  let currentElevationGrid = null; // 7x7 array of normalized heights
-  let terrainReliefScale = 14;
+  let currentElevationGrid = null;
+  let terrainReliefScale = 16;
+
+  // --- UNIFIED SEAMLESS ROAD + ELEVATED HIGHWAY + TERRAIN HEIGHT FUNCTION ---
+  function isOnFlatRoadOrDistrict(x, z) {
+    // 1. North-South Avenues & Outer Beltway
+    for (let i = 0; i < roadXCoords.length; i++) {
+      if (Math.abs(x - roadXCoords[i]) < 20 && z >= -680 && z <= 680) return true;
+    }
+    // 2. East-West Cross Streets & Outer Beltway
+    for (let i = 0; i < roadZCoords.length; i++) {
+      if (Math.abs(z - roadZCoords[i]) < 20 && x >= -680 && x <= 680) return true;
+    }
+    // 3. East/West Expressways out to Stunt Airport (X = +660..+1260) and Dino Canyon (X = -660..-1260)
+    if ((Math.abs(z - (-140)) < 22 || Math.abs(z - 100) < 22) && Math.abs(x) <= 1260) return true;
+    // 4. Stunt Airport District Tarmac & Runways (X = 640..1280, Z = -580..520)
+    if (x >= 640 && x <= 1280 && z >= -580 && z <= 520) return true;
+    // 5. Dino Canyon Rally Circuit (X = -1260..-640, Z = -460..460)
+    if (x >= -1260 && x <= -640 && z >= -460 && z <= 460) {
+      if (Math.abs(x - (-920)) < 22 || Math.abs(x - (-1120)) < 22 || Math.abs(z - (-360)) < 22 || Math.abs(z - 360) < 22) return true;
+    }
+    // 6. South Ocean Causeways & Starlight Resort Island (Z = 200..1180)
+    if ((Math.abs(x) < 22 || Math.abs(x - (-220)) < 22) && z >= 200 && z <= 1150) return true;
+    if (x >= -520 && x <= 520 && z >= 640 && z <= 1180) return true;
+    // 7. Central Soccer Stadium
+    if (x > 5 && x < 105 && z > 0 && z < 85) return true;
+    return false;
+  }
 
   function getTerrainHeightAt(x, z) {
-    // Keep main avenues, downtown core, soccer pitch, and beach boardwalk smoothly flat for high-speed driving
-    for (let i = 0; i < roadXCoords.length; i++) {
-      if (Math.abs(x - roadXCoords[i]) < 18) return 0;
+    // North Mountain Highway & Summit Plateau (Z = -660..-1280)
+    // Smoothly climbs from Y = 0 at Z = -660 up to Y = 38m at Z = -940..-1260!
+    if (z < -660 && Math.abs(x) < 380) {
+      if (z >= -940) {
+        const climbT = (-660 - z) / 280; // 0.0 at Z=-660 -> 1.0 at Z=-940
+        // Smooth S-curve highway grade so cars never bump on transition!
+        const smoothT = climbT * climbT * (3 - 2 * climbT);
+        return smoothT * 38.0;
+      }
+      if (z >= -1260) {
+        return 38.0;
+      }
     }
-    for (let i = 0; i < roadZCoords.length; i++) {
-      if (Math.abs(z - roadZCoords[i]) < 18) return 0;
-    }
-    if (x > 5 && x < 105 && z > 0 && z < 85) return 0; // Soccer stadium
-    if (z > 185) return 0; // Beach & Marina
 
-    // Compute smooth distance from nearest road to blend hills naturally in parks/blocks & outer perimeter
+    // Keep all roads, airport runways, bridges, soccer stadium, and resort island flush at Y = 0
+    if (isOnFlatRoadOrDistrict(x, z)) return 0;
+
+    // Smooth blend into rolling topographic hills in open parklands and outer wilderness
     let minRoadDist = 999;
-    roadXCoords.forEach(rx => { minRoadDist = Math.min(minRoadDist, Math.abs(x - rx) - 16); });
-    roadZCoords.forEach(rz => { minRoadDist = Math.min(minRoadDist, Math.abs(z - rz) - 16); });
-    const blend = Math.max(0, Math.min(1, minRoadDist / 38));
+    roadXCoords.forEach(rx => { minRoadDist = Math.min(minRoadDist, Math.abs(x - rx) - 18); });
+    roadZCoords.forEach(rz => { minRoadDist = Math.min(minRoadDist, Math.abs(z - rz) - 18); });
+    const blend = Math.max(0, Math.min(1, minRoadDist / 45));
 
-    // Outer perimeter rises into real topographic hills!
-    const radialOut = Math.max(0, (Math.hypot(x, z + 40) - 235) / 110);
     const wave =
-      Math.sin(x * 0.022 + hometown.lat) * Math.cos(z * 0.022 + hometown.lon) * 0.5 +
-      Math.sin(x * 0.05 - z * 0.04) * 0.25 + 0.5;
+      Math.sin(x * 0.012 + hometown.lat) * Math.cos(z * 0.012 + hometown.lon) * 0.5 +
+      Math.sin(x * 0.028 - z * 0.024) * 0.25 + 0.5;
 
     let gridH = wave;
     if (currentElevationGrid && currentElevationGrid.length === 49) {
-      const gx = Math.max(0, Math.min(6, Math.floor(((x + 360) / 720) * 6)));
-      const gz = Math.max(0, Math.min(6, Math.floor(((z + 360) / 720) * 6)));
+      const gx = Math.max(0, Math.min(6, Math.floor(((x + 1400) / 2800) * 6)));
+      const gz = Math.max(0, Math.min(6, Math.floor(((z + 1400) / 2800) * 6)));
       gridH = currentElevationGrid[gz * 7 + gx] * 0.7 + wave * 0.3;
     }
 
-    return (blend * 0.35 + radialOut * 1.45) * gridH * terrainReliefScale;
+    const outerBoost = Math.max(0, (Math.hypot(x, z) - 720) / 350);
+    return (blend * 0.25 + outerBoost * 1.35) * gridH * terrainReliefScale;
   }
 
   function rebuildTerrainVertices() {
@@ -510,85 +566,355 @@
     const pos = terrainGeo.attributes.position;
     for (let i = 0; i < pos.count; i++) {
       const vx = pos.getX(i);
-      const vz = -pos.getY(i); // PlaneGeometry is rotated -PI/2 around X
-      const h = getTerrainHeightAt(vx, vz);
-      pos.setZ(i, h);
+      const vz = -pos.getY(i);
+      // Channel of Ocean Bay between Main Island (Z=230) and Starlight Resort Island (Z=640)
+      if (vz > 245 && vz < 635 && Math.abs(vx) < 620) {
+        pos.setZ(i, -2.5);
+      } else {
+        pos.setZ(i, getTerrainHeightAt(vx, vz));
+      }
     }
     pos.needsUpdate = true;
     terrainGeo.computeVertexNormals();
   }
 
-  function buildBaseWorld() {
-    // 1. Ocean Bay Plane
-    const oceanGeo = new THREE.PlaneGeometry(2600, 2600);
-    const oceanMat = new THREE.MeshStandardMaterial({
-      color: 0x0284c7,
-      roughness: 0.18,
-      metalness: 0.35
+  // --- HELPER: CREATE CONNECTED RAMP WITH FLUSH APRON, SIDE RAILS & OPTIONAL LANDING ---
+  function addConnectedRamp(r) {
+    const baseY = r.baseY || 0;
+    const shape = new THREE.Shape();
+    shape.moveTo(-r.l / 2, 0);
+    shape.lineTo(r.l / 2, 0);
+    shape.lineTo(r.l / 2, r.h);
+    shape.closePath();
+
+    const extrudeGeo = new THREE.ExtrudeGeometry(shape, { depth: r.w, bevelEnabled: false });
+    extrudeGeo.center();
+
+    const rampGroup = new THREE.Group();
+    const rampMesh = new THREE.Mesh(
+      extrudeGeo,
+      new THREE.MeshStandardMaterial({ map: TEXTURES.rampTex, roughness: 0.45 })
+    );
+    rampMesh.position.y = r.h / 2;
+    rampMesh.castShadow = true;
+    rampMesh.receiveShadow = true;
+    rampGroup.add(rampMesh);
+
+    // Flush Yellow Lead-In Entry Apron at (-r.l/2) so road-to-ramp transition looks 100% seamless!
+    const apron = new THREE.Mesh(
+      new THREE.BoxGeometry(4.5, 0.14, r.w + 0.6),
+      new THREE.MeshBasicMaterial({ color: 0xfacc15 })
+    );
+    apron.position.set(-r.l / 2 - 2.0, 0.08, 0);
+    rampGroup.add(apron);
+
+    // 3D Glowing Side Guide Rails along the incline so cars stay aligned on the ramp
+    const railLen = Math.hypot(r.l, r.h);
+    const railPitch = Math.atan2(r.h, r.l);
+    const railMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.4 });
+    [-r.w / 2 - 0.35, r.w / 2 + 0.35].forEach(rz => {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(railLen, 0.75, 0.45), railMat);
+      rail.position.set(0, r.h / 2 + 0.4, rz);
+      rail.rotation.z = railPitch;
+      rampGroup.add(rail);
     });
-    const ocean = new THREE.Mesh(oceanGeo, oceanMat);
+
+    rampGroup.position.set(r.x, baseY, r.z);
+    if (r.dir === 'N') rampGroup.rotation.y = Math.PI / 2;
+    else if (r.dir === 'S') rampGroup.rotation.y = -Math.PI / 2;
+    else if (r.dir === 'W') rampGroup.rotation.y = Math.PI;
+    scene.add(rampGroup);
+
+    // Floating Golden Sky-Ring above the jump trajectory
+    if (!r.noRing) {
+      const skyRing = new THREE.Mesh(
+        new THREE.TorusGeometry(7.2, 0.6, 12, 28),
+        new THREE.MeshBasicMaterial({ color: 0xfacc15 })
+      );
+      const offsetZ = r.dir === 'N' ? -r.l * 0.85 : r.dir === 'S' ? r.l * 0.85 : 0;
+      const offsetX = r.dir === 'E' ? r.l * 0.85 : r.dir === 'W' ? -r.l * 0.85 : 0;
+      skyRing.position.set(r.x + offsetX, baseY + r.h + 8.5, r.z + offsetZ);
+      if (r.dir === 'E' || r.dir === 'W') skyRing.rotation.y = Math.PI / 2;
+      scene.add(skyRing);
+    }
+
+    ramps.push({ ...r, baseY });
+  }
+
+  // --- BUILD THE MASSIVE 6-DISTRICT CONNECTED WORLD ---
+  function buildBaseWorld() {
+    // 1. Massive Ocean Bay Plane (6,000m x 6,000m)
+    const ocean = new THREE.Mesh(
+      new THREE.PlaneGeometry(6000, 6000),
+      new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.18, metalness: 0.35 })
+    );
     ocean.rotation.x = -Math.PI / 2;
-    ocean.position.y = -1.2;
+    ocean.position.y = -1.4;
     ocean.receiveShadow = true;
     scene.add(ocean);
 
-    // Subdivided 3D Elevation Terrain Mesh (56x56 grid)
-    terrainGeo = new THREE.PlaneGeometry(720, 620, 56, 56);
-    const terrainMat = new THREE.MeshStandardMaterial({ map: TEXTURES.grass, roughness: 0.85 });
-    terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
+    // 2. Massive 2,800m x 2,800m Subdivided 3D Terrain Mesh (96x96 grid)
+    terrainGeo = new THREE.PlaneGeometry(2800, 2800, 96, 96);
+    terrainMesh = new THREE.Mesh(
+      terrainGeo,
+      new THREE.MeshStandardMaterial({ map: TEXTURES.grass, roughness: 0.85 })
+    );
     terrainMesh.rotation.x = -Math.PI / 2;
-    terrainMesh.position.set(0, -0.02, -45);
+    terrainMesh.position.set(0, -0.02, 0);
     terrainMesh.receiveShadow = true;
     scene.add(terrainMesh);
     rebuildTerrainVertices();
 
-    // Sandy Beach Strip along South Bay (Z = 200..265)
-    const beach = new THREE.Mesh(
-      new THREE.BoxGeometry(720, 2.6, 75),
-      new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.9 })
-    );
-    beach.position.set(0, -1.55, 235);
-    beach.receiveShadow = true;
-    scene.add(beach);
+    // 3. Connected Main Road & Outer Ring Beltway Grid (-660..+660)
+    const roadMatN = new THREE.MeshStandardMaterial({ map: TEXTURES.roadN, roughness: 0.7 });
+    const roadMatE = new THREE.MeshStandardMaterial({ map: TEXTURES.roadE, roughness: 0.7 });
+    const junctionMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.75 });
 
-    // Marina Wooden Pier
-    const pier = new THREE.Mesh(
-      new THREE.BoxGeometry(36, 2.5, 110),
-      new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.8 })
-    );
-    pier.position.set(120, 0.4, 305);
-    pier.castShadow = true;
-    pier.receiveShadow = true;
-    scene.add(pier);
-
-    // 2. Main Road Network Grid
     roadXCoords.forEach(rx => {
-      const mesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(26, 560),
-        new THREE.MeshStandardMaterial({ map: TEXTURES.roadN, roughness: 0.7 })
-      );
+      const w = Math.abs(rx) === 660 || rx === 0 ? 32 : 26;
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, 1360), roadMatN);
       mesh.rotation.x = -Math.PI / 2;
-      mesh.position.set(rx, 0.06, -50);
+      mesh.position.set(rx, 0.06, 0);
       mesh.receiveShadow = true;
       scene.add(mesh);
     });
 
     roadZCoords.forEach(rz => {
-      const mesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(680, 26),
-        new THREE.MeshStandardMaterial({ map: TEXTURES.roadE, roughness: 0.7 })
-      );
+      const w = Math.abs(rz) === 660 ? 32 : 26;
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1360, w), roadMatE);
       mesh.rotation.x = -Math.PI / 2;
-      mesh.position.set(0, 0.04, rz);
+      mesh.position.set(0, 0.05, rz);
       mesh.receiveShadow = true;
       scene.add(mesh);
     });
 
-    // Boulevard Welcome Overhead Gantry Archways (Dynamic City & ZIP Signboards!)
+    // Paved Asphalt Intersection Plazas where avenues & streets cross so roads connect seamlessly
+    roadXCoords.forEach(rx => {
+      roadZCoords.forEach(rz => {
+        const box = new THREE.Mesh(new THREE.PlaneGeometry(32, 32), junctionMat);
+        box.rotation.x = -Math.PI / 2;
+        box.position.set(rx, 0.075, rz);
+        scene.add(box);
+      });
+    });
+
+    // 4. East & West Cross-Island Expressways (Connecting Dino Canyon <-> Downtown <-> Stunt Airport)
+    [-140, 100].forEach(ez => {
+      const expRoad = new THREE.Mesh(new THREE.PlaneGeometry(2500, 28), roadMatE);
+      expRoad.rotation.x = -Math.PI / 2;
+      expRoad.position.set(0, 0.065, ez);
+      expRoad.receiveShadow = true;
+      scene.add(expRoad);
+    });
+
+    // 5. DISTRICT 2: INTERNATIONAL STUNT AIRPORT (X = +700..+1220, Z = -520..+460)
+    const tarmac = new THREE.Mesh(
+      new THREE.PlaneGeometry(520, 980),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 })
+    );
+    tarmac.rotation.x = -Math.PI / 2;
+    tarmac.position.set(960, 0.04, -30);
+    tarmac.receiveShadow = true;
+    scene.add(tarmac);
+
+    // Twin 920m Runways (X = 920 and X = 1080)
+    [920, 1080].forEach(rwx => {
+      const rw = new THREE.Mesh(
+        new THREE.PlaneGeometry(44, 920),
+        new THREE.MeshStandardMaterial({ map: TEXTURES.runwayTex, roughness: 0.65 })
+      );
+      rw.rotation.x = -Math.PI / 2;
+      rw.position.set(rwx, 0.08, -30);
+      rw.receiveShadow = true;
+      scene.add(rw);
+    });
+
+    // Air Traffic Control Tower (X = 810, Z = -30)
+    const towerStem = new THREE.Mesh(
+      new THREE.CylinderGeometry(7, 10, 68, 12),
+      new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4 })
+    );
+    towerStem.position.set(810, 34, -30);
+    towerStem.castShadow = true;
+    const towerCab = new THREE.Mesh(
+      new THREE.CylinderGeometry(14, 10, 12, 16),
+      new THREE.MeshStandardMaterial({ color: 0x0ea5e9, metalness: 0.7, roughness: 0.2 })
+    );
+    towerCab.position.set(810, 72, -30);
+    airportRadarMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(14, 2.2, 1.5),
+      new THREE.MeshBasicMaterial({ color: 0xfacc15 })
+    );
+    airportRadarMesh.position.set(810, 81, -30);
+    scene.add(towerStem, towerCab, airportRadarMesh);
+
+    // 2 Drive-Through Stunt Hangars on Tarmac (X = 810, Z = 180 and Z = -220)
+    [180, -220].forEach(hz => {
+      const hMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, metalness: 0.4, roughness: 0.4 });
+      const wallL = new THREE.Mesh(new THREE.BoxGeometry(2.5, 22, 54), hMat);
+      wallL.position.set(790, 11, hz);
+      const wallR = new THREE.Mesh(new THREE.BoxGeometry(2.5, 22, 54), hMat);
+      wallR.position.set(830, 11, hz);
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(43, 3, 54), hMat);
+      roof.position.set(810, 23, hz);
+      roof.castShadow = true;
+      scene.add(wallL, wallR, roof);
+    });
+
+    // 2 Parked 3D Jumbo Jets on Runway 1 (Jump RIGHT OVER their wings with the connected Runway Ramps!)
+    [-160, 120].forEach(jz => {
+      const jet = new THREE.Group();
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 });
+      const wingMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.4 });
+      const fuse = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.2, 38, 12), bodyMat);
+      fuse.rotation.z = Math.PI / 2;
+      fuse.position.y = 4.2;
+      const wings = new THREE.Mesh(new THREE.BoxGeometry(10, 0.6, 42), wingMat);
+      wings.position.y = 4.0;
+      const tail = new THREE.Mesh(new THREE.BoxGeometry(5, 9, 1.2), wingMat);
+      tail.position.set(-16, 8.5, 0);
+      jet.add(fuse, wings, tail);
+      jet.position.set(920, 0, jz);
+      scene.add(jet);
+    });
+
+    // 6. DISTRICT 3: NORTH MOUNTAIN HIGHWAY & SUMMIT OVERLOOK (Z = -660..-1250)
+    // Paved Mountain Highway climbing smoothly along terrain from Z=-660 to Z=-1220
+    const mtnRoadGeo = new THREE.PlaneGeometry(30, 580, 1, 40);
+    const mrPos = mtnRoadGeo.attributes.position;
+    for (let i = 0; i < mrPos.count; i++) {
+      const rz = -mrPos.getY(i) - 950;
+      mrPos.setZ(i, getTerrainHeightAt(0, rz) + 0.12);
+    }
+    mtnRoadGeo.computeVertexNormals();
+    const mtnRoad = new THREE.Mesh(mtnRoadGeo, roadMatN);
+    mtnRoad.rotation.x = -Math.PI / 2;
+    mtnRoad.position.set(0, 0, -950);
+    mtnRoad.receiveShadow = true;
+    scene.add(mtnRoad);
+
+    // Summit Paved Overlook Plaza at (X = 0, Z = -1080, Y = 38m)
+    const summitPlaza = new THREE.Mesh(
+      new THREE.BoxGeometry(220, 1.0, 220),
+      new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.75 })
+    );
+    summitPlaza.position.set(0, 37.6, -1080);
+    summitPlaza.receiveShadow = true;
+    scene.add(summitPlaza);
+
+    const summitSign = new THREE.Mesh(
+      new THREE.BoxGeometry(36, 5.5, 1.4),
+      new THREE.MeshBasicMaterial({ map: makeSignTexture('SUMMIT SKY-JUMP OVERLOOK', 'ALTITUDE +38M • BLAST OFF RAMP AHEAD!', '#1d4ed8') })
+    );
+    summitSign.position.set(0, 52, -975);
+    scene.add(summitSign);
+
+    // 7. DISTRICT 4: OCEAN CAUSEWAYS & STARLIGHT RESORT ISLAND (Z = +240..+1150)
+    // Two Mega Bridges across the Ocean Bay Channel (Z = 220..660):
+    // Bridge 1: Golden Gate Suspension Bridge (X = -220, Z = 220..660)
+    // Bridge 2: Central Ocean Causeway (X = 0, Z = 220..1100)
+    const causeway = new THREE.Mesh(
+      new THREE.BoxGeometry(32, 1.6, 880),
+      new THREE.MeshStandardMaterial({ map: TEXTURES.roadN, roughness: 0.7 })
+    );
+    causeway.position.set(0, -0.7, 660);
+    causeway.receiveShadow = true;
+    scene.add(causeway);
+
+    const bridgeDeck = new THREE.Mesh(
+      new THREE.BoxGeometry(30, 1.6, 460),
+      new THREE.MeshStandardMaterial({ map: TEXTURES.roadN, roughness: 0.7 })
+    );
+    bridgeDeck.position.set(-220, -0.7, 440);
+    bridgeDeck.receiveShadow = true;
+    scene.add(bridgeDeck);
+
+    const towerMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.45, metalness: 0.3 });
+    [330, 530].forEach(tz => {
+      [-234, -206].forEach(tx => {
+        const pillar = new THREE.Mesh(new THREE.BoxGeometry(3.6, 68, 3.6), towerMat);
+        pillar.position.set(tx, 32, tz);
+        pillar.castShadow = true;
+        scene.add(pillar);
+      });
+      [30, 56].forEach(by => {
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(32, 3.0, 3.0), towerMat);
+        beam.position.set(-220, by, tz);
+        beam.castShadow = true;
+        scene.add(beam);
+      });
+    });
+
+    // Resort Island Sandy Beach & Boardwalk (Z = 650..1150)
+    const resortBeach = new THREE.Mesh(
+      new THREE.BoxGeometry(920, 1.5, 480),
+      new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.9 })
+    );
+    resortBeach.position.set(0, -0.72, 900);
+    resortBeach.receiveShadow = true;
+    scene.add(resortBeach);
+
+    // Resort Island Cross-Boulevard (Z = 850)
+    const islandRoad = new THREE.Mesh(new THREE.PlaneGeometry(760, 28), roadMatE);
+    islandRoad.rotation.x = -Math.PI / 2;
+    islandRoad.position.set(0, 0.08, 850);
+    scene.add(islandRoad);
+
+    // Rotating 3D Ferris Wheel on Resort Island Boardwalk (X = 140, Z = 890)
+    const standMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.4, roughness: 0.3 });
+    [-6, 6].forEach(oz => {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.4, 38, 10), standMat);
+      leg.position.set(140, 18, 890 + oz);
+      leg.rotation.x = oz > 0 ? -0.18 : 0.18;
+      scene.add(leg);
+    });
+    ferrisWheelGroup = new THREE.Group();
+    ferrisWheelGroup.position.set(140, 35, 890);
+    ferrisWheelGroup.add(new THREE.Mesh(new THREE.TorusGeometry(25, 0.9, 12, 36), new THREE.MeshBasicMaterial({ color: 0xf472b6 })));
+    const gondolaColors = [0xef4444, 0xf59e0b, 0xeab308, 0x22c55e, 0x06b6d4, 0x3b82f6, 0xa855f7, 0xec4899];
+    for (let i = 0; i < 12; i++) {
+      const ang = (i / 12) * Math.PI * 2;
+      const spoke = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 50, 6), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+      spoke.rotation.z = ang;
+      ferrisWheelGroup.add(spoke);
+      const cab = new THREE.Mesh(new THREE.SphereGeometry(2.4, 12, 12), new THREE.MeshStandardMaterial({ color: gondolaColors[i % gondolaColors.length], roughness: 0.3 }));
+      cab.position.set(Math.cos(ang) * 25, Math.sin(ang) * 25, 0);
+      ferrisWheelGroup.add(cab);
+    }
+    scene.add(ferrisWheelGroup);
+
+    // 8. DISTRICT 5: DINO SAFARI VALLEY & CANYON RALLY (X = -1200..-660, Z = -400..+400)
+    [-920, -1120].forEach(cx => {
+      const cRoad = new THREE.Mesh(new THREE.PlaneGeometry(26, 760), roadMatN);
+      cRoad.rotation.x = -Math.PI / 2;
+      cRoad.position.set(cx, 0.06, 0);
+      scene.add(cRoad);
+    });
+    [-360, 360].forEach(cz => {
+      const cRoad = new THREE.Mesh(new THREE.PlaneGeometry(520, 26), roadMatE);
+      cRoad.rotation.x = -Math.PI / 2;
+      cRoad.position.set(-920, 0.05, cz);
+      scene.add(cRoad);
+    });
+
+    // Red Rock Canyon Drive-Through Archways over the Dino Rally Track (X = -920)
+    [-180, 0, 180].forEach(az => {
+      const archMat = new THREE.MeshStandardMaterial({ color: 0xc2410c, roughness: 0.85 });
+      [-16, 16].forEach(ox => {
+        const col = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 5.5, 28, 8), archMat);
+        col.position.set(-920 + ox, 14, az);
+        scene.add(col);
+      });
+      const span = new THREE.Mesh(new THREE.BoxGeometry(38, 6, 8), archMat);
+      span.position.set(-920, 27, az);
+      scene.add(span);
+    });
+
+    // 9. Boulevard Welcome Overhead Gantry Archways in Downtown (X = 0)
     [-85, 22].forEach((az, idx) => {
       const archGroup = new THREE.Group();
       const pillarMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.5, roughness: 0.3 });
-      [-14.5, 14.5].forEach(ax => {
+      [-15.5, 15.5].forEach(ax => {
         const p = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.1, 18.5, 12), pillarMat);
         p.position.set(ax, 9.2, az);
         p.castShadow = true;
@@ -598,10 +924,7 @@
         idx === 0 ? 'DOWNTOWN ' + hometown.city.toUpperCase() : 'WELCOME TO ' + hometown.city.toUpperCase(),
         `ZIP ${hometown.zip} • ${hometown.state.toUpperCase()}`
       );
-      const banner = new THREE.Mesh(
-        new THREE.BoxGeometry(31, 4.8, 1.4),
-        new THREE.MeshBasicMaterial({ map: signTex })
-      );
+      const banner = new THREE.Mesh(new THREE.BoxGeometry(33, 4.8, 1.4), new THREE.MeshBasicMaterial({ map: signTex }));
       banner.position.set(0, 17.5, az);
       if (idx === 0) welcomeSignMeshN = banner;
       else welcomeSignMeshS = banner;
@@ -609,32 +932,7 @@
       scene.add(archGroup);
     });
 
-    // 3. Golden Gate Style Suspension Bridge (X = -110, Z = 220..440)
-    const bridgeDeck = new THREE.Mesh(
-      new THREE.BoxGeometry(26, 1.5, 220),
-      new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 })
-    );
-    bridgeDeck.position.set(-110, 0.6, 330);
-    bridgeDeck.receiveShadow = true;
-    scene.add(bridgeDeck);
-
-    const towerMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.45, metalness: 0.3 });
-    [275, 385].forEach(tz => {
-      [-122, -98].forEach(tx => {
-        const pillar = new THREE.Mesh(new THREE.BoxGeometry(3.2, 58, 3.2), towerMat);
-        pillar.position.set(tx, 27, tz);
-        pillar.castShadow = true;
-        scene.add(pillar);
-      });
-      [26, 48].forEach(by => {
-        const beam = new THREE.Mesh(new THREE.BoxGeometry(26, 2.6, 2.6), towerMat);
-        beam.position.set(-110, by, tz);
-        beam.castShadow = true;
-        scene.add(beam);
-      });
-    });
-
-    // 4. Core Downtown Skyscrapers & Hero HQ
+    // 10. Downtown Skyscrapers & District Buildings
     const blockPlots = [
       { x: -165, z: -200, w: 42, d: 42, h: 78, tint: 0x38bdf8, helipad: true },
       { x: -165, z: -80,  w: 38, d: 44, h: 62, tint: 0x818cf8 },
@@ -651,9 +949,18 @@
       { x: 55,   z: 150,  w: 40, d: 34, h: 48, tint: 0x22c55e },
       { x: 165,  z: 40,   w: 40, d: 38, h: 46, tint: 0xf59e0b },
       { x: 165,  z: 150,  w: 38, d: 36, h: 40, tint: 0xf43f5e },
-      { x: 0,    z: -305, w: 52, d: 44, h: 118, tint: 0x38bdf8 },
-      { x: -110, z: -305, w: 46, d: 42, h: 96,  tint: 0xfacc15 },
-      { x: 110,  z: -305, w: 46, d: 42, h: 102, tint: 0xf472b6 }
+      // North Downtown High-Rises
+      { x: -55,  z: -340, w: 48, d: 44, h: 112, tint: 0x38bdf8 },
+      { x: 55,   z: -340, w: 48, d: 44, h: 106, tint: 0xfacc15 },
+      { x: -165, z: -340, w: 44, d: 42, h: 88,  tint: 0xf472b6 },
+      { x: 165,  z: -340, w: 44, d: 42, h: 84,  tint: 0x34d399 },
+      // East & West Midtown Towers
+      { x: -330, z: -200, w: 44, d: 44, h: 72,  tint: 0x2dd4bf },
+      { x: -330, z: -80,  w: 42, d: 42, h: 58,  tint: 0xfb7185 },
+      { x: -330, z: 40,   w: 42, d: 42, h: 48,  tint: 0x60a5fa },
+      { x: 330,  z: -200, w: 44, d: 44, h: 76,  tint: 0x818cf8 },
+      { x: 330,  z: -80,  w: 42, d: 42, h: 60,  tint: 0xfacc15 },
+      { x: 330,  z: 40,   w: 42, d: 42, h: 50,  tint: 0x4ade80 }
     ];
 
     blockPlots.forEach((b, idx) => {
@@ -665,24 +972,15 @@
       mesh.receiveShadow = true;
       scene.add(mesh);
 
-      const crown = new THREE.Mesh(
-        new THREE.BoxGeometry(b.w + 1.2, 1.8, b.d + 1.2),
-        new THREE.MeshBasicMaterial({ color: b.tint })
-      );
+      const crown = new THREE.Mesh(new THREE.BoxGeometry(b.w + 1.2, 1.8, b.d + 1.2), new THREE.MeshBasicMaterial({ color: b.tint }));
       crown.position.set(b.x, b.h + 0.9, b.z);
       scene.add(crown);
 
       if (b.helipad) {
-        const pad = new THREE.Mesh(
-          new THREE.CylinderGeometry(11, 11, 0.6, 24),
-          new THREE.MeshStandardMaterial({ color: 0x1e293b })
-        );
+        const pad = new THREE.Mesh(new THREE.CylinderGeometry(11, 11, 0.6, 24), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
         pad.position.set(b.x, b.h + 1.9, b.z);
         scene.add(pad);
-        const ring = new THREE.Mesh(
-          new THREE.RingGeometry(7.5, 9, 24),
-          new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide })
-        );
+        const ring = new THREE.Mesh(new THREE.RingGeometry(7.5, 9, 24), new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide }));
         ring.rotation.x = -Math.PI / 2;
         ring.position.set(b.x, b.h + 2.25, b.z);
         scene.add(ring);
@@ -699,7 +997,7 @@
       buildingColliders.push(col);
     });
 
-    // 5. 3D Car-Soccer Stadium (X = 55, Z = 42)
+    // 11. 3D Car-Soccer Stadium (X = 55, Z = 42)
     const pitchMesh = new THREE.Mesh(
       new THREE.PlaneGeometry(76, 56),
       new THREE.MeshStandardMaterial({ map: TEXTURES.soccerPitch, roughness: 0.8 })
@@ -723,105 +1021,69 @@
       });
     });
 
-    // 6. Rotating 3D Ferris Wheel on Beach Boardwalk
-    const standMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.4, roughness: 0.3 });
-    [-5, 5].forEach(oz => {
-      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.2, 34, 10), standMat);
-      leg.position.set(120, 16, 235 + oz);
-      leg.rotation.x = oz > 0 ? -0.18 : 0.18;
-      scene.add(leg);
-    });
-    ferrisWheelGroup = new THREE.Group();
-    ferrisWheelGroup.position.set(120, 31, 235);
-    ferrisWheelGroup.add(new THREE.Mesh(new THREE.TorusGeometry(22, 0.8, 12, 36), new THREE.MeshBasicMaterial({ color: 0xf472b6 })));
-    const gondolaColors = [0xef4444, 0xf59e0b, 0xeab308, 0x22c55e, 0x06b6d4, 0x3b82f6, 0xa855f7, 0xec4899];
-    for (let i = 0; i < 12; i++) {
-      const ang = (i / 12) * Math.PI * 2;
-      const spoke = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 44, 6), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
-      spoke.rotation.z = ang;
-      ferrisWheelGroup.add(spoke);
-      const cab = new THREE.Mesh(new THREE.SphereGeometry(2.2, 12, 12), new THREE.MeshStandardMaterial({ color: gondolaColors[i % gondolaColors.length], roughness: 0.3 }));
-      cab.position.set(Math.cos(ang) * 22, Math.sin(ang) * 22, 0);
-      ferrisWheelGroup.add(cab);
-    }
-    scene.add(ferrisWheelGroup);
+    // 12. PROPERLY CONNECTED STUNT RAMPS (WITH CENTER EXPRESS LANES, GUARDRAILS & PAIRED LANDINGS!)
+    const connectedRamps = [
+      // Central Grand Boulevard Center Stunt Lane (8.5m wide in a 32m road, leaving 11m pass-through lanes on both sides!)
+      { x: 0,    z: 35,   w: 9.5, l: 26, h: 6.2, dir: 'N' },
+      { x: 0,    z: -32,  w: 9.5, l: 24, h: 6.2, dir: 'S', noRing: true }, // Paired smooth down-landing ramp!
+      { x: 0,    z: -195, w: 9.5, l: 26, h: 6.8, dir: 'N' },
+      { x: 0,    z: -260, w: 9.5, l: 24, h: 6.8, dir: 'S', noRing: true },
 
-    // 7. 12 Mega Stunt Ramps + Sky Rings
-    const rampLocations = [
-      { x: 0,    z: -75,  w: 12, l: 24, h: 6.5, dir: 'N' },
-      { x: 0,    z: 35,   w: 12, l: 24, h: 6.0, dir: 'N' },
-      { x: -110, z: -60,  w: 12, l: 22, h: 7.0, dir: 'N' },
-      { x: -110, z: 185,  w: 14, l: 24, h: 7.5, dir: 'S' },
-      { x: 110,  z: -60,  w: 12, l: 22, h: 7.0, dir: 'N' },
-      { x: 110,  z: 170,  w: 14, l: 24, h: 8.0, dir: 'S' },
-      { x: -55,  z: -20,  w: 12, l: 20, h: 6.5, dir: 'E' },
-      { x: 55,   z: -20,  w: 12, l: 20, h: 6.5, dir: 'W' },
-      { x: -55,  z: -140, w: 12, l: 22, h: 7.0, dir: 'E' },
-      { x: 55,   z: -140, w: 12, l: 22, h: 7.0, dir: 'W' },
-      { x: 220,  z: 30,   w: 16, l: 28, h: 9.5, dir: 'N' },
-      { x: -220, z: 30,   w: 16, l: 28, h: 9.5, dir: 'S' }
+      // Stunt Airport Runway Jumbo-Jet Jumps (Jump right over the parked 3D Jumbo Jets at Z = 120 and Z = -160!)
+      { x: 920,  z: 155,  w: 14,  l: 30, h: 8.5, dir: 'N' },
+      { x: 920,  z: 85,   w: 14,  l: 28, h: 8.5, dir: 'S', noRing: true },
+      { x: 920,  z: -125, w: 14,  l: 30, h: 8.5, dir: 'N' },
+      { x: 920,  z: -195, w: 14,  l: 28, h: 8.5, dir: 'S', noRing: true },
+      // Runway 2 Speed Jump
+      { x: 1080, z: 0,    w: 16,  l: 34, h: 10.5, dir: 'N' },
+
+      // North Mountain Summit Mega Ski-Jump (At Y = 38m altitude, launching South toward Downtown!)
+      { x: 0,    z: -955, w: 16,  l: 34, h: 11.0, baseY: 38.0, dir: 'S' },
+
+      // Starlight Resort Island & Golden Gate Bridge Jumps
+      { x: -220, z: 260,  w: 10,  l: 26, h: 6.8, dir: 'S' },
+      { x: 0,    z: 780,  w: 12,  l: 28, h: 7.5, dir: 'S' },
+
+      // Dino Safari Canyon Rally Jumps
+      { x: -920, z: 80,   w: 11,  l: 26, h: 7.2, dir: 'N' },
+      { x: -920, z: -80,  w: 11,  l: 26, h: 7.2, dir: 'N' }
     ];
 
-    rampLocations.forEach(r => {
-      const shape = new THREE.Shape();
-      shape.moveTo(-r.l / 2, 0);
-      shape.lineTo(r.l / 2, 0);
-      shape.lineTo(r.l / 2, r.h);
-      shape.closePath();
+    connectedRamps.forEach(r => addConnectedRamp(r));
 
-      const extrudeGeo = new THREE.ExtrudeGeometry(shape, { depth: r.w, bevelEnabled: false });
-      extrudeGeo.center();
-      const rampMesh = new THREE.Mesh(extrudeGeo, new THREE.MeshStandardMaterial({ map: TEXTURES.rampTex, roughness: 0.5 }));
-      rampMesh.position.set(r.x, r.h / 2, r.z);
-      if (r.dir === 'N') rampMesh.rotation.y = Math.PI / 2;
-      else if (r.dir === 'S') rampMesh.rotation.y = -Math.PI / 2;
-      else if (r.dir === 'W') rampMesh.rotation.y = Math.PI;
-      rampMesh.castShadow = true;
-      rampMesh.receiveShadow = true;
-      scene.add(rampMesh);
-
-      const skyRing = new THREE.Mesh(new THREE.TorusGeometry(6.5, 0.55, 12, 28), new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
-      const offsetZ = r.dir === 'N' ? -18 : r.dir === 'S' ? 18 : 0;
-      const offsetX = r.dir === 'E' ? 18 : r.dir === 'W' ? -18 : 0;
-      skyRing.position.set(r.x + offsetX, r.h + 8, r.z + offsetZ);
-      if (r.dir === 'E' || r.dir === 'W') skyRing.rotation.y = Math.PI / 2;
-      scene.add(skyRing);
-      ramps.push(r);
-    });
-
-    // 8. Knockable 3D Physics Props (Cones & Crates)
+    // 13. Knockable 3D Physics Props (Cones & Crates across Districts)
     const coneGeo = new THREE.ConeGeometry(0.85, 2.2, 10);
     const coneMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.4 });
     const crateGeo = new THREE.BoxGeometry(1.8, 1.8, 1.8);
     const crateMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.7 });
 
-    for (let i = 0; i < 80; i++) {
+    for (let i = 0; i < 110; i++) {
       const isCone = i % 3 !== 0;
       const mesh = new THREE.Mesh(isCone ? coneGeo : crateGeo, isCone ? coneMat : crateMat);
-      const rx = roadXCoords[i % roadXCoords.length] + (i % 2 === 0 ? 10 : -10);
-      const rz = -220 + (i * 5.6) % 420;
+      const rx = roadXCoords[i % roadXCoords.length] + (i % 2 === 0 ? 11 : -11);
+      const rz = -520 + (i * 10.5) % 1080;
       mesh.position.set(rx, isCone ? 1.1 : 0.9, rz);
       mesh.castShadow = true;
       scene.add(mesh);
       physicsProps.push({ mesh, vx: 0, vy: 0, vz: 0, hitCooldown: 0, baseY: isCone ? 1.1 : 0.9 });
     }
 
-    // 9. Fluffy 3D Sky Clouds
+    // 14. Fluffy 3D Sky Clouds across the 3km Sky
     const cloudMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95 });
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 36; i++) {
       const cg = new THREE.Group();
       for (let j = 0; j < 4; j++) {
-        const puff = new THREE.Mesh(new THREE.SphereGeometry(8 + Math.random() * 6, 10, 10), cloudMat);
-        puff.position.set(j * 7 - 10, Math.random() * 3, (Math.random() - 0.5) * 6);
+        const puff = new THREE.Mesh(new THREE.SphereGeometry(10 + Math.random() * 8, 10, 10), cloudMat);
+        puff.position.set(j * 9 - 14, Math.random() * 4, (Math.random() - 0.5) * 8);
         puff.scale.y = 0.55;
         cg.add(puff);
       }
-      cg.position.set((Math.random() - 0.5) * 900, 110 + Math.random() * 45, (Math.random() - 0.5) * 900);
+      cg.position.set((Math.random() - 0.5) * 2400, 135 + Math.random() * 55, (Math.random() - 0.5) * 2400);
       scene.add(cg);
       clouds.push(cg);
     }
 
-    // 10. 3D Weather Particle Pool (Snowflakes / Raindrops)
+    // 15. 3D Weather Particle Pool
     const flakeGeo = new THREE.BoxGeometry(0.45, 0.45, 0.45);
     const flakeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     for (let i = 0; i < 220; i++) {
@@ -833,17 +1095,14 @@
     }
   }
 
-  // --- REBUILD DYNAMIC HOMETOWN LAYER (OSM STREETS, BUILDINGS, SIGNS, FLORA & HORIZON) ---
+  // --- REBUILD DYNAMIC HOMETOWN LAYER (OSM BUILDINGS, 3D STREET SIGNS, FLORA & HORIZON) ---
   function rebuildHometownScenery(osmData = null) {
-    // Clear previous dynamic children
     while (hometownDynamicGroup.children.length > 0) {
-      const child = hometownDynamicGroup.children[0];
-      hometownDynamicGroup.remove(child);
+      hometownDynamicGroup.remove(hometownDynamicGroup.children[0]);
     }
     buildingColliders.length = 0;
     baseBuildingColliders.forEach(c => buildingColliders.push(c));
 
-    // 1. Update Welcome Arch Signboards with Current City, State & ZIP
     if (welcomeSignMeshN) {
       welcomeSignMeshN.material.map = makeSignTexture(
         'DOWNTOWN ' + hometown.city.toUpperCase(),
@@ -861,47 +1120,50 @@
       welcomeSignMeshS.material.needsUpdate = true;
     }
 
-    // 2. Update Ground Terrain Material & Vertex Heights for Biome
     if (terrainMesh) {
       if (hometown.biome === 'desert') {
         terrainMesh.material.map = TEXTURES.desertSand;
-        terrainReliefScale = 22;
+        terrainReliefScale = 24;
       } else if (hometown.biome === 'alpine') {
         terrainMesh.material.map = TEXTURES.snowGround;
-        terrainReliefScale = 34;
+        terrainReliefScale = 36;
       } else {
         terrainMesh.material.map = TEXTURES.grass;
-        terrainReliefScale = hometown.biome === 'coastal' ? 12 : 18;
+        terrainReliefScale = hometown.biome === 'coastal' ? 14 : 20;
       }
       terrainMesh.material.needsUpdate = true;
       rebuildTerrainVertices();
     }
 
-    // 3. Place 3D Green Street Name Signs at Major Intersections Using Real OSM Street Names!
+    // 3D Green Street Name Signs at Major Intersections & District Entrances!
     const streetSignCoords = [
-      { x: 15,   z: 58,   streetIdx: 0 },
-      { x: -15,  z: -5,   streetIdx: 1 },
-      { x: 15,   z: -115, streetIdx: 2 },
-      { x: -95,  z: 58,   streetIdx: 3 },
-      { x: 95,   z: 58,   streetIdx: 4 },
-      { x: -95,  z: -115, streetIdx: 5 }
+      { x: 17,   z: 58,   streetIdx: 0 },
+      { x: -17,  z: -5,   streetIdx: 1 },
+      { x: 17,   z: -115, streetIdx: 2 },
+      { x: -200, z: 58,   streetIdx: 3 },
+      { x: 200,  z: 58,   streetIdx: 4 },
+      { x: -200, z: -115, streetIdx: 5 },
+      { x: 640,  z: -120, custom: '✈️ STUNT AIRPORT EXPY' },
+      { x: -640, z: -120, custom: '🦖 DINO CANYON PKWY' },
+      { x: 18,   z: -640, custom: '🏔️ SUMMIT HIGHWAY' },
+      { x: 18,   z: 215,  custom: '🏖️ OCEAN CAUSEWAY' }
     ];
     const poleMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.6 });
     streetSignCoords.forEach((sc, idx) => {
-      const sName = (hometown.streets[idx % hometown.streets.length] || 'MAIN ST').toUpperCase();
-      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.25, 7.5, 8), poleMat);
-      post.position.set(sc.x, 3.75, sc.z);
+      const sName = sc.custom || (hometown.streets[idx % hometown.streets.length] || 'MAIN ST').toUpperCase();
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 7.8, 8), poleMat);
+      post.position.set(sc.x, 3.9, sc.z);
       hometownDynamicGroup.add(post);
 
       const board = new THREE.Mesh(
-        new THREE.BoxGeometry(8.5, 2.2, 0.35),
-        new THREE.MeshBasicMaterial({ map: makeSignTexture(sName, `📍 ${hometown.city}`, '#047857') })
+        new THREE.BoxGeometry(9.5, 2.3, 0.35),
+        new THREE.MeshBasicMaterial({ map: makeSignTexture(sName, `📍 ${hometown.city}, ${hometown.stateAbbr}`, '#047857') })
       );
-      board.position.set(sc.x, 7.6, sc.z);
+      board.position.set(sc.x, 7.8, sc.z);
       hometownDynamicGroup.add(board);
     });
 
-    // 4. Extrude Real OpenStreetMap Streets & Buildings if OSM JSON was returned!
+    // Extrude Real OpenStreetMap Building Footprints cleanly inside City Blocks (No floating disconnected road scraps!)
     if (osmData && Array.isArray(osmData.elements)) {
       const nodes = new Map();
       osmData.elements.forEach(el => {
@@ -910,7 +1172,6 @@
 
       const metersPerDegLat = 111132;
       const metersPerDegLon = 111132 * Math.cos((hometown.lat * Math.PI) / 180);
-      const osmRoadMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
       const osmBldgMat = new THREE.MeshStandardMaterial({
         map: TEXTURES.buildingWarm,
         roughness: 0.45,
@@ -918,72 +1179,49 @@
       });
 
       let osmBuildingsAdded = 0;
-      let osmStreetsAdded = 0;
-
       osmData.elements.forEach(el => {
-        if (el.type !== 'way' || !Array.isArray(el.nodes) || !el.tags) return;
-        const pts = [];
+        if (el.type !== 'way' || !Array.isArray(el.nodes) || !el.tags || !el.tags.building) return;
+        if (osmBuildingsAdded >= 65) return;
+
+        let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
         el.nodes.forEach(nid => {
           const n = nodes.get(nid);
           if (n) {
-            const x = (n.lon - hometown.lon) * metersPerDegLon * 1.35;
-            const z = -(n.lat - hometown.lat) * metersPerDegLat * 1.35;
-            pts.push({ x, z });
+            const x = (n.lon - hometown.lon) * metersPerDegLon * 1.8;
+            const z = -(n.lat - hometown.lat) * metersPerDegLat * 1.8;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (z < minZ) minZ = z;
+            if (z > maxZ) maxZ = z;
           }
         });
-        if (pts.length < 2) return;
+        if (!isFinite(minX)) return;
 
-        // Real OpenStreetMap Building Footprints!
-        if (el.tags.building && osmBuildingsAdded < 52) {
-          let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
-          pts.forEach(p => {
-            if (p.x < minX) minX = p.x;
-            if (p.x > maxX) maxX = p.x;
-            if (p.z < minZ) minZ = p.z;
-            if (p.z > maxZ) maxZ = p.z;
-          });
-          const cx = (minX + maxX) / 2;
-          const cz = (minZ + maxZ) / 2;
-          const bw = Math.max(8, Math.min(34, (maxX - minX) * 1.15));
-          const bd = Math.max(8, Math.min(34, (maxZ - minZ) * 1.15));
+        const cx = (minX + maxX) / 2;
+        const cz = (minZ + maxZ) / 2;
+        const bw = Math.max(10, Math.min(36, (maxX - minX) * 1.2));
+        const bd = Math.max(10, Math.min(36, (maxZ - minZ) * 1.2));
 
-          // Avoid blocking the main stunt boulevards or soccer pitch
-          if (roadXCoords.some(rx => Math.abs(cx - rx) < 22)) return;
-          if (roadZCoords.some(rz => Math.abs(cz - rz) < 22)) return;
-          if (cx > 5 && cx < 105 && cz > 0 && cz < 85) return;
-          if (Math.abs(cx) > 310 || Math.abs(cz) > 290) return;
+        // Keep roads, ramps, and soccer pitch 100% clear!
+        if (roadXCoords.some(rx => Math.abs(cx - rx) < 28)) return;
+        if (roadZCoords.some(rz => Math.abs(cz - rz) < 28)) return;
+        if (cx > 0 && cx < 110 && cz > -5 && cz < 90) return;
+        if (Math.abs(cx) > 610 || Math.abs(cz) > 610) return;
 
-          const levels = parseInt(el.tags['building:levels'], 10) || (2 + (osmBuildingsAdded % 6));
-          const bh = Math.min(75, Math.max(12, levels * 5.5));
-          const baseY = getTerrainHeightAt(cx, cz);
+        const levels = parseInt(el.tags['building:levels'], 10) || (2 + (osmBuildingsAdded % 7));
+        const bh = Math.min(82, Math.max(14, levels * 5.8));
+        const baseY = getTerrainHeightAt(cx, cz);
 
-          const bMesh = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), osmBldgMat);
-          bMesh.position.set(cx, baseY + bh / 2, cz);
-          bMesh.castShadow = true;
-          bMesh.receiveShadow = true;
-          hometownDynamicGroup.add(bMesh);
-          osmBuildingsAdded++;
-        } else if (el.tags.highway && osmStreetsAdded < 40) {
-          // Real OpenStreetMap Local Connector Streets!
-          for (let i = 0; i < pts.length - 1; i++) {
-            const p1 = pts[i], p2 = pts[i + 1];
-            const segLen = Math.hypot(p2.x - p1.x, p2.z - p1.z);
-            if (segLen < 4 || segLen > 180) continue;
-            const mx = (p1.x + p2.x) / 2;
-            const mz = (p1.z + p2.z) / 2;
-            if (Math.abs(mx) > 310 || Math.abs(mz) > 280) continue;
-            const seg = new THREE.Mesh(new THREE.BoxGeometry(6.5, 0.16, segLen), osmRoadMat);
-            const h = getTerrainHeightAt(mx, mz);
-            seg.position.set(mx, Math.max(0.02, h), mz);
-            seg.rotation.y = Math.atan2(p2.x - p1.x, p2.z - p1.z);
-            hometownDynamicGroup.add(seg);
-          }
-          osmStreetsAdded++;
-        }
+        const bMesh = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), osmBldgMat);
+        bMesh.position.set(cx, baseY + bh / 2, cz);
+        bMesh.castShadow = true;
+        bMesh.receiveShadow = true;
+        hometownDynamicGroup.add(bMesh);
+        osmBuildingsAdded++;
       });
     }
 
-    // 5. Regional Horizon Mountains / Red Rock Canyon Mesas
+    // Outer 3D Mountain Range / Red Rock Canyon Horizon around the 3km World (Radius = 1550m)
     const isDesert = hometown.biome === 'desert';
     const isAlpine = hometown.biome === 'alpine';
     const mtnMat = new THREE.MeshStandardMaterial({
@@ -995,53 +1233,47 @@
       roughness: 0.55
     });
 
-    for (let i = 0; i < 26; i++) {
-      const ang = (i / 26) * Math.PI * 2;
-      const dist = 540 + (i % 3) * 55;
-      const h = (isAlpine ? 145 : isDesert ? 95 : 105) + (i % 4) * 38;
+    for (let i = 0; i < 36; i++) {
+      const ang = (i / 36) * Math.PI * 2;
+      const dist = 1520 + (i % 3) * 110;
+      const h = (isAlpine ? 240 : isDesert ? 165 : 185) + (i % 4) * 55;
       const mtn = new THREE.Group();
 
       if (isDesert) {
-        // Flat-topped Red Rock Sedona Mesas / Buttes!
-        const mesa = new THREE.Mesh(new THREE.CylinderGeometry(36, 78, h, 8), mtnMat);
+        const mesa = new THREE.Mesh(new THREE.CylinderGeometry(65, 135, h, 8), mtnMat);
         mesa.position.y = h / 2 - 2;
-        const topLayer = new THREE.Mesh(new THREE.CylinderGeometry(30, 36, h * 0.22, 8), capMat);
+        const topLayer = new THREE.Mesh(new THREE.CylinderGeometry(52, 65, h * 0.22, 8), capMat);
         topLayer.position.y = h * 0.9 - 2;
         mtn.add(mesa, topLayer);
       } else {
-        // Snow-Capped Mountain Peaks!
-        const base = new THREE.Mesh(new THREE.ConeGeometry(85, h, 7), mtnMat);
+        const base = new THREE.Mesh(new THREE.ConeGeometry(155, h, 7), mtnMat);
         base.position.y = h / 2 - 2;
-        const cap = new THREE.Mesh(new THREE.ConeGeometry(38, h * 0.44, 7), capMat);
+        const cap = new THREE.Mesh(new THREE.ConeGeometry(68, h * 0.44, 7), capMat);
         cap.position.y = h * 0.78 - 2;
         mtn.add(base, cap);
       }
-      mtn.position.set(Math.cos(ang) * dist, 0, Math.sin(ang) * dist - 40);
+      mtn.position.set(Math.cos(ang) * dist, 0, Math.sin(ang) * dist);
       hometownDynamicGroup.add(mtn);
     }
 
-    // 6. Regional Flora (Palm Trees for Coastal, Saguaro Cacti for Desert, Snow Pines for Alpine)
+    // Regional Flora across the 6 Districts
     const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
-    const leafMat = new THREE.MeshStandardMaterial({
-      color: isAlpine ? 0x065f46 : 0x16a34a,
-      roughness: 0.7
-    });
+    const leafMat = new THREE.MeshStandardMaterial({ color: isAlpine ? 0x065f46 : 0x16a34a, roughness: 0.7 });
     const cactusMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.75 });
     const snowMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.6 });
 
-    for (let i = 0; i < 90; i++) {
-      const tx = (Math.random() - 0.5) * 600;
-      const tz = (Math.random() - 0.5) * 480;
-      if (roadXCoords.some(rx => Math.abs(tx - rx) < 18)) continue;
-      if (roadZCoords.some(rz => Math.abs(tz - rz) < 18)) continue;
-      if (buildingColliders.some(b => tx > b.minX - 4 && tx < b.maxX + 4 && tz > b.minZ - 4 && tz < b.maxZ + 4)) continue;
-      if (tx > 5 && tx < 105 && tz > 0 && tz < 85) continue;
+    for (let i = 0; i < 160; i++) {
+      const tx = (Math.random() - 0.5) * 1800;
+      const tz = (Math.random() - 0.5) * 1800;
+      if (isOnFlatRoadOrDistrict(tx, tz)) continue;
+      if (tz > 240 && tz < 640) continue; // Ocean channel
+      if (buildingColliders.some(b => tx > b.minX - 5 && tx < b.maxX + 5 && tz > b.minZ - 5 && tz < b.maxZ + 5)) continue;
 
       const ty = getTerrainHeightAt(tx, tz);
+      if (ty < -0.5) continue;
       const flora = new THREE.Group();
 
-      if (isDesert) {
-        // 3D Saguaro Cactus with Side Arms!
+      if (isDesert || tx < -650) {
         const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.75, 8.5, 8), cactusMat);
         stem.position.y = 4.25;
         const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 3.2, 8), cactusMat);
@@ -1049,8 +1281,7 @@
         const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 2.8, 8), cactusMat);
         armR.position.set(1.1, 4.4, 0);
         flora.add(stem, armL, armR);
-      } else if (hometown.biome === 'coastal') {
-        // 3D Palm Tree with Curved Fronds!
+      } else if (hometown.biome === 'coastal' || tz > 640) {
         const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.75, 10.5, 8), trunkMat);
         trunk.position.y = 5.2;
         flora.add(trunk);
@@ -1063,12 +1294,11 @@
           flora.add(frond);
         }
       } else {
-        // Evergreen Pine Tree (Snow-Tipped in Alpine Biome!)
         const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.9, 6, 7), trunkMat);
         trunk.position.y = 3;
         const crown1 = new THREE.Mesh(new THREE.ConeGeometry(4.2, 8, 8), leafMat);
         crown1.position.y = 8;
-        const crown2 = new THREE.Mesh(new THREE.ConeGeometry(3.1, 6.5, 8), isAlpine ? snowMat : leafMat);
+        const crown2 = new THREE.Mesh(new THREE.ConeGeometry(3.1, 6.5, 8), isAlpine || tz < -650 ? snowMat : leafMat);
         crown2.position.y = 11.5;
         flora.add(trunk, crown1, crown2);
       }
@@ -1090,15 +1320,11 @@
   };
 
   function classifyBiome(stateAbbr, elevMax, tempF) {
-    if (['AZ', 'NM', 'NV'].includes(stateAbbr)) {
-      return { biome: 'desert', label: 'Red Rock Desert' };
-    }
+    if (['AZ', 'NM', 'NV'].includes(stateAbbr)) return { biome: 'desert', label: 'Red Rock Desert' };
     if (['CO', 'UT', 'WY', 'MT', 'ID', 'VT', 'NH', 'AK'].includes(stateAbbr) || elevMax > 1100 || tempF <= 34) {
       return { biome: 'alpine', label: 'Alpine Snow Peaks' };
     }
-    if (['CA', 'FL', 'HI', 'SC', 'LA'].includes(stateAbbr)) {
-      return { biome: 'coastal', label: 'Coastal Palm Bay' };
-    }
+    if (['CA', 'FL', 'HI', 'SC', 'LA'].includes(stateAbbr)) return { biome: 'coastal', label: 'Coastal Palm Bay' };
     return { biome: 'metro', label: 'Highland Metro' };
   }
 
@@ -1113,7 +1339,6 @@
     statusEl.textContent = `⏳ Fetching OpenStreetMap streets, real elevation terrain & weather for ${cleanZip}...`;
 
     try {
-      // 1. Resolve ZIP -> City, State, Lat, Lon via Zippopotam.us + Nominatim Town Center
       let place = FALLBACK_ZIPS[cleanZip] || null;
       try {
         const zRes = await fetch(`https://api.zippopotam.us/us/${cleanZip}`);
@@ -1128,7 +1353,6 @@
               lat: FALLBACK_ZIPS[cleanZip] ? FALLBACK_ZIPS[cleanZip].lat : parseFloat(p['latitude']),
               lon: FALLBACK_ZIPS[cleanZip] ? FALLBACK_ZIPS[cleanZip].lon : parseFloat(p['longitude'])
             };
-            // Refine rural postal centroids to actual town center via Nominatim if not in preset cache
             if (!FALLBACK_ZIPS[cleanZip]) {
               try {
                 const nomRes = await fetch(`https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(place.city)}&state=${encodeURIComponent(place.state)}&country=US&format=json&limit=1`);
@@ -1157,7 +1381,6 @@
       hometown.lat = place.lat;
       hometown.lon = place.lon;
 
-      // 2. Build 7x7 Lat/Lon Grid for Real Open-Meteo Elevation Heightmap!
       const lats = [];
       const lons = [];
       for (let gz = -3; gz <= 3; gz++) {
@@ -1178,7 +1401,6 @@
         fetch(osmUrl).then(r => r.ok ? r.json() : null)
       ]);
 
-      // Parse Real Elevation Grid
       if (elevRes.status === 'fulfilled' && elevRes.value && Array.isArray(elevRes.value.elevation)) {
         const arr = elevRes.value.elevation;
         const minE = Math.round(Math.min(...arr));
@@ -1189,7 +1411,6 @@
         currentElevationGrid = arr.map(v => (v - minE) / span);
       }
 
-      // Parse Live Weather
       weatherType = 'clear';
       if (weatherRes.status === 'fulfilled' && weatherRes.value && weatherRes.value.current) {
         const cur = weatherRes.value.current;
@@ -1216,7 +1437,6 @@
         hometown.weatherDesc = '❄️ Alpine Snow';
       }
 
-      // Parse Real OpenStreetMap Streets, Buildings & Named Landmarks
       let osmJson = null;
       if (osmRes.status === 'fulfilled' && osmRes.value && Array.isArray(osmRes.value.elements)) {
         osmJson = osmRes.value;
@@ -1248,18 +1468,16 @@
         }
       }
 
-      // Rebuild 3D Terrain, OSM Buildings, Street Signs, Biome Trees & Missions!
       rebuildHometownScenery(osmJson);
       rebuildHometownMissions();
 
-      // Update HUD & Modal Badges
       document.getElementById('hudZipCity').textContent = `📍 ${hometown.city}, ${hometown.stateAbbr} (${hometown.zip})`;
       document.getElementById('hudZipMeta').textContent = `⛰️ Elev: ${hometown.elevMin}m–${hometown.elevMax}m • ${hometown.weatherDesc} ${hometown.tempF}°F • ${hometown.biomeLabel}`;
       document.getElementById('zipBiomeBadge').textContent = `${hometown.biomeLabel} • ${hometown.tempF}°F`;
       statusEl.textContent = `✅ Built 3D ${hometown.city}, ${hometown.stateAbbr} (${hometown.zip})! Streets: ${hometown.streets.slice(0, 4).join(', ')}`;
 
       sfx.playFanfare();
-      showStuntBanner(`📍 ${hometown.city.toUpperCase()}, ${hometown.stateAbbr}`, `3D OPENSTREETMAP & ${hometown.biomeLabel.toUpperCase()} LOADED!`);
+      showStuntBanner(`📍 ${hometown.city.toUpperCase()}, ${hometown.stateAbbr}`, `6 DISTRICTS & ${hometown.biomeLabel.toUpperCase()} LOADED!`);
     } catch (err) {
       statusEl.textContent = `✅ Loaded ${hometown.city}, ${hometown.stateAbbr} (${hometown.zip})!`;
     }
@@ -1532,15 +1750,15 @@
 
   const worldVehicles = [];
   const spawnPositions = [
-    { x: 0,    z: 75,   h: Math.PI },
-    { x: -110, z: 120,  h: Math.PI },
-    { x: -110, z: 20,   h: 0 },
-    { x: 220,  z: -15,  h: 0 },
-    { x: 0,    z: 115,  h: Math.PI / 2 },
-    { x: 110,  z: 20,   h: -Math.PI / 2 },
-    { x: -55,  z: -200, h: 0, y: 94.5 },
-    { x: 120,  z: 345,  h: 0 },
-    { x: 110,  z: -120, h: Math.PI }
+    { x: 0,    z: 75,   h: Math.PI },       // 1: Comet GT Supercar (Downtown Grand Blvd)
+    { x: -220, z: 120,  h: Math.PI },       // 2: Hero Patrol Interceptor
+    { x: -220, z: 20,   h: 0 },             // 3: Big Red Fire Engine
+    { x: -920, z: 150,  h: Math.PI },       // 4: Monster Crush 4x4 (Dino Canyon Rally)
+    { x: 0,    z: 115,  h: Math.PI / 2 },   // 5: Melody Ice Cream Van
+    { x: 220,  z: 20,   h: -Math.PI / 2 },  // 6: Rocket Pizza Buggy
+    { x: 920,  z: 280,  h: Math.PI },       // 7: Sky-Hawk Helicopter (Stunt Airport)
+    { x: 40,   z: 520,  h: 0 },             // 8: Aqua-Jet Speedboat (Ocean Bay Channel)
+    { x: -920, z: -150, h: 0 }              // 9: Emerald Rex (Dino Canyon)
   ];
 
   VEHICLE_CATALOG.forEach((spec, i) => {
@@ -1565,10 +1783,10 @@
   scene.add(soccerBallMesh);
   const soccerBall = { mesh: soccerBallMesh, x: 55, y: 2.8, z: 42, vx: 0, vy: 0, vz: 0 };
 
-  // AI Traffic Cars
+  // AI Traffic Cars across the 1,320m Avenues & Beltway
   const aiCars = [];
   const aiColors = [0x38bdf8, 0xa855f7, 0x22c55e, 0xfacc15, 0xf43f5e, 0xf97316];
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < 24; i++) {
     const g = new THREE.Group();
     const b = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.5, 6.4), new THREE.MeshStandardMaterial({ color: aiColors[i % aiColors.length], roughness: 0.35 }));
     b.position.y = 1.3;
@@ -1576,26 +1794,26 @@
     const t = new THREE.Mesh(new THREE.BoxGeometry(2.9, 1.1, 3.4), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.2 }));
     t.position.y = 2.4;
     g.add(b, t);
-    const rx = [-220, -110, 110, 220][i % 4];
+    const rx = [-660, -440, -220, 220, 440, 660][i % 6];
     const dir = i % 2 === 0 ? 1 : -1;
-    const rz = -220 + (i * 32) % 380;
-    g.position.set(rx + (dir > 0 ? 5.5 : -5.5), 0, rz);
+    const rz = -600 + (i * 52) % 1200;
+    g.position.set(rx + (dir > 0 ? 6.5 : -6.5), 0, rz);
     g.rotation.y = dir > 0 ? 0 : Math.PI;
     scene.add(g);
-    aiCars.push({ group: g, x: rx + (dir > 0 ? 5.5 : -5.5), z: rz, dir, speed: 24 + (i % 4) * 5 });
+    aiCars.push({ group: g, x: rx + (dir > 0 ? 6.5 : -6.5), z: rz, dir, speed: 28 + (i % 5) * 6 });
   }
 
-  // --- DYNAMIC HOMETOWN HERO MISSIONS ---
+  // --- DYNAMIC HOMETOWN HERO MISSIONS ACROSS ALL 6 DISTRICTS ---
   let MISSIONS = [];
   let missionIdx = 0;
 
   const beaconGroup = new THREE.Group();
   const beaconCylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(7, 7, 65, 24, 1, true),
+    new THREE.CylinderGeometry(7, 7, 75, 24, 1, true),
     new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.28, side: THREE.DoubleSide })
   );
-  beaconCylinder.position.y = 32.5;
-  const beaconRing = new THREE.Mesh(new THREE.TorusGeometry(7.2, 0.5, 12, 32), new THREE.MeshBasicMaterial({ color: 0xfde047 }));
+  beaconCylinder.position.y = 37.5;
+  const beaconRing = new THREE.Mesh(new THREE.TorusGeometry(7.5, 0.55, 12, 32), new THREE.MeshBasicMaterial({ color: 0xfde047 }));
   beaconRing.rotation.x = Math.PI / 2;
   beaconRing.position.y = 0.6;
 
@@ -1613,46 +1831,44 @@
 
   function rebuildHometownMissions() {
     const st0 = hometown.streets[0] || 'Main St';
-    const st1 = hometown.streets[1] || 'Central Ave';
     const lm0 = hometown.landmarks[0] || `${hometown.city} Park`;
-    const lm1 = hometown.landmarks[1] || `${hometown.city} School`;
 
     MISSIONS = [
       {
         title: `🔥 Fire Rescue on ${st0}!`,
-        desc: `Drive to ${st0} in ${hometown.city} or spray the blaze with Fire Engine [3] Water Cannon [Z]!`,
-        x: -110,
+        desc: `Drive to ${st0} or spray the blaze with Fire Engine [3] Water Cannon [Z]!`,
+        x: -220,
         z: -20,
         type: 'fire'
       },
       {
-        title: `🍕 Hot Pizza Rush to ${lm0}!`,
-        desc: `Deliver fresh pizzas to ${lm0} (press [6] for Rocket Pizza Buggy or race to the Marina)!`,
-        x: 120,
-        z: 270,
+        title: `✈️ Stunt Airport Jumbo-Jet Jump!`,
+        desc: `Drive East on the Expressway (or press [G] for Airport) and jump over the parked Jumbo Jet!`,
+        x: 920,
+        z: 120,
+        type: 'airport'
+      },
+      {
+        title: `🏔️ Summit Overlook Expedition (${hometown.city} Peaks)!`,
+        desc: `Drive North up the Mountain Highway (or press [G]) to the +38m Summit Ski-Jump!`,
+        x: 0,
+        z: -980,
+        y: 38,
+        type: 'summit'
+      },
+      {
+        title: `🍕 Hot Pizza Rush to Starlight Resort Island!`,
+        desc: `Blast South across the Ocean Causeway to the Ferris Wheel near ${lm0}!`,
+        x: 0,
+        z: 850,
         type: 'delivery'
       },
       {
-        title: `🚁 Sky-High Rooftop Rescue at ${hometown.city} Tower!`,
-        desc: `Press [7] for the Sky-Hawk Helicopter to land on the ${hometown.city} Skyscraper Helipad!`,
-        x: -55,
-        z: -200,
-        y: 94,
-        type: 'rooftop'
-      },
-      {
-        title: `🍦 Ice Cream Party at ${lm1}!`,
-        desc: `Serve rainbow cones along ${st1} near ${lm1} (press [5] for Ice Cream Van)!`,
-        x: 0,
-        z: 42,
-        type: 'icecream'
-      },
-      {
-        title: `🌉 ${hometown.city} Bridge Stunt Sprint!`,
-        desc: `Blast across the Golden Suspension Bridge in ${hometown.city} (${hometown.zip}) at full turbo!`,
-        x: -110,
-        z: 330,
-        type: 'bridge'
+        title: `🦖 Dino Canyon Rally Checkpoint!`,
+        desc: `Race West to Dino Safari Canyon (or press [G]) and roar through the Red Rock Archways!`,
+        x: -920,
+        z: 0,
+        type: 'canyon'
       }
     ];
     missionIdx = missionIdx % MISSIONS.length;
@@ -1683,11 +1899,8 @@
   const zipInputEl = document.getElementById('zipInput');
 
   window.addEventListener('keydown', e => {
-    // Do not intercept driving keys while typing a ZIP code in the input field!
     if (document.activeElement === zipInputEl) {
-      if (e.code === 'Enter') {
-        loadZipCode(zipInputEl.value);
-      }
+      if (e.code === 'Enter') loadZipCode(zipInputEl.value);
       return;
     }
 
@@ -1697,6 +1910,7 @@
       return;
     }
     if (e.code === 'KeyP') openZipCustomizer();
+    if (e.code === 'KeyG') cycleDistrictFastTravel();
     if (e.code === 'KeyC') cycleCamera();
     if (e.code === 'KeyT') cycleTimeOfDay();
     if (e.code === 'KeyM') toggleMute();
@@ -1752,7 +1966,35 @@
     touchExitBtn.addEventListener('click', onHop);
   }
 
-  // Wire up ZIP Code UI Buttons & Preset Chips
+  // --- DISTRICT FAST-TRAVEL (G KEY OR TOP-RIGHT BUTTON) ---
+  function cycleDistrictFastTravel() {
+    sfx.init();
+    currentDistrictIdx = (currentDistrictIdx + 1) % WORLD_DISTRICTS.length;
+    const dist = WORLD_DISTRICTS[currentDistrictIdx];
+    const btn = document.getElementById('btnDistrict');
+    if (btn) btn.textContent = `🗺️ ${dist.name} (G)`;
+
+    const targetObj = activeVehicle || leo;
+    targetObj.x = dist.x;
+    targetObj.y = dist.y;
+    targetObj.z = dist.z;
+    targetObj.heading = dist.h;
+    targetObj.speed = 0;
+    if (activeVehicle) {
+      activeVehicle.vy = 0;
+      activeVehicle.root.position.set(dist.x, dist.y, dist.z);
+      activeVehicle.root.rotation.y = dist.h;
+    } else {
+      leo.group.position.set(dist.x, dist.y, dist.z);
+      leo.group.rotation.y = dist.h;
+    }
+    sfx.playJump();
+    showStuntBanner(dist.name.toUpperCase(), dist.desc.toUpperCase());
+  }
+
+  const btnDistrictEl = document.getElementById('btnDistrict');
+  if (btnDistrictEl) btnDistrictEl.addEventListener('click', cycleDistrictFastTravel);
+
   document.getElementById('loadZipBtn').addEventListener('click', () => {
     sfx.init();
     loadZipCode(zipInputEl.value);
@@ -1808,7 +2050,7 @@
     const refPos = activeVehicle ? activeVehicle : leo;
     targetVeh.x = refPos.x;
     targetVeh.z = refPos.z;
-    targetVeh.y = Math.max(0, refPos.y);
+    targetVeh.y = Math.max(getTerrainHeightAt(refPos.x, refPos.z), refPos.y);
     targetVeh.heading = refPos.heading;
     targetVeh.speed = activeVehicle ? activeVehicle.speed * 0.7 : 0;
     targetVeh.root.position.set(targetVeh.x, targetVeh.y, targetVeh.z);
@@ -1826,7 +2068,7 @@
     if (activeVehicle) {
       leo.x = activeVehicle.x - Math.cos(activeVehicle.heading) * 4.5;
       leo.z = activeVehicle.z + Math.sin(activeVehicle.heading) * 4.5;
-      leo.y = Math.max(0, activeVehicle.y);
+      leo.y = Math.max(getTerrainHeightAt(leo.x, leo.z), activeVehicle.y);
       leo.heading = activeVehicle.heading;
       leo.group.position.set(leo.x, leo.y, leo.z);
       leo.group.visible = true;
@@ -1949,7 +2191,7 @@
   }
   function toggleMute() {
     sfx.muted = !sfx.muted;
-    document.getElementById('btnMute').textContent = sfx.muted ? '🔇 Muted' : '🔊 Audio';
+    document.getElementById('btnMute').textContent = sfx.muted ? '🔇' : '🔊';
   }
 
   document.getElementById('btnCam').addEventListener('click', cycleCamera);
@@ -1965,7 +2207,6 @@
   }
   document.getElementById('startBtn').addEventListener('click', startGame);
 
-  // Support URL parameters ?zip=81611&autostart=1
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('zip')) {
     const qZip = urlParams.get('zip');
@@ -1973,6 +2214,14 @@
     loadZipCode(qZip);
   } else {
     loadZipCode('94040');
+  }
+  if (urlParams.get('zone')) {
+    const zName = urlParams.get('zone');
+    const foundIdx = WORLD_DISTRICTS.findIndex(d => d.id === zName);
+    if (foundIdx >= 0) {
+      currentDistrictIdx = (foundIdx - 1 + WORLD_DISTRICTS.length) % WORLD_DISTRICTS.length;
+      cycleDistrictFastTravel();
+    }
   }
   if (urlParams.get('autostart') === '1') {
     startGame();
@@ -2002,15 +2251,20 @@
 
   function update(dt) {
     if (ferrisWheelGroup) ferrisWheelGroup.rotation.z += dt * 0.35;
+    if (airportRadarMesh) airportRadarMesh.rotation.y += dt * 1.8;
     clouds.forEach(c => {
       c.position.x += dt * 4.5;
-      if (c.position.x > 480) c.position.x = -480;
+      if (c.position.x > 1300) c.position.x = -1300;
     });
     beaconRing.scale.setScalar(1 + Math.sin(performance.now() * 0.006) * 0.14);
 
     const playerObj = activeVehicle || leo;
 
-    // Animate 3D Weather Particles (Snow / Rain) around camera/player
+    // Update Sun Shadow Camera to follow player across the 3,000m world so shadows stay crisp everywhere!
+    sunLight.position.set(playerObj.x + 160, 260, playerObj.z + 140);
+    sunLight.target.position.set(playerObj.x, 0, playerObj.z);
+    sunLight.target.updateMatrixWorld();
+
     weatherParticles.forEach(wp => {
       if (weatherType === 'clear') {
         wp.visible = false;
@@ -2021,10 +2275,10 @@
       wp.scale.set(1, isSnow ? 1 : 4.5, 1);
       wp.position.y -= (isSnow ? 14 : 52) * dt;
       if (isSnow) wp.position.x += Math.sin(performance.now() * 0.002 + wp.position.z) * 3 * dt;
-      if (wp.position.y < 0) {
+      if (wp.position.y < playerObj.y) {
         wp.position.set(
           playerObj.x + (Math.random() - 0.5) * 160,
-          55 + Math.random() * 35,
+          playerObj.y + 55 + Math.random() * 35,
           playerObj.z + (Math.random() - 0.5) * 160
         );
       }
@@ -2059,11 +2313,11 @@
         v.heading += steer * spec.turnRate * dt;
         const targetSpeed = throttle * spec.maxSpeed;
         v.speed += (targetSpeed - v.speed) * 3.5 * dt;
-        if (boostPressed) v.y = Math.min(155, v.y + 32 * dt);
-        else if (keys['KeyZ'] || keys['KeyF']) v.y = Math.max(getTerrainHeightAt(v.x, v.z), v.y - 32 * dt);
+        if (boostPressed) v.y = Math.min(220, v.y + 36 * dt);
+        else if (keys['KeyZ'] || keys['KeyF']) v.y = Math.max(getTerrainHeightAt(v.x, v.z), v.y - 36 * dt);
 
-        v.x += Math.sin(v.heading) * v.speed * dt;
-        v.z += Math.cos(v.heading) * v.speed * dt;
+        v.x = Math.max(-1380, Math.min(1380, v.x + Math.sin(v.heading) * v.speed * dt));
+        v.z = Math.max(-1380, Math.min(1380, v.z + Math.cos(v.heading) * v.speed * dt));
 
         v.bodyGroup.rotation.x = (v.speed / spec.maxSpeed) * 0.26;
         v.bodyGroup.rotation.z = -steer * 0.28;
@@ -2099,6 +2353,7 @@
         const nextX = v.x + Math.sin(v.heading) * v.speed * dt;
         const nextZ = v.z + Math.cos(v.heading) * v.speed * dt;
 
+        // Check Building Colliders AND Ramp Back-Wall Colliders (so you never clip into the vertical back of a ramp!)
         let blocked = false;
         for (let i = 0; i < buildingColliders.length; i++) {
           const b = buildingColliders[i];
@@ -2110,40 +2365,65 @@
             }
           }
         }
-        if (!blocked) {
-          v.x = Math.max(-340, Math.min(340, nextX));
-          v.z = Math.max(-340, Math.min(430, nextZ));
-        }
 
-        // Ground Elevation from Real 3D Terrain + Rooftops + Stunt Ramps
-        let groundHeight = getTerrainHeightAt(v.x, v.z);
+        // Check Ramp Elevation & Smooth Entry / Guide-Rails / Back-Wall Protection
+        let groundHeight = Math.max(0, getTerrainHeightAt(nextX, nextZ));
         for (let i = 0; i < buildingColliders.length; i++) {
           const b = buildingColliders[i];
-          if (v.x > b.minX && v.x < b.maxX && v.z > b.minZ && v.z < b.maxZ && v.y >= b.height - 3) {
+          if (nextX > b.minX && nextX < b.maxX && nextZ > b.minZ && nextZ < b.maxZ && v.y >= b.height - 3) {
             groundHeight = Math.max(groundHeight, b.height);
           }
         }
 
         for (let i = 0; i < ramps.length; i++) {
           const r = ramps[i];
-          if (Math.abs(v.x - r.x) < r.w / 2 + 1 && Math.abs(v.z - r.z) < r.l / 2 + 1) {
-            let t = 0.5;
-            if (r.dir === 'N') t = (r.z + r.l / 2 - v.z) / r.l;
-            else if (r.dir === 'S') t = (v.z - (r.z - r.l / 2)) / r.l;
-            else if (r.dir === 'E') t = (v.x - (r.x - r.l / 2)) / r.l;
-            else if (r.dir === 'W') t = (r.x + r.l / 2 - v.x) / r.l;
-            t = Math.max(0, Math.min(1, t));
-            groundHeight = Math.max(groundHeight, t * r.h);
+          const halfW = r.w / 2 + 0.9;
+          const halfL = r.l / 2 + 2.2; // Includes the flush entry apron!
+          const isEW = r.dir === 'E' || r.dir === 'W';
+          const inX = isEW ? Math.abs(nextX - r.x) < halfL : Math.abs(nextX - r.x) < halfW;
+          const inZ = isEW ? Math.abs(nextZ - r.z) < halfW : Math.abs(nextZ - r.z) < halfL;
 
-            if (t > 0.78 && Math.abs(v.speed) > 32 && v.vy <= 2) {
-              const jumpMult = spec.id === 'monster' ? 1.45 : 1.0;
-              v.vy = Math.abs(v.speed) * 0.44 * jumpMult;
-              sfx.playJump();
+          if (inX && inZ) {
+            let t = 0;
+            if (r.dir === 'N') t = (r.z + r.l / 2 - nextZ) / r.l;
+            else if (r.dir === 'S') t = (nextZ - (r.z - r.l / 2)) / r.l;
+            else if (r.dir === 'E') t = (nextX - (r.x - r.l / 2)) / r.l;
+            else if (r.dir === 'W') t = (r.x + r.l / 2 - nextX) / r.l;
+            t = Math.max(0, Math.min(1, t));
+
+            const rampY = (r.baseY || 0) + t * r.h;
+
+            // If hitting the tall vertical back wall from ground level, block instead of teleporting up!
+            if (t > 0.85 && v.y < rampY - 3.2) {
+              blocked = true;
+              v.speed *= -0.35;
+              break;
+            }
+
+            groundHeight = Math.max(groundHeight, rampY);
+
+            // Launch into the sky when reaching the top of a takeoff ramp at speed!
+            if (!r.noRing && t > 0.78 && Math.abs(v.speed) > 32 && v.vy <= 2) {
+              // Ensure player is moving toward the ramp launch direction
+              const fwdDot =
+                r.dir === 'N' ? -Math.cos(v.heading) :
+                r.dir === 'S' ? Math.cos(v.heading) :
+                r.dir === 'E' ? Math.sin(v.heading) : -Math.sin(v.heading);
+              if (fwdDot * Math.sign(v.speed) > 0.35) {
+                const jumpMult = spec.id === 'monster' ? 1.45 : 1.0;
+                v.vy = Math.abs(v.speed) * 0.42 * jumpMult;
+                sfx.playJump();
+              }
             }
           }
         }
 
-        if (v.y > groundHeight + 0.15 || v.vy > 0) {
+        if (!blocked) {
+          v.x = Math.max(-1350, Math.min(1350, nextX));
+          v.z = Math.max(-1350, Math.min(1350, nextZ));
+        }
+
+        if (v.y > groundHeight + 0.18 || v.vy > 0) {
           v.y += v.vy * dt;
           v.vy -= 38 * dt;
           v.airTime += dt;
@@ -2193,7 +2473,7 @@
       leo.speed = throttle * 24;
       leo.x += Math.sin(leo.heading) * leo.speed * dt;
       leo.z += Math.cos(leo.heading) * leo.speed * dt;
-      const gH = getTerrainHeightAt(leo.x, leo.z);
+      const gH = Math.max(0, getTerrainHeightAt(leo.x, leo.z));
       if (leo.y > gH || leo.vy > 0) {
         leo.y += leo.vy * dt;
         leo.vy -= 42 * dt;
@@ -2219,7 +2499,7 @@
       const promptEl = document.getElementById('interactPrompt');
       if (nearVeh) {
         promptEl.style.display = 'block';
-        promptEl.textContent = `Press [E] or Click to Drive ${nearVeh.spec.emoji} ${nearVeh.spec.name}!`;
+        promptEl.textContent = `Press [E] or Tap to Drive ${nearVeh.spec.emoji} ${nearVeh.spec.name}!`;
       } else {
         promptEl.style.display = 'none';
       }
@@ -2229,7 +2509,7 @@
     const camPresets = [
       { dist: 21, height: 8.5, lookAhead: 12 },
       { dist: 14, height: 5.2, lookAhead: 16 },
-      { dist: 38, height: 22.0, lookAhead: 8 }
+      { dist: 42, height: 25.0, lookAhead: 10 }
     ];
     const cp = camPresets[cameraMode];
     const targetCamX = playerObj.x - Math.sin(playerObj.heading) * cp.dist;
@@ -2370,8 +2650,8 @@
 
     aiCars.forEach(ai => {
       ai.z += ai.dir * ai.speed * dt;
-      if (ai.z > 220) ai.z = -260;
-      if (ai.z < -260) ai.z = 220;
+      if (ai.z > 650) ai.z = -650;
+      if (ai.z < -650) ai.z = 650;
       ai.group.position.z = ai.z;
     });
 
@@ -2379,7 +2659,7 @@
     const distToMission = Math.hypot(curM.x - playerObj.x, curM.z - playerObj.z);
     const heightDiff = Math.abs((curM.y || 0) - playerObj.y);
 
-    if (distToMission < 14 && heightDiff < 18) {
+    if (distToMission < 18 && heightDiff < 22) {
       completeCurrentMission();
     }
 
@@ -2411,36 +2691,44 @@
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(playerObj.heading - Math.PI);
-    const scale = 0.25;
+    const scale = 0.085; // Zoomed out to show the connected 6-District highway network!
 
     ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 2.5;
     roadXCoords.forEach(rx => {
       const x = (rx - playerObj.x) * scale;
       ctx.beginPath();
-      ctx.moveTo(x, (-300 - playerObj.z) * scale);
-      ctx.lineTo(x, (350 - playerObj.z) * scale);
+      ctx.moveTo(x, (-680 - playerObj.z) * scale);
+      ctx.lineTo(x, (680 - playerObj.z) * scale);
       ctx.stroke();
     });
     roadZCoords.forEach(rz => {
       const z = (rz - playerObj.z) * scale;
       ctx.beginPath();
-      ctx.moveTo((-300 - playerObj.x) * scale, z);
-      ctx.lineTo((300 - playerObj.x) * scale, z);
+      ctx.moveTo((-680 - playerObj.x) * scale, z);
+      ctx.lineTo((680 - playerObj.x) * scale, z);
       ctx.stroke();
     });
 
-    worldVehicles.forEach(v => {
-      if (v === activeVehicle) return;
-      ctx.fillStyle = '#38bdf8';
+    // Draw District Icons/Dots on Radar
+    WORLD_DISTRICTS.forEach(d => {
+      ctx.fillStyle = '#a855f7';
       ctx.beginPath();
-      ctx.arc((v.x - playerObj.x) * scale, (v.z - playerObj.z) * scale, 3.2, 0, Math.PI * 2);
+      ctx.arc((d.x - playerObj.x) * scale, (d.z - playerObj.z) * scale, 3.0, 0, Math.PI * 2);
       ctx.fill();
     });
 
+    // Draw Golden Mission Beacon (clamped to radar edge if far away)
+    const mx = (mission.x - playerObj.x) * scale;
+    const mz = (mission.z - playerObj.z) * scale;
+    const mDist = Math.hypot(mx, mz);
+    const maxR = 74;
+    const clampedX = mDist > maxR ? (mx / mDist) * maxR : mx;
+    const clampedZ = mDist > maxR ? (mz / mDist) * maxR : mz;
+
     ctx.fillStyle = '#facc15';
     ctx.beginPath();
-    ctx.arc((mission.x - playerObj.x) * scale, (mission.z - playerObj.z) * scale, 6, 0, Math.PI * 2);
+    ctx.arc(clampedX, clampedZ, 5.5, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();
