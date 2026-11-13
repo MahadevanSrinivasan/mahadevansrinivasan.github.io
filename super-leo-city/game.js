@@ -1714,6 +1714,44 @@
     keys[e.code] = false;
   });
 
+  // --- MOBILE & TABLET MULTI-TOUCH CONTROLS ---
+  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+    document.body.classList.add('touch-enabled');
+  }
+
+  document.querySelectorAll('#touchControls .t-btn[data-key]').forEach(btn => {
+    const code = btn.getAttribute('data-key');
+    const press = e => {
+      e.preventDefault();
+      sfx.init();
+      keys[code] = true;
+      btn.classList.add('pressed');
+      if (code === 'KeyZ') triggerVehicleGadget();
+    };
+    const release = e => {
+      e.preventDefault();
+      keys[code] = false;
+      btn.classList.remove('pressed');
+    };
+    btn.addEventListener('touchstart', press, { passive: false });
+    btn.addEventListener('touchend', release, { passive: false });
+    btn.addEventListener('touchcancel', release, { passive: false });
+    btn.addEventListener('mousedown', press);
+    btn.addEventListener('mouseup', release);
+    btn.addEventListener('mouseleave', release);
+  });
+
+  const touchExitBtn = document.getElementById('touchExitBtn');
+  if (touchExitBtn) {
+    const onHop = e => {
+      e.preventDefault();
+      sfx.init();
+      toggleEnterExitVehicle();
+    };
+    touchExitBtn.addEventListener('touchstart', onHop, { passive: false });
+    touchExitBtn.addEventListener('click', onHop);
+  }
+
   // Wire up ZIP Code UI Buttons & Preset Chips
   document.getElementById('loadZipBtn').addEventListener('click', () => {
     sfx.init();
