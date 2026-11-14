@@ -51,13 +51,14 @@ A dedicated, lightweight bare-metal C99 + SDL2 port (`apex_nitro.c`) built speci
 
 - **Hardware Target**: Raspberry Pi Model B Rev 2 (ARMv6 700MHz, 512MB RAM, Broadcom VideoCore IV GPU) running RetroPie directly via SDL2 + native OpenGL ES 2.0 with **zero X11 overhead**.
 - **Complete Feature Parity**:
-  - Full 3D continuous spline racing circuits (**Neon Metropolis**, **Canyon Pass**, **Midnight Highway**)
-  - 6 sculpted coupe/hypercar models (**Tuner R34**, **Exotic GT**, **Muscle 69**, **Hyper S**, **Euro Drift**, **Roadster**)
+  - Full 3D continuous spline racing circuits (**Tokyo Neon Underground**, **Pacific Sunset Canyon**, **Alpine Horizon Speedway**)
+  - 6 sculpted coupe/hypercar models (**Vortex GT-R**, **Diablo V12**, **Titan GT500**, **Phantom RS**, **Cyber Valkyrie**, **Interceptor X**)
   - 360° interactive **3D Tuner Speedshop (Garage)** with custom pearlescent paint, custom rims, neon underglow, and aero wings
   - Weight-transfer drift physics, counter-steering, and active N2O boost recharge
   - Switchable **6-Speed Automatic / Manual Transmission** with gear-ratio acceleration curves and redline RPM management
-  - 4 camera angles including **First-Person Cockpit View** with animated 3D steering wheel and working dashboard gauges
+  - 4 camera angles (**Chase**, **First-Person Cockpit View** with animated 3D steering wheel and working dashboard gauges, **Hood / Bumper**, **High Heli**)
   - Real-time scissor-clipped **3D Rear-View Mirror** rendering
+  - Live dynamic race rank tracking (1st to 6th) and official **Finish Results Screen**
   - Procedural SDL2 multi-channel synthesizer soundtrack and dynamic rev-matched engine audio
 
 ### Compilation & RetroPie Ports Setup
@@ -67,14 +68,15 @@ On the Raspberry Pi (using Broadcom VideoCore IV GLES2/EGL libraries):
 ```bash
 # Compile native ARM binary
 gcc -O3 -Wall -Wextra $(sdl2-config --cflags) \
+  -mcpu=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard \
   -DRPI_BUILD -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux \
-  apex_nitro.c -o /home/pi/RetroPie/roms/ports/apex_nitro \
+  apex_nitro.c -o /opt/retropie/ports/apexnitro/apex_nitro \
   $(sdl2-config --libs) -L/opt/vc/lib -lbrcmGLESv2 -lbrcmEGL -lbcm_host -lm
 
 # RetroPie Ports Launcher (~/RetroPie/roms/ports/Apex Nitro 3D.sh)
 cat << 'EOF' > "/home/pi/RetroPie/roms/ports/Apex Nitro 3D.sh"
 #!/bin/bash
-/home/pi/RetroPie/roms/ports/apex_nitro
+"/opt/retropie/supplementary/runcommand/runcommand.sh" 0 _PORT_ "apexnitro" ""
 EOF
 chmod +x "/home/pi/RetroPie/roms/ports/Apex Nitro 3D.sh"
 ```
@@ -90,18 +92,20 @@ gcc -O3 -Wall -Wextra $(sdl2-config --cflags) \
 
 | Action | Keyboard | USB Gamepad |
 | :--- | :--- | :--- |
-| **Steer Left / Right** | `A` / `D` or `←` / `→` | D-Pad / Analog Stick |
-| **Accelerate / Gas** | `W` or `↑` or `X` (*revs engine on starting grid!*) | Button A / Trigger |
-| **Brake / Reverse** | `S` or `↓` | Button B / Trigger |
-| **Drift / Handbrake** | `Z` or `Left Shift` or `Space` | Shoulder Button / Trigger |
-| **Nitro (N2O Boost)** | `Space` or `Left Ctrl` | Button X / Turbo |
-| **Cycle Camera (incl. Cockpit)** | `C` | Shoulder Button |
+| **Steer Left / Right** | `A` / `D` or `←` / `→` | D-Pad / Left Analog Stick |
+| **Accelerate / Gas** | `W` or `↑` or `X` (*revs engine on starting grid!*) | Button A / Trigger (Btn 0 / 1) |
+| **Brake / Reverse** | `S` or `↓` | Button B / Trigger (Btn 2) |
+| **Drift / Handbrake** | `Z` or `Left Shift` or `B` | Shoulder Buttons (Btn 3 / 4) |
+| **Nitro (N2O Boost)** | `Space` or `Left Ctrl` | Button X / Trigger (Btn 5) |
+| **Menu Highlight & Adjust** | `↑` / `↓` (Row), `←` / `→` (Cycle) | D-Pad Up / Down / Left / Right |
+| **Confirm / Launch Race** | `Enter`, `Space`, or `X` | Start / Buttons 0 / 1 / 7 / 9 |
+| **Cycle Camera (4 Modes)** | `C` (Chase, Cockpit, Hood, Heli) | Shoulder Button |
 | **Toggle Rear-View Mirror** | `V` | - |
-| **Toggle Auto / Manual Gearbox** | `T` | - |
-| **Manual Downshift / Upshift** | `Q` / `E` | L1 / R1 |
+| **Toggle Auto / Manual Gearbox** | `T` (or Speedshop row 6) | - |
+| **Manual Downshift / Upshift** | `Q` / `E` | L1 / R1 (Buttons 4 / 5) |
 | **Mute / Unmute Audio** | `M` | - |
-| **Tuner Speedshop / Garage** | `G` (or `2` on Title screen) | - |
-| **Title Quick Select** | `1` (Circuit), `2` (Garage), `3` (Drift), `4` (Time Attack) | - |
-| **Garage Customization** | `1` (Car), `2` (Paint), `3` (Rims), `4` (Glow), `5` (Wing), `7` (Track), `8` (Mode) | - |
-| **Launch Race / Confirm** | `Enter`, `Space`, or `X` | Start / Button A |
-| **Quit to EmulationStation** | `Escape` or `Right Shift` + `Enter` | `Select` + `Start` |
+| **Tuner Speedshop / Garage** | `G` (or row 2 on Title) | - |
+| **Title Quick Select** | `1` (Circuit), `2` (Garage), `3` (Pursuit), `4` (Drift) | - |
+| **Garage Customization** | `1` (Car), `2` (Paint), `3` (Rims), `4` (Glow), `5` (Wing), `6` (Gearbox), `7` (Track), `8` (Mode) | - |
+| **Race Results Actions** | `Enter` / `Space` (Restart), `G` (Speedshop), `Esc` (Title) | Buttons 0 / 7 / 9 (Restart), Btn 1 (Title) |
+| **Quit to EmulationStation** | `Escape` or `Right Shift` + `Enter` | `Select` + `Start` (Buttons 6+7 or 8+9) |
