@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Block Dungeons Arcade — 3D Voxel Dungeon Crawler</title>
+  <style>
+    :root {
+      --bd-emerald: #10b981;
+      --bd-emerald-glow: rgba(16, 185, 129, 0.5);
+      --bd-gold: #f59e0b;
+      --bd-gold-light: #fbbf24;
+      --bd-cyan: #06b6d4;
+      --bd-ruby: #ef4444;
+      --bd-purple: #8b5cf6;
+      --bd-dark: #0c1017;
+      --bd-panel: rgba(14, 20, 31, 0.88);
+      --bd-panel-border: rgba(60, 80, 115, 0.45);
+      --bd-font-arcade: 'Courier New', 'Consolas', 'Lucida Console', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #080b11;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: #f1f5f9;
+    }
+
+    #gameCanvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      touch-action: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    /* Common Glass / Arcade Box Styling */
+    .arcade-box {
+      background: var(--bd-panel);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 2px solid var(--bd-panel-border);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .arcade-btn {
+      font-family: var(--bd-font-arcade);
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-transform: uppercase;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+    .arcade-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+    }
+    .arcade-btn:active {
+      transform: translateY(1px);
+    }
+    .btn-green {
+      background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+      border-color: #34d399;
+      color: #ffffff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+    }
+    .btn-green:hover {
+      background: linear-gradient(180deg, #34d399 0%, #059669 100%);
+      box-shadow: 0 0 20px var(--bd-emerald-glow);
+    }
+    .btn-blue {
+      background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+      border-color: #38bdf8;
+      color: #ffffff;
+    }
+    .btn-gold {
+      background: linear-gradient(180deg, #d97706 0%, #b45309 100%);
+      border-color: #fbbf24;
+      color: #ffffff;
+    }
+    .btn-purple {
+      background: linear-gradient(180deg, #7c3aed 0%, #6d28d9 100%);
+      border-color: #a78bfa;
+      color: #ffffff;
+    }
+    .btn-dark {
+      background: rgba(30, 41, 59, 0.85);
+      border-color: rgba(100, 116, 139, 0.5);
+      color: #e2e8f0;
+    }
+    .btn-dark:hover {
+      background: rgba(51, 65, 85, 0.95);
+      border-color: #94a3b8;
+    }
+
+    /* ==================== TITLE SCREEN OVERLAY ==================== */
+    #titleOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 30px 24px;
+      pointer-events: none;
+      background: radial-gradient(circle at center, rgba(12, 16, 25, 0.35) 0%, rgba(8, 11, 17, 0.78) 100%);
+    }
+    #titleOverlay > * {
+      pointer-events: auto;
+    }
+
+    .title-header {
+      text-align: center;
+      margin-top: 10px;
+    }
+    .title-logo-badge {
+      display: inline-block;
+      font-family: var(--bd-font-arcade);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(52, 211, 153, 0.4);
+      padding: 4px 14px;
+      border-radius: 20px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    .title-main-logo {
+      font-family: var(--bd-font-arcade);
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 900;
+      letter-spacing: 1px;
+      line-height: 1.1;
+      color: #fff;
+      text-shadow: 0 4px 0 #0f172a, 0 8px 16px rgba(0, 0, 0, 0.8), 0 0 35px var(--bd-emerald-glow);
+      text-transform: uppercase;
+      background: linear-gradient(180deg, #ffffff 20%, #a7f3d0 60%, #10b981 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.8));
+    }
+    .title-sub-logo {
+      font-family: var(--bd-font-arcade);
+      font-size: 13px;
+      letter-spacing: 3px;
+      color: #fbbf24;
+      margin-top: 4px;
+      text-transform: uppercase;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    }
+
+    .title-center-card {
+      width: 100%;
+      max-width: 520px;
+      padding: 22px 26px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .title-stage-chips {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .stage-chip {
+      font-family: var(--bd-font-arcade);
+      font-size: 11px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(100, 116, 139, 0.4);
+      color: #cbd5e1;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .stage-chip:hover, .stage-chip.active {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: #34d399;
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+    }
+
+    .title-btn-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .btn-play-big {
+      font-size: 17px;
+      padding: 14px 24px;
+      letter-spacing: 1px;
+    }
+
+    .title-options-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .title-footer {
+      text-align: center;
+      font-family: var(--bd-font-arcade);
+      font-size: 11px;
+      color: #94a3b8;
+      background: rgba(12, 16, 25, 0.75);
+      padding: 6px 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .title-footer span {
+      color: #38bdf8;
+      font-weight: 700;
+    }
+
+    /* ==================== IN-GAME HUD ==================== */
+    #hudOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 5;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px;
+      opacity: 1;
+      transition: opacity 0.25s ease;
+    }
+    #hudOverlay > * {
+      pointer-events: auto;
+    }
+
+    .hud-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    /* Top Left: Health & Collectibles */
+    .hud-stats-card {
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 220px;
+    }
+    .hud-hearts-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .hud-heart {
+      width: 20px;
+      height: 20px;
+      display: inline-block;
+      background-size: contain;
+      background-repeat: no-repeat;
+      filter: drop-shadow(0 2px 4px rgba(239, 68, 68, 0.5));
+    }
+    .hud-counters-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-family: var(--bd-font-arcade);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .hud-counter-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .gem-icon {
+      color: #34d399;
+      text-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+    }
+    .villager-icon {
+      color: #fbbf24;
+    }
+
+    /* Co-op Buddy Health (if active) */
+    .hud-buddy-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--bd-font-arcade);
+      font-size: 10px;
+      color: #38bdf8;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 5px;
+    }
+
+    /* Top Center: Stage & Boss Bar */
+    .hud-center-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      text-align: center;
+      max-width: 440px;
+      flex: 1;
+    }
+    .hud-stage-banner {
+      font-family: var(--bd-font-arcade);
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 1px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      padding: 4px 14px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+    .hud-boss-wrap {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1.5px solid #ef4444;
+      border-radius: 8px;
+      padding: 6px 12px;
+      box-shadow: 0 0 16px rgba(239, 68, 68, 0.4);
+      display: none; /* Shown during boss fights */
+    }
+    .hud-boss-info {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--bd-font-arcade);
+      font-size: 11px;
+      font-weight: 700;
+      color: #fca5a5;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+    .hud-boss-bar-bg {
+      width: 100%;
+      height: 10px;
+      background: #1e1e24;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .hud-boss-bar-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #ef4444, #f59e0b);
+      transition: width 0.15s ease-out;
+      box-shadow: 0 0 8px #ef4444;
+    }
+
+    /* Top Right: Radar Minimap & Quick Actions */
+    .hud-right-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .minimap-card {
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    #minimapCanvas {
+      width: 120px;
+      height: 120px;
+      background: #090d14;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: block;
+    }
+    .minimap-lbl {
+      font-family: var(--bd-font-arcade);
+      font-size: 9px;
+      color: #94a3b8;
+      letter-spacing: 1px;
+    }
+
+    .hud-quick-btn-row {
+      display: flex;
+      gap: 6px;
+    }
+    .hud-mini-btn {
+      font-family: var(--bd-font-arcade);
+      font-size: 10px;
+      padding: 5px 8px;
+      border-radius: 6px;
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: #e2e8f0;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .hud-mini-btn:hover {
+      background: rgba(51, 65, 85, 0.95);
+      border-color: #38bdf8;
+      color: #fff;
+    }
+
+    /* ==================== 5-CARD ARCADE DOCK ==================== */
+    .hud-bottom-bar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .arcade-deck-dock {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 16px;
+    }
+
+    .dock-slot {
+      position: relative;
+      width: 72px;
+      height: 94px;
+      background: rgba(20, 27, 43, 0.95);
+      border: 1.5px solid rgba(148, 163, 184, 0.3);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 4px 6px 4px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      overflow: hidden;
+    }
+    .dock-slot:hover {
+      transform: translateY(-4px);
+      border-color: #34d399;
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+    }
+    .dock-slot.slot-super {
+      border-color: var(--bd-purple);
+      box-shadow: 0 0 14px rgba(139, 92, 246, 0.35);
+    }
+    .dock-slot.ready {
+      animation: superPulse 1.2s infinite alternate ease-in-out;
+    }
+    @keyframes superPulse {
+      0% { box-shadow: 0 0 10px rgba(139, 92, 246, 0.4); border-color: #a78bfa; }
+      100% { box-shadow: 0 0 24px rgba(236, 72, 153, 0.8), 0 0 35px rgba(139, 92, 246, 0.6); border-color: #f472b6; }
+    }
+
+    .slot-key-badge {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      font-family: var(--bd-font-arcade);
+      font-size: 9px;
+      font-weight: 700;
+      color: #fff;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      padding: 1px 4px;
+      z-index: 2;
+    }
+    .slot-stars-badge {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      font-size: 8px;
+      color: #fbbf24;
+      z-index: 2;
+    }
+
+    .slot-art-icon {
+      width: 40px;
+      height: 40px;
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .slot-art-icon canvas {
+      image-rendering: pixelated;
+      width: 36px;
+      height: 36px;
+    }
+
+    .slot-name-lbl {
+      font-family: var(--bd-font-arcade);
+      font-size: 8.5px;
+      font-weight: 700;
+      text-align: center;
+      color: #f1f5f9;
+      line-height: 1.1;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      z-index: 2;
+    }
+    .slot-type-lbl {
+      font-size: 7.5px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      z-index: 2;
+    }
+
+    .slot-cooldown-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 0%;
+      background: rgba(15, 23, 42, 0.75);
+      border-top: 2px solid #38bdf8;
+      transition: height 0.05s linear;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .super-gauge-wrap {
+      width: 100%;
+      max-width: 380px;
+      height: 7px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .super-gauge-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #8b5cf6, #ec4899, #fbbf24);
+      transition: width 0.1s ease-out;
+      box-shadow: 0 0 10px rgba(139, 92, 246, 0.7);
+    }
+    .super-gauge-lbl {
+      position: absolute;
+      top: -16px;
+      font-family: var(--bd-font-arcade);
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #d8b4fe;
+      text-shadow: 0 0 6px rgba(139, 92, 246, 0.8);
+    }
+
+    /* ==================== CARD BINDER OVERLAY ==================== */
+    #binderOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 20;
+      background: rgba(6, 9, 15, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .binder-modal {
+      width: 100%;
+      max-width: 860px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      padding: 22px;
+      gap: 16px;
+      overflow: hidden;
+    }
+
+    .binder-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1.5px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 12px;
+    }
+    .binder-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .binder-title {
+      font-family: var(--bd-font-arcade);
+      font-size: 22px;
+      font-weight: 800;
+      color: #f1f5f9;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #fff, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .binder-subtitle {
+      font-family: var(--bd-font-arcade);
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .binder-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .binder-tab {
+      font-family: var(--bd-font-arcade);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 7px 12px;
+      border-radius: 6px;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      color: #cbd5e1;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .binder-tab:hover, .binder-tab.active {
+      background: rgba(2, 132, 199, 0.25);
+      border-color: #38bdf8;
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+    }
+
+    .binder-grid-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+    .binder-grid-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .binder-grid-scroll::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.3);
+      border-radius: 3px;
+    }
+
+    .binder-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 14px;
+    }
+
+    .binder-card {
+      position: relative;
+      background: linear-gradient(145deg, #161f30 0%, #0d131f 100%);
+      border: 2px solid rgba(148, 163, 184, 0.25);
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+      transition: all 0.18s ease;
+      overflow: hidden;
+    }
+    .binder-card:hover {
+      transform: translateY(-4px);
+      border-color: #38bdf8;
+      box-shadow: 0 8px 22px rgba(56, 189, 248, 0.25);
+    }
+    .binder-card.equipped {
+      border-color: #10b981;
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
+    }
+    .binder-card.locked {
+      opacity: 0.55;
+      filter: grayscale(0.8);
+    }
+
+    /* Holographic Foil Sheen Effect */
+    .foil-shine {
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 200%;
+      height: 100%;
+      background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.15) 45%, rgba(139,92,246,0.2) 50%, rgba(56,189,248,0.2) 55%, transparent 70%);
+      pointer-events: none;
+      animation: foilSheen 4s infinite linear;
+    }
+    @keyframes foilSheen {
+      0% { transform: translateX(0%); }
+      50% { transform: translateX(50%); }
+      100% { transform: translateX(0%); }
+    }
+
+    .bcard-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--bd-font-arcade);
+      font-size: 9px;
+      color: #94a3b8;
+    }
+    .bcard-stars {
+      color: #fbbf24;
+      font-size: 10px;
+    }
+    .bcard-art-box {
+      width: 100%;
+      height: 80px;
+      background: rgba(10, 14, 22, 0.85);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .bcard-art-box canvas {
+      width: 56px;
+      height: 56px;
+      image-rendering: pixelated;
+    }
+    .bcard-name {
+      font-family: var(--bd-font-arcade);
+      font-size: 11px;
+      font-weight: 700;
+      color: #f8fafc;
+      line-height: 1.2;
+    }
+    .bcard-desc {
+      font-size: 10.5px;
+      color: #94a3b8;
+      line-height: 1.3;
+      flex: 1;
+    }
+    .bcard-action-btn {
+      width: 100%;
+      padding: 6px 8px;
+      font-size: 10px;
+    }
+
+    /* ==================== FOIL CARD DISPENSER OVERLAY ==================== */
+    #dispenserOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 30;
+      background: radial-gradient(circle at center, rgba(15, 23, 42, 0.92) 0%, rgba(6, 9, 15, 0.98) 100%);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .dispenser-cabinet {
+      width: 100%;
+      max-width: 620px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      text-align: center;
+    }
+
+    .dispenser-banner-badge {
+      font-family: var(--bd-font-arcade);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #fbbf24;
+      text-shadow: 0 0 12px rgba(251, 191, 36, 0.8);
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(251, 191, 36, 0.5);
+      padding: 6px 18px;
+      border-radius: 20px;
+      animation: pulseGlow 1.5s infinite alternate;
+    }
+    @keyframes pulseGlow {
+      0% { transform: scale(0.98); box-shadow: 0 0 10px rgba(251, 191, 36, 0.3); }
+      100% { transform: scale(1.02); box-shadow: 0 0 25px rgba(251, 191, 36, 0.7); }
+    }
+
+    .dispenser-slot-housing {
+      width: 280px;
+      height: 16px;
+      background: #090d14;
+      border: 2px solid #334155;
+      border-radius: 6px;
+      box-shadow: inset 0 3px 8px #000, 0 4px 14px rgba(0,0,0,0.8);
+      position: relative;
+    }
+
+    /* Animated Holo Foil Dispenser Card */
+    .dispenser-holo-card {
+      position: relative;
+      width: 240px;
+      height: 330px;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 3px solid #fbbf24;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(251, 191, 36, 0.5);
+      overflow: hidden;
+      animation: slideOutCard 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+    @keyframes slideOutCard {
+      0% { transform: translateY(-40px) scale(0.85); opacity: 0; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .dispenser-holo-shine {
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.25) 0%, rgba(251,191,36,0.2) 30%, rgba(139,92,246,0.2) 60%, transparent 80%);
+      pointer-events: none;
+      animation: rotateHolo 6s linear infinite;
+    }
+    @keyframes rotateHolo {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .dh-card-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--bd-font-arcade);
+      font-size: 11px;
+      color: #fbbf24;
+      z-index: 2;
+    }
+    .dh-card-art {
+      width: 140px;
+      height: 120px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1.5px solid rgba(251, 191, 36, 0.4);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+    }
+    .dh-card-art canvas {
+      width: 80px;
+      height: 80px;
+      image-rendering: pixelated;
+    }
+    .dh-card-title {
+      font-family: var(--bd-font-arcade);
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffffff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      z-index: 2;
+    }
+    .dh-card-desc {
+      font-size: 11.5px;
+      color: #cbd5e1;
+      line-height: 1.3;
+      text-align: center;
+      z-index: 2;
+    }
+
+    /* Victory Stats Table */
+    .victory-stats-table {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .vstat-cell {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 8px;
+      padding: 8px 6px;
+    }
+    .vstat-lbl {
+      font-family: var(--bd-font-arcade);
+      font-size: 9.5px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .vstat-val {
+      font-family: var(--bd-font-arcade);
+      font-size: 15px;
+      font-weight: 800;
+      color: #34d399;
+    }
+
+    .dispenser-actions-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
+    /* ==================== MOBILE TOUCH CONTROLS ==================== */
+    #touchControls {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      height: 160px;
+      z-index: 15;
+      display: none; /* Enabled on touch devices or small screens */
+      pointer-events: none;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .touch-dpad-zone {
+      width: 140px;
+      height: 140px;
+      position: relative;
+      pointer-events: auto;
+      background: rgba(15, 23, 42, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+    }
+    .touch-stick-thumb {
+      width: 50px;
+      height: 50px;
+      background: rgba(56, 189, 248, 0.7);
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      position: absolute;
+      top: 45px;
+      left: 45px;
+      pointer-events: none;
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.6);
+    }
+    .touch-btns-cluster {
+      display: grid;
+      grid-template-columns: repeat(2, 60px);
+      gap: 12px;
+      pointer-events: auto;
+    }
+    .touch-arcade-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      font-family: var(--bd-font-arcade);
+      font-size: 11px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+      user-select: none;
+      touch-action: none;
+    }
+    .tbtn-bop { background: #10b981; }
+    .tbtn-bow { background: #0284c7; }
+    .tbtn-dash { background: #d97706; }
+    .tbtn-super { background: #7c3aed; }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .hud-top-bar { flex-direction: column; align-items: stretch; gap: 8px; }
+      .hud-stats-card { min-width: auto; }
+      .dock-slot { width: 58px; height: 78px; padding: 4px 2px; }
+      .slot-art-icon { width: 32px; height: 32px; margin-top: 10px; }
+      .slot-name-lbl { font-size: 7px; }
+      .victory-stats-table { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- WebGL 3D Canvas -->
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Title Attract Screen Overlay -->
+  <div id="titleOverlay">
+    <div class="title-header">
+      <div class="title-logo-badge">Arcade Voxel Edition</div>
+      <h1 class="title-main-logo">BLOCK DUNGEONS</h1>
+      <div class="title-sub-logo">★ 5-CARD ARCADE DECK &amp; CO-OP ★</div>
+    </div>
+
+    <div class="arcade-box title-center-card">
+      <div class="title-stage-chips" id="titleStageChips">
+        <div class="stage-chip active" data-stage="1">1. Creeper Woods</div>
+        <div class="stage-chip" data-stage="2">2. Pumpkin Pastures</div>
+        <div class="stage-chip" data-stage="3">3. Redstone Mines</div>
+        <div class="stage-chip" data-stage="4">4. Obsidian Citadel</div>
+      </div>
+
+      <div class="title-btn-stack">
+        <button class="arcade-btn btn-green btn-play-big" id="btnPlayAdventure">
+          ▶ PLAY ADVENTURE
+        </button>
+        <button class="arcade-btn btn-blue" id="btnOpenBinder">
+          🃏 ARCADE CARD BINDER (20 CARDS)
+        </button>
+      </div>
+
+      <div class="title-options-row">
+        <button class="arcade-btn btn-dark" id="btnToggleCoop">
+          👥 CO-OP BUDDY: <span id="lblCoopState" style="color:#34d399;">ON (AI)</span>
+        </button>
+        <button class="arcade-btn btn-dark" id="btnToggleBloom">
+          ✨ BLOOM: <span id="lblBloomState" style="color:#38bdf8;">ON</span>
+        </button>
+        <button class="arcade-btn btn-dark" id="btnToggleAudio">
+          🔊 AUDIO: <span id="lblAudioState" style="color:#fbbf24;">ON</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="title-footer">
+      <span>CONTROLS:</span> WASD / Stick to Move • <span>J / Space</span>: Melee Bop • <span>K</span>: Firework Bow • <span>L / Shift</span>: Dash • <span>U / E</span>: Super • <span>P</span>: 2P Co-Op
+    </div>
+  </div>
+
+  <!-- In-Game HUD -->
+  <div id="hudOverlay" style="display: none;">
+    <div class="hud-top-bar">
+      <!-- Player 1 Stats Card -->
+      <div class="arcade-box hud-stats-card">
+        <div class="hud-hearts-row" id="hudHeartsP1">
+          <!-- Populated by JS -->
+        </div>
+        <div class="hud-counters-row">
+          <div class="hud-counter-item">
+            <span class="gem-icon">💎</span>
+            <span id="hudEmeraldCount">0</span>
+          </div>
+          <div class="hud-counter-item">
+            <span class="villager-icon">🗝️</span>
+            <span id="hudKeysCount">0/1</span>
+          </div>
+          <div class="hud-counter-item">
+            <span class="villager-icon">🐾</span>
+            <span id="hudRescuedCount">0/2</span>
+          </div>
+        </div>
+        <div class="hud-buddy-row" id="hudBuddyRow">
+          <span>P2 BUDDY:</span>
+          <div class="hud-hearts-row" id="hudHeartsP2" style="gap:2px;"></div>
+        </div>
+      </div>
+
+      <!-- Center: Stage banner & Boss bar -->
+      <div class="hud-center-card">
+        <div class="hud-stage-banner" id="hudStageBanner">STAGE 1: MOSSY CREEPER WOODS</div>
+        <div class="hud-boss-wrap" id="hudBossWrap">
+          <div class="hud-boss-info">
+            <span id="hudBossName">GIANT MOSSY SLIME KING</span>
+            <span id="hudBossHpPct">100%</span>
+          </div>
+          <div class="hud-boss-bar-bg">
+            <div class="hud-boss-bar-fill" id="hudBossBarFill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Radar Minimap & Quick Actions -->
+      <div class="hud-right-panel">
+        <div class="arcade-box minimap-card">
+          <canvas id="minimapCanvas" width="120" height="120"></canvas>
+          <div class="minimap-lbl">RADAR MINIMAP</div>
+        </div>
+        <div class="hud-quick-btn-row">
+          <button class="hud-mini-btn" id="hudBtnBinder">Binder [G]</button>
+          <button class="hud-mini-btn" id="hudBtnStage">Stage [1-4]</button>
+          <button class="hud-mini-btn" id="hudBtnCoop">Co-Op [P]</button>
+          <button class="hud-mini-btn" id="hudBtnBloom">Bloom [B]</button>
+          <button class="hud-mini-btn" id="hudBtnAudio">Mute [M]</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom: 5-Card Arcade Dock -->
+    <div class="hud-bottom-bar">
+      <div class="super-gauge-wrap">
+        <div class="super-gauge-lbl" id="superGaugeLbl">SUPER ARTIFACT CHARGE: 0%</div>
+        <div class="super-gauge-fill" id="superGaugeFill"></div>
+      </div>
+
+      <div class="arcade-box arcade-deck-dock" id="hudDeckDock">
+        <!-- Slot 1: Melee Spark Tool -->
+        <div class="dock-slot" id="dockSlot1" data-slot="1">
+          <span class="slot-key-badge">J</span>
+          <span class="slot-stars-badge">★</span>
+          <div class="slot-art-icon" id="dockArt1"></div>
+          <div class="slot-name-lbl" id="dockName1">Pickaxe</div>
+          <div class="slot-type-lbl">MELEE</div>
+          <div class="slot-cooldown-overlay" id="dockCd1"></div>
+        </div>
+        <!-- Slot 2: Ranged Launcher -->
+        <div class="dock-slot" id="dockSlot2" data-slot="2">
+          <span class="slot-key-badge">K</span>
+          <span class="slot-stars-badge">★</span>
+          <div class="slot-art-icon" id="dockArt2"></div>
+          <div class="slot-name-lbl" id="dockName2">Crossbow</div>
+          <div class="slot-type-lbl">RANGED</div>
+          <div class="slot-cooldown-overlay" id="dockCd2"></div>
+        </div>
+        <!-- Slot 3: Hero Armor -->
+        <div class="dock-slot" id="dockSlot3" data-slot="3">
+          <span class="slot-key-badge">PASS</span>
+          <span class="slot-stars-badge">★</span>
+          <div class="slot-art-icon" id="dockArt3"></div>
+          <div class="slot-name-lbl" id="dockName3">Tunic</div>
+          <div class="slot-type-lbl">ARMOR</div>
+          <div class="slot-cooldown-overlay" id="dockCd3"></div>
+        </div>
+        <!-- Slot 4: Pet Companion -->
+        <div class="dock-slot" id="dockSlot4" data-slot="4">
+          <span class="slot-key-badge">PET</span>
+          <span class="slot-stars-badge">★</span>
+          <div class="slot-art-icon" id="dockArt4"></div>
+          <div class="slot-name-lbl" id="dockName4">Wolf Pup</div>
+          <div class="slot-type-lbl">PET</div>
+          <div class="slot-cooldown-overlay" id="dockCd4"></div>
+        </div>
+        <!-- Slot 5: Super Artifact -->
+        <div class="dock-slot slot-super" id="dockSlot5" data-slot="5">
+          <span class="slot-key-badge">U</span>
+          <span class="slot-stars-badge">★</span>
+          <div class="slot-art-icon" id="dockArt5"></div>
+          <div class="slot-name-lbl" id="dockName5">Beacon</div>
+          <div class="slot-type-lbl">SUPER</div>
+          <div class="slot-cooldown-overlay" id="dockCd5"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Arcade Card Binder Overlay -->
+  <div id="binderOverlay">
+    <div class="arcade-box binder-modal">
+      <div class="binder-header">
+        <div class="binder-title-group">
+          <div class="binder-title">Arcade Card Binder</div>
+          <div class="binder-subtitle">Collect 20 Voxel Cards • Upgrade Stars • Custom Loadout</div>
+        </div>
+        <button class="arcade-btn btn-dark" id="btnCloseBinder">✕ CLOSE [ESC]</button>
+      </div>
+
+      <div class="binder-tabs" id="binderTabs">
+        <div class="binder-tab active" data-cat="all">ALL CARDS (20)</div>
+        <div class="binder-tab" data-cat="melee">1. MELEE (4)</div>
+        <div class="binder-tab" data-cat="ranged">2. RANGED (4)</div>
+        <div class="binder-tab" data-cat="armor">3. ARMOR (4)</div>
+        <div class="binder-tab" data-cat="pet">4. PET (4)</div>
+        <div class="binder-tab" data-cat="super">5. SUPER (4)</div>
+      </div>
+
+      <div class="binder-grid-scroll">
+        <div class="binder-cards-grid" id="binderCardsGrid">
+          <!-- Populated dynamically by game.js -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Foil Arcade Card Dispenser Overlay -->
+  <div id="dispenserOverlay">
+    <div class="dispenser-cabinet">
+      <div class="dispenser-banner-badge" id="dispenserBadge">
+        ✨ NEW ARCADE CARD UNLOCKED! ✨
+      </div>
+
+      <div class="dispenser-slot-housing"></div>
+
+      <div class="dispenser-holo-card" id="dispenserHoloCard">
+        <div class="dispenser-holo-shine"></div>
+        <div class="dh-card-header">
+          <span id="dispenserCardSlot">SLOT 1 — MELEE</span>
+          <span id="dispenserCardStars">★★★</span>
+        </div>
+        <div class="dh-card-art">
+          <canvas id="dispenserArtCanvas" width="80" height="80"></canvas>
+        </div>
+        <div class="dh-card-title" id="dispenserCardTitle">WHIRLWIND HAMMER</div>
+        <div class="dh-card-desc" id="dispenserCardDesc">
+          360° sweeping hammer spin that releases shockwaves and knocks back surrounding slimes.
+        </div>
+      </div>
+
+      <div class="arcade-box" style="padding:12px 18px; width:100%;">
+        <div class="victory-stats-table">
+          <div class="vstat-cell">
+            <div class="vstat-lbl">Stage Cleared</div>
+            <div class="vstat-val" id="vstatStage" style="color:#fbbf24;">STAGE 1</div>
+          </div>
+          <div class="vstat-cell">
+            <div class="vstat-lbl">Slimes Bapped</div>
+            <div class="vstat-val" id="vstatKills">28</div>
+          </div>
+          <div class="vstat-cell">
+            <div class="vstat-lbl">Cages Freed</div>
+            <div class="vstat-val" id="vstatRescued" style="color:#38bdf8;">2/2</div>
+          </div>
+          <div class="vstat-cell">
+            <div class="vstat-lbl">Emeralds Looted</div>
+            <div class="vstat-val" id="vstatEmeralds" style="color:#34d399;">+145</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dispenser-actions-row">
+        <button class="arcade-btn btn-green" id="btnNextStage">▶ PLAY NEXT STAGE</button>
+        <button class="arcade-btn btn-blue" id="btnDispenserBinder">🃏 OPEN BINDER</button>
+        <button class="arcade-btn btn-gold" id="btnReplayStage">🔄 REPLAY STAGE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Virtual Touch Controls -->
+  <div id="touchControls">
+    <div class="touch-dpad-zone" id="touchDpad">
+      <div class="touch-stick-thumb" id="touchThumb"></div>
+    </div>
+    <div class="touch-btns-cluster">
+      <div class="touch-arcade-btn tbtn-bop" id="touchBtnBop">BOP</div>
+      <div class="touch-arcade-btn tbtn-bow" id="touchBtnBow">BOW</div>
+      <div class="touch-arcade-btn tbtn-dash" id="touchBtnDash">DASH</div>
+      <div class="touch-arcade-btn tbtn-super" id="touchBtnSuper">SUPER</div>
+    </div>
+  </div>
+
+  <!-- Three.js + Postprocessing + Game -->
+  <script src="three.min.js"></script>
+  <script src="postprocessing.min.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
