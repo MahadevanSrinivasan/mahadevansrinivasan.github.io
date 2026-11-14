@@ -23,12 +23,6 @@ body {
     -webkit-text-size-adjust: 100%;
 }
 
-h1, h2, h3, h4, h5, h6 {
-    font-family: $header-font-family;
-    font-weight: 200;
-}
-
-
 /**
  * Set `margin-bottom` to maintain vertical rhythm
  */
@@ -78,7 +72,12 @@ li {
 
 
 
-
+/**
+ * Headings
+ */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 300;
+}
 
 
 
@@ -95,7 +94,7 @@ a {
 
     &:hover {
         color: $text-color;
-        text-decoration: none;
+        text-decoration: underline;
     }
 }
 
