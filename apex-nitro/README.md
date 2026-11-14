@@ -44,3 +44,64 @@ python3 -m http.server 8080
 ```
 
 Then open `http://localhost:8080/index.html`.
+
+## Native RetroPie / Raspberry Pi Edition (OpenGL ES 2.0 + SDL2)
+
+A dedicated, lightweight bare-metal C99 + SDL2 port (`apex_nitro.c`) built specifically for classic low-power hardware with zero external image or audio asset dependencies.
+
+- **Hardware Target**: Raspberry Pi Model B Rev 2 (ARMv6 700MHz, 512MB RAM, Broadcom VideoCore IV GPU) running RetroPie directly via SDL2 + native OpenGL ES 2.0 with **zero X11 overhead**.
+- **Complete Feature Parity**:
+  - Full 3D continuous spline racing circuits (**Neon Metropolis**, **Canyon Pass**, **Midnight Highway**)
+  - 6 sculpted coupe/hypercar models (**Tuner R34**, **Exotic GT**, **Muscle 69**, **Hyper S**, **Euro Drift**, **Roadster**)
+  - 360° interactive **3D Tuner Speedshop (Garage)** with custom pearlescent paint, custom rims, neon underglow, and aero wings
+  - Weight-transfer drift physics, counter-steering, and active N2O boost recharge
+  - Switchable **6-Speed Automatic / Manual Transmission** with gear-ratio acceleration curves and redline RPM management
+  - 4 camera angles including **First-Person Cockpit View** with animated 3D steering wheel and working dashboard gauges
+  - Real-time scissor-clipped **3D Rear-View Mirror** rendering
+  - Procedural SDL2 multi-channel synthesizer soundtrack and dynamic rev-matched engine audio
+
+### Compilation & RetroPie Ports Setup
+
+On the Raspberry Pi (using Broadcom VideoCore IV GLES2/EGL libraries):
+
+```bash
+# Compile native ARM binary
+gcc -O3 -Wall -Wextra $(sdl2-config --cflags) \
+  -DRPI_BUILD -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux \
+  apex_nitro.c -o /home/pi/RetroPie/roms/ports/apex_nitro \
+  $(sdl2-config --libs) -L/opt/vc/lib -lbrcmGLESv2 -lbrcmEGL -lbcm_host -lm
+
+# RetroPie Ports Launcher (~/RetroPie/roms/ports/Apex Nitro 3D.sh)
+cat << 'EOF' > "/home/pi/RetroPie/roms/ports/Apex Nitro 3D.sh"
+#!/bin/bash
+/home/pi/RetroPie/roms/ports/apex_nitro
+EOF
+chmod +x "/home/pi/RetroPie/roms/ports/Apex Nitro 3D.sh"
+```
+
+On Desktop Linux (Standard Mesa GLES2/EGL):
+```bash
+gcc -O3 -Wall -Wextra $(sdl2-config --cflags) \
+  apex_nitro.c -o apex_nitro \
+  $(sdl2-config --libs) -lGLESv2 -lEGL -lm
+```
+
+### RetroPie Controls
+
+| Action | Keyboard | USB Gamepad |
+| :--- | :--- | :--- |
+| **Steer Left / Right** | `A` / `D` or `←` / `→` | D-Pad / Analog Stick |
+| **Accelerate / Gas** | `W` or `↑` or `X` (*revs engine on starting grid!*) | Button A / Trigger |
+| **Brake / Reverse** | `S` or `↓` | Button B / Trigger |
+| **Drift / Handbrake** | `Z` or `Left Shift` or `Space` | Shoulder Button / Trigger |
+| **Nitro (N2O Boost)** | `Space` or `Left Ctrl` | Button X / Turbo |
+| **Cycle Camera (incl. Cockpit)** | `C` | Shoulder Button |
+| **Toggle Rear-View Mirror** | `V` | - |
+| **Toggle Auto / Manual Gearbox** | `T` | - |
+| **Manual Downshift / Upshift** | `Q` / `E` | L1 / R1 |
+| **Mute / Unmute Audio** | `M` | - |
+| **Tuner Speedshop / Garage** | `G` (or `2` on Title screen) | - |
+| **Title Quick Select** | `1` (Circuit), `2` (Garage), `3` (Drift), `4` (Time Attack) | - |
+| **Garage Customization** | `1` (Car), `2` (Paint), `3` (Rims), `4` (Glow), `5` (Wing), `7` (Track), `8` (Mode) | - |
+| **Launch Race / Confirm** | `Enter`, `Space`, or `X` | Start / Button A |
+| **Quit to EmulationStation** | `Escape` or `Right Shift` + `Enter` | `Select` + `Start` |
