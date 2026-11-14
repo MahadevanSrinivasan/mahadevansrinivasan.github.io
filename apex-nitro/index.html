@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Apex Nitro 3D — Street & Canyon Racing</title>
+  <style>
+    :root {
+      --nfs-cyan: #00f0ff;
+      --nfs-magenta: #ff2a85;
+      --nfs-gold: #ffd166;
+      --nfs-lime: #4ade80;
+      --nfs-bg: rgba(9, 12, 24, 0.78);
+      --nfs-border: rgba(0, 240, 255, 0.34);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #05070e;
+      font-family: 'Segoe UI', 'Rajdhani', system-ui, -apple-system, sans-serif;
+      color: #f8fafc;
+    }
+    #gameCanvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* Glass Panels */
+    .nfs-panel {
+      background: var(--nfs-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1.5px solid var(--nfs-border);
+      border-radius: 14px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    /* ==================== 3D SHOWROOM GARAGE OVERLAY ==================== */
+    #garageOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 12px 18px;
+      background: radial-gradient(circle at 50% 48%, rgba(0, 0, 0, 0) 28%, rgba(4, 6, 14, 0.52) 100%);
+    }
+    .garage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: auto;
+    }
+    .brand-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 16px;
+    }
+    .brand-kicker {
+      background: linear-gradient(135deg, var(--nfs-magenta), #ff6b00);
+      color: #fff;
+      font-size: 10.5px;
+      font-weight: 900;
+      letter-spacing: 1.4px;
+      padding: 3px 9px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+    .brand-title {
+      font-size: 24px;
+      font-weight: 900;
+      font-style: italic;
+      letter-spacing: 1.4px;
+      background: linear-gradient(90deg, #ffffff 0%, var(--nfs-cyan) 65%, var(--nfs-magenta) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 24px rgba(0, 240, 255, 0.35);
+    }
+    .brand-sub {
+      font-size: 11.5px;
+      color: #94a3b8;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-ghost {
+      background: rgba(15, 23, 42, 0.85);
+      color: #e2e8f0;
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-ghost:hover {
+      border-color: var(--nfs-cyan);
+      color: #fff;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.35);
+    }
+
+    /* Side columns leaving wide clear center for the 3D Spinning Turntable */
+    .garage-columns {
+      display: flex;
+      justify-content: space-between;
+      align-items: stretch;
+      gap: 14px;
+      flex: 1;
+      margin-top: 8px;
+      min-height: 0;
+    }
+    .garage-col {
+      width: 318px;
+      max-width: 34vw;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      pointer-events: auto;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+    .garage-col::-webkit-scrollbar {
+      width: 4px;
+    }
+    .garage-col::-webkit-scrollbar-thumb {
+      background: rgba(0, 240, 255, 0.35);
+      border-radius: 4px;
+    }
+    .sec-card {
+      padding: 9px 12px;
+    }
+    .sec-title {
+      font-size: 10.5px;
+      font-weight: 900;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--nfs-cyan);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Car Roster Cards */
+    .car-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 5px;
+    }
+    .car-btn {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.14s ease;
+    }
+    .car-btn:hover {
+      background: rgba(0, 240, 255, 0.12);
+      border-color: rgba(0, 240, 255, 0.55);
+      color: #fff;
+    }
+    .car-btn.active {
+      background: linear-gradient(90deg, rgba(0, 240, 255, 0.24), rgba(255, 42, 133, 0.16));
+      border-color: var(--nfs-cyan);
+      color: #fff;
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.28);
+    }
+    .car-name {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.3px;
+    }
+    .car-tag {
+      font-size: 10px;
+      color: #94a3b8;
+      font-weight: 700;
+    }
+    .car-rating {
+      font-size: 10.5px;
+      font-weight: 900;
+      color: var(--nfs-gold);
+      background: rgba(255, 209, 102, 0.12);
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    /* Stat Bars */
+    .stat-row {
+      margin-bottom: 5px;
+    }
+    .stat-row:last-child {
+      margin-bottom: 0;
+    }
+    .stat-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #cbd5e1;
+      margin-bottom: 2px;
+    }
+    .stat-track {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .stat-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--nfs-cyan), var(--nfs-magenta));
+      transition: width 0.25s ease;
+    }
+
+    /* Swatches & Option Pills */
+    .swatch-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 7px;
+    }
+    .swatch-btn {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.32);
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+    .swatch-btn:hover {
+      transform: scale(1.12);
+    }
+    .swatch-btn.active {
+      border-color: #fff;
+      transform: scale(1.16);
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.75);
+    }
+    .pill-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 5px;
+    }
+    .opt-pill {
+      padding: 5px 7px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1.5px solid rgba(255, 255, 255, 0.14);
+      color: #cbd5e1;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.12s ease;
+    }
+    .opt-pill:hover {
+      border-color: var(--nfs-cyan);
+      color: #fff;
+    }
+    .opt-pill.active {
+      background: rgba(0, 240, 255, 0.22);
+      border-color: var(--nfs-cyan);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+    }
+
+    /* Track & Mode Selector Cards */
+    .stack-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .mode-card-btn {
+      padding: 6px 9px;
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1.5px solid rgba(255, 255, 255, 0.13);
+      color: #cbd5e1;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+    .mode-card-btn:hover {
+      border-color: var(--nfs-magenta);
+      color: #fff;
+    }
+    .mode-card-btn.active {
+      background: linear-gradient(90deg, rgba(255, 42, 133, 0.25), rgba(0, 240, 255, 0.15));
+      border-color: var(--nfs-magenta);
+      color: #fff;
+      box-shadow: 0 0 16px rgba(255, 42, 133, 0.3);
+    }
+    .mode-title {
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .mode-desc {
+      font-size: 10px;
+      color: #94a3b8;
+      font-weight: 600;
+      margin-top: 1px;
+    }
+
+    .launch-btn {
+      width: 100%;
+      padding: 11px 16px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #ff2a85 0%, #ff6b00 50%, #ffd166 100%);
+      color: #0b0f19;
+      font-size: 15.5px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 10px 28px rgba(255, 42, 133, 0.5);
+      transition: transform 0.14s ease, box-shadow 0.14s ease;
+      flex-shrink: 0;
+    }
+    .launch-btn:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 14px 36px rgba(255, 42, 133, 0.72);
+    }
+
+    .garage-center-bottom {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 540px;
+      max-width: calc(100vw - 680px);
+      min-width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: auto;
+      z-index: 32;
+    }
+    .mode-horiz-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+    @media (max-width: 1020px) {
+      .garage-center-bottom {
+        position: static;
+        transform: none;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        margin-top: 8px;
+      }
+      .mode-horiz-list {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ==================== IN-RACE NFS HUD ==================== */
+    #raceHud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 15;
+      display: none;
+    }
+    body.in-race #raceHud {
+      display: block;
+    }
+
+    /* Top-Left Telemetry */
+    .hud-top-left {
+      position: absolute;
+      top: 14px;
+      left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .pos-card {
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-left: 4px solid var(--nfs-cyan);
+    }
+    .pos-big {
+      font-size: 32px;
+      font-weight: 900;
+      font-style: italic;
+      color: var(--nfs-cyan);
+      line-height: 1;
+      text-shadow: 0 0 14px rgba(0, 240, 255, 0.5);
+    }
+    .pos-total {
+      font-size: 13px;
+      color: #94a3b8;
+      font-weight: 800;
+    }
+    .lap-block {
+      border-left: 1.5px solid rgba(255, 255, 255, 0.16);
+      padding-left: 14px;
+    }
+    .lap-val {
+      font-size: 18px;
+      font-weight: 900;
+      color: #fff;
+    }
+    .time-val {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--nfs-gold);
+      font-variant-numeric: tabular-nums;
+    }
+    .best-val {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    #pursuitBarCard {
+      padding: 8px 14px;
+      border-left: 4px solid var(--nfs-magenta);
+      display: none;
+    }
+    .heat-label {
+      font-size: 11.5px;
+      font-weight: 900;
+      color: #ff5ca8;
+      letter-spacing: 0.8px;
+    }
+
+    /* Top-Center Combo & Countdown */
+    .hud-top-center {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .style-score-pill {
+      padding: 6px 18px;
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--nfs-gold);
+      letter-spacing: 0.8px;
+      font-variant-numeric: tabular-nums;
+    }
+    #comboHud {
+      padding: 7px 18px;
+      border-color: var(--nfs-magenta);
+      background: linear-gradient(90deg, rgba(255, 42, 133, 0.25), rgba(0, 240, 255, 0.18));
+      font-size: 16px;
+      font-weight: 900;
+      font-style: italic;
+      color: #fff;
+      text-shadow: 0 0 12px rgba(255, 42, 133, 0.85);
+      opacity: 0;
+      transform: scale(0.9);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    #comboHud.active {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    #countdownBanner {
+      position: fixed;
+      top: 32%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.85);
+      font-size: 84px;
+      font-weight: 900;
+      font-style: italic;
+      color: #fff;
+      text-shadow: 0 0 36px var(--nfs-cyan), 0 6px 0 #0f172a;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 25;
+    }
+    #countdownBanner.active {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+
+    #calloutBanner {
+      position: fixed;
+      top: 22%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.88);
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 22;
+      transition: opacity 0.18s ease, transform 0.22s ease;
+    }
+    #calloutBanner.active {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    .callout-main {
+      font-size: 32px;
+      font-weight: 900;
+      font-style: italic;
+      color: var(--nfs-cyan);
+      text-shadow: 0 0 20px rgba(0, 240, 255, 0.75), 0 4px 0 #090d16;
+    }
+    .callout-sub {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--nfs-gold);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+    }
+
+    /* Top-Right Radar & Controls */
+    .hud-top-right {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    #minimapCanvas {
+      width: 170px;
+      height: 170px;
+      border-radius: 20px;
+      border: 2px solid var(--nfs-border);
+      background: rgba(7, 11, 22, 0.82);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
+    }
+    .quick-toggles {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+      pointer-events: auto;
+    }
+    .hud-btn {
+      background: rgba(11, 16, 30, 0.86);
+      color: #e2e8f0;
+      border: 1.5px solid rgba(255, 255, 255, 0.22);
+      border-radius: 9px;
+      padding: 6px 10px;
+      font-size: 11.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+    .hud-btn:hover {
+      border-color: var(--nfs-cyan);
+      color: #fff;
+    }
+    .hud-btn.on {
+      border-color: var(--nfs-cyan);
+      color: var(--nfs-cyan);
+    }
+
+    /* Bottom-Left Key Legend */
+    .hud-bottom-left {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      padding: 10px 14px;
+      font-size: 11.5px;
+      line-height: 1.6;
+      color: #cbd5e1;
+    }
+    .key-pill {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 5px;
+      padding: 0 6px;
+      font-weight: 900;
+      color: var(--nfs-cyan);
+      font-size: 10.5px;
+    }
+
+    /* Bottom-Right Curved RPM Tachometer + N2O */
+    .hud-bottom-right {
+      position: absolute;
+      bottom: 12px;
+      right: 16px;
+      pointer-events: none;
+    }
+    #tachCanvas {
+      width: 244px;
+      height: 220px;
+      filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.75));
+    }
+
+    /* ==================== MOBILE / TOUCH CONTROLS ==================== */
+    #touchControls {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 26;
+      display: none;
+    }
+    body.in-race.touch-enabled #touchControls {
+      display: block;
+    }
+    .touch-left-pad {
+      position: absolute;
+      bottom: 18px;
+      left: 14px;
+      display: flex;
+      gap: 10px;
+      pointer-events: auto;
+    }
+    .touch-right-pad {
+      position: absolute;
+      bottom: 18px;
+      right: 14px;
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      pointer-events: auto;
+    }
+    .t-btn {
+      width: 68px;
+      height: 68px;
+      border-radius: 18px;
+      background: rgba(12, 18, 34, 0.8);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 2px solid rgba(255, 255, 255, 0.32);
+      color: #fff;
+      font-size: 20px;
+      font-weight: 900;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55);
+    }
+    .t-btn span {
+      font-size: 10px;
+      font-weight: 900;
+      margin-top: 2px;
+      color: #cbd5e1;
+    }
+    .t-btn.pressed {
+      transform: scale(0.92);
+      border-color: var(--nfs-cyan);
+      background: rgba(0, 240, 255, 0.42);
+    }
+    .t-btn.gas {
+      height: 82px;
+      background: rgba(22, 163, 74, 0.78);
+      border-color: #86efac;
+    }
+    .t-btn.drift {
+      background: rgba(255, 42, 133, 0.78);
+      border-color: #f9a8d4;
+    }
+    .t-btn.n2o {
+      background: rgba(0, 180, 255, 0.8);
+      border-color: #a5f3fc;
+    }
+
+    /* ==================== POST-RACE RESULTS OVERLAY ==================== */
+    #resultsOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 35;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(4, 7, 16, 0.82);
+      backdrop-filter: blur(8px);
+    }
+    #resultsOverlay.active {
+      display: flex;
+    }
+    .results-box {
+      width: 92%;
+      max-width: 520px;
+      padding: 28px 30px;
+      text-align: center;
+      border: 2px solid var(--nfs-cyan);
+    }
+    .res-kicker {
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: var(--nfs-magenta);
+      text-transform: uppercase;
+    }
+    .res-place {
+      font-size: 46px;
+      font-weight: 900;
+      font-style: italic;
+      color: var(--nfs-gold);
+      margin: 6px 0 18px;
+      text-shadow: 0 0 24px rgba(255, 209, 102, 0.5);
+    }
+    .res-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+    .res-stat {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 12px;
+      padding: 11px;
+    }
+    .res-stat-lbl {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .res-stat-val {
+      font-size: 20px;
+      font-weight: 900;
+      color: #fff;
+      margin-top: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+    .res-actions {
+      display: flex;
+      gap: 12px;
+    }
+    .res-actions button {
+      flex: 1;
+      padding: 13px 16px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .btn-rematch {
+      border: none;
+      background: linear-gradient(135deg, var(--nfs-cyan), #3b82f6);
+      color: #090d16;
+    }
+    .btn-back-garage {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+    }
+
+    /* Responsive Breakpoints */
+    @media (pointer: coarse), (max-width: 900px) {
+      body.in-race #touchControls { display: block; }
+      .hud-bottom-left { display: none; }
+      .hud-bottom-right {
+        bottom: 102px;
+        right: 10px;
+        transform: scale(0.68);
+        transform-origin: bottom right;
+      }
+      #minimapCanvas {
+        width: 112px;
+        height: 112px;
+      }
+      .hud-top-left, .hud-top-right {
+        transform: scale(0.84);
+      }
+      .hud-top-left { transform-origin: top left; }
+      .hud-top-right { transform-origin: top right; }
+    }
+    @media (max-width: 820px) {
+      #garageOverlay {
+        padding: 10px;
+        overflow-y: auto;
+        justify-content: flex-start;
+      }
+      .garage-columns {
+        flex-direction: column;
+        margin-top: 8px;
+      }
+      .garage-col {
+        width: 100%;
+        max-width: 100%;
+        overflow-y: visible;
+      }
+      .brand-title { font-size: 21px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- ==================== 3D SHOWROOM GARAGE OVERLAY ==================== -->
+  <div id="garageOverlay">
+    <div class="garage-header">
+      <div class="nfs-panel brand-title-wrap">
+        <span class="brand-kicker">3D Street &amp; Canyon Racer</span>
+        <div>
+          <div class="brand-title">APEX NITRO 3D</div>
+          <div class="brand-sub">UnrealBloom Neon • Continuous Spline Circuits • Arcade Drift &amp; N2O</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-ghost" id="btnGarageBloom">✨ Bloom: ON</button>
+        <button class="btn-ghost" id="btnGarageAudio">🔊 Sound: ON</button>
+      </div>
+    </div>
+
+    <div class="garage-columns">
+      <!-- Left Column: Car Roster + Live Performance Specs -->
+      <div class="garage-col">
+        <div class="nfs-panel sec-card">
+          <div class="sec-title">
+            <span>🏎️ Select Machine (6 Rides)</span>
+            <span id="carClassTag" style="color:#ffd166;">JDM TURBO</span>
+          </div>
+          <div class="car-grid" id="carSelector"></div>
+        </div>
+
+        <div class="nfs-panel sec-card">
+          <div class="sec-title">📊 Performance Specs</div>
+          <div class="stat-row">
+            <div class="stat-labels"><span>Top Speed</span><span id="statSpdLbl">88</span></div>
+            <div class="stat-track"><div class="stat-fill" id="statSpdBar" style="width:88%"></div></div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-labels"><span>Acceleration &amp; N2O</span><span id="statAccLbl">84</span></div>
+            <div class="stat-track"><div class="stat-fill" id="statAccBar" style="width:84%"></div></div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-labels"><span>Drift &amp; Cornering</span><span id="statHndLbl">92</span></div>
+            <div class="stat-track"><div class="stat-fill" id="statHndBar" style="width:92%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Visual Tuner + Track + Mode + Launch -->
+      <div class="garage-col">
+        <div class="nfs-panel sec-card">
+          <div class="sec-title">🎨 Metallic Paint</div>
+          <div class="swatch-row" id="paintSwatches"></div>
+          <div class="sec-title">💡 Neon Underglow</div>
+          <div class="swatch-row" id="glowSwatches"></div>
+          <div class="sec-title" style="margin-bottom:6px;">🪽 Aero Wing Kit</div>
+          <div class="pill-grid" id="wingSelector"></div>
+        </div>
+
+        <div class="nfs-panel sec-card">
+          <div class="sec-title">🛣️ Select 3D Circuit</div>
+          <div class="stack-list" id="trackSelector"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="garage-center-bottom">
+      <div class="nfs-panel sec-card" style="padding:8px 10px;">
+        <div class="sec-title" style="margin-bottom:5px;">🏁 Select Race Mode</div>
+        <div class="mode-horiz-list" id="modeSelector"></div>
+      </div>
+      <button class="launch-btn" id="launchRaceBtn">🔥 Launch Race [Enter]</button>
+    </div>
+  </div>
+
+  <!-- ==================== IN-RACE NFS HUD ==================== -->
+  <div id="raceHud">
+    <div class="hud-top-left">
+      <div class="nfs-panel pos-card">
+        <div>
+          <span class="pos-big" id="posVal">1ST</span>
+          <span class="pos-total" id="posTotal">/ 6</span>
+        </div>
+        <div class="lap-block">
+          <div class="lap-val" id="lapVal">LAP 1 / 3</div>
+          <div class="time-val" id="raceTimeVal">TIME 00:00.00</div>
+          <div class="best-val" id="bestLapVal">BEST --:--.--</div>
+        </div>
+      </div>
+
+      <div class="nfs-panel" id="pursuitBarCard">
+        <div class="heat-label" id="pursuitStatus">🚨 HEAT LEVEL 3 • OUTRUN INTERCEPTORS!</div>
+        <div class="best-val" id="pursuitTimer" style="color:#ffd166;margin-top:2px;">EVASION WINDOW: 02:00</div>
+      </div>
+    </div>
+
+    <div class="hud-top-center">
+      <div class="nfs-panel style-score-pill" id="styleScoreVal">STYLE: 0 PTS</div>
+      <div class="nfs-panel" id="comboHud">💨 DRIFT x1 • +0 PTS</div>
+    </div>
+
+    <div id="countdownBanner">3</div>
+
+    <div id="calloutBanner">
+      <div class="callout-main" id="calloutMain">DRIFT KING!</div>
+      <div class="callout-sub" id="calloutSub">+1,500 STYLE BONUS</div>
+    </div>
+
+    <div class="hud-top-right">
+      <canvas id="minimapCanvas" width="170" height="170"></canvas>
+      <div class="quick-toggles">
+        <button class="hud-btn on" id="btnBloom" title="Toggle Neon Bloom">✨ Bloom</button>
+        <button class="hud-btn" id="btnCam" title="Switch Camera (C)">🎥 Cam (C)</button>
+        <button class="hud-btn" id="btnGarage" title="Open 3D Tuner Garage (G)">🔧 Garage (G)</button>
+        <button class="hud-btn on" id="btnMute" title="Toggle Engine & SFX (M)">🔊 Audio (M)</button>
+      </div>
+    </div>
+
+    <div class="nfs-panel hud-bottom-left">
+      <div><span class="key-pill">W A S D</span> / <span class="key-pill">ARROWS</span> Steer, Accelerate &amp; Brake</div>
+      <div><span class="key-pill">SHIFT</span> or <span class="key-pill">B</span> Handbrake Drift • Earn N2O!</div>
+      <div><span class="key-pill">SPACE</span> Fire N2O Nitrous Boost</div>
+      <div><span class="key-pill">C</span> Camera View • <span class="key-pill">G</span> Tuner Garage • <span class="key-pill">M</span> Mute</div>
+    </div>
+
+    <div class="hud-bottom-right">
+      <canvas id="tachCanvas" width="244" height="220"></canvas>
+    </div>
+
+    <!-- Mobile / Tablet Multi-Touch Racing Pedals -->
+    <div id="touchControls">
+      <div class="touch-left-pad">
+        <div class="t-btn" data-key="ArrowLeft">◀<span>LEFT</span></div>
+        <div class="t-btn" data-key="ArrowRight">▶<span>RIGHT</span></div>
+      </div>
+      <div class="touch-right-pad">
+        <div class="t-btn n2o" data-key="Space">🔥<span>N2O</span></div>
+        <div class="t-btn drift" data-key="ShiftLeft">💨<span>DRIFT</span></div>
+        <div class="t-btn gas" data-key="ArrowUp">▲<span>GAS</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== POST-RACE RESULTS OVERLAY ==================== -->
+  <div id="resultsOverlay">
+    <div class="nfs-panel results-box">
+      <div class="res-kicker" id="resModeTag">UNDERGROUND CIRCUIT COMPLETE</div>
+      <div class="res-place" id="resPlace">🏆 1ST PLACE!</div>
+      <div class="res-grid">
+        <div class="res-stat">
+          <div class="res-stat-lbl">Total Time</div>
+          <div class="res-stat-val" id="resTime">01:42.30</div>
+        </div>
+        <div class="res-stat">
+          <div class="res-stat-lbl">Best Lap</div>
+          <div class="res-stat-val" id="resBestLap">00:32.85</div>
+        </div>
+        <div class="res-stat">
+          <div class="res-stat-lbl">Style &amp; Drift Score</div>
+          <div class="res-stat-val" id="resScore" style="color:#ffd166;">12,450 PTS</div>
+        </div>
+        <div class="res-stat">
+          <div class="res-stat-lbl">Top Speed</div>
+          <div class="res-stat-val" id="resTopSpeed" style="color:#00f0ff;">208 MPH</div>
+        </div>
+      </div>
+      <div class="res-actions">
+        <button class="btn-rematch" id="raceAgainBtn">🔄 RACE AGAIN</button>
+        <button class="btn-back-garage" id="backGarageBtn">🔧 TUNER GARAGE</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="three.min.js"></script>
+  <script src="postprocessing.min.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
