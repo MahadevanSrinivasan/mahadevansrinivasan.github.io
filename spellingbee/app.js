@@ -1145,7 +1145,56 @@
     }
   }
 
-  function savePersistedState() {
+  let syncDebounceTimer = null;
+
+  function scheduleServerBackup(extraPayload) {
+    if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
+    syncDebounceTimer = setTimeout(() => {
+      syncServerProgress(extraPayload);
+    }, 1200);
+  }
+
+  async function syncServerProgress(extraPayload) {
+    if (window.location.protocol === 'file:') return;
+    try {
+      const payload = Object.assign({
+        spellingbee: {
+          mastery: state.masteryByAge,
+          score: state.score,
+          streak: state.streak,
+          ageMode: state.ageMode
+        }
+      }, extraPayload || {});
+      const res = await fetch('/api/kids/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const srvSpell = data && data.progress && data.progress.spellingbee;
+      if (!srvSpell) return;
+
+      if (srvSpell.mastery && typeof srvSpell.mastery === 'object') {
+        state.masteryByAge = Object.assign({}, state.masteryByAge, srvSpell.mastery);
+        try {
+          localStorage.setItem(STORAGE_KEYS.mastery, JSON.stringify(state.masteryByAge));
+        } catch (_) {}
+      }
+      if (typeof srvSpell.score === 'number' && srvSpell.score > state.score) {
+        state.score = srvSpell.score;
+        try {
+          localStorage.setItem(STORAGE_KEYS.score, String(state.score));
+        } catch (_) {}
+      }
+      updateTierButtonsUI();
+      updateStatusReadout();
+    } catch (_) {
+      // Silently ignore when running on static GitHub Pages without Chief of Staff backend
+    }
+  }
+
+  function savePersistedState(extraPayload) {
     try {
       const activeProf = getActiveMasteryProfile();
       activeProf.tier = state.tier;
@@ -1157,6 +1206,7 @@
     } catch (_) {
       // Ignore storage write errors
     }
+    scheduleServerBackup(extraPayload);
   }
 
   function applyTheme(theme) {
@@ -1932,6 +1982,8 @@
     bindEvents();
     startRound();
     await loadExternalWordBank();
+    syncServerProgress();
+    setInterval(() => syncServerProgress(), 60000);
   }
 
   if (document.readyState === 'loading') {

@@ -62,6 +62,8 @@ class MathClubApp {
         this.bindEvents();
         this.renderAgeProfile();
         this.updateDashboardStats();
+        this.syncServerProgress();
+        this.backupTimer = setInterval(() => this.syncServerProgress(), 60000);
     }
 
     isCoarsePointerDevice() {
@@ -940,6 +942,7 @@ class MathClubApp {
         try {
             localStorage.setItem("mathclub_adaptive_progress_v1", JSON.stringify(this.adaptiveProgress));
         } catch (e) {}
+        this.scheduleServerBackup();
     }
 
     saveSessionStats(solvedCount, accuracy, maxCombo, points) {
@@ -956,6 +959,60 @@ class MathClubApp {
             localStorage.setItem("mathclub_cards_stats", JSON.stringify(this.stats));
         } catch (e) {}
         this.updateDashboardStats();
+        this.scheduleServerBackup();
+    }
+
+    scheduleServerBackup() {
+        if (this.syncDebounceTimer) clearTimeout(this.syncDebounceTimer);
+        this.syncDebounceTimer = setTimeout(() => {
+            this.syncServerProgress();
+        }, 1200);
+    }
+
+    async syncServerProgress() {
+        if (window.location.protocol === "file:") return;
+        try {
+            const payload = {
+                mathclub: {
+                    adaptive: this.adaptiveProgress || {},
+                    stats: this.stats || {},
+                    stars: (this.stats && this.stats.totalPoints) || 0,
+                    streak: (this.stats && this.stats.bestStreak) || 0,
+                    age: this.activeAgeId
+                }
+            };
+            const res = await fetch("/api/kids/progress", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            const srvMath = data && data.progress && data.progress.mathclub;
+            if (!srvMath) return;
+
+            if (srvMath.adaptive && typeof srvMath.adaptive === "object") {
+                this.adaptiveProgress = Object.assign({}, this.adaptiveProgress, srvMath.adaptive);
+                try {
+                    localStorage.setItem("mathclub_adaptive_progress_v1", JSON.stringify(this.adaptiveProgress));
+                } catch (e) {}
+            }
+            if (srvMath.stats && typeof srvMath.stats === "object") {
+                this.stats.totalSolved = Math.max(this.stats.totalSolved || 0, srvMath.stats.totalSolved || 0);
+                this.stats.totalSessions = Math.max(this.stats.totalSessions || 0, srvMath.stats.totalSessions || 0);
+                this.stats.bestStreak = Math.max(this.stats.bestStreak || 0, srvMath.stats.bestStreak || 0);
+                this.stats.totalPoints = Math.max(this.stats.totalPoints || 0, srvMath.stats.totalPoints || 0);
+                try {
+                    localStorage.setItem("mathclub_cards_stats", JSON.stringify(this.stats));
+                } catch (e) {}
+            }
+            if (!this.gameState.isActive) {
+                this.renderDeckButtons();
+                this.updateDashboardStats();
+            }
+        } catch (e) {
+            // Silently ignore when hosted on static GitHub Pages without local Chief of Staff backend
+        }
     }
 
     updateDashboardStats() {
