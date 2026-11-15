@@ -2449,6 +2449,17 @@
   let tiltAttached = false;
   let tiltEnabled = false;
 
+  const TILT_SENS_PRESETS = [
+    { id: 'std', btnLabel: '📱 Tilt', callout: 'STANDARD (15.5° LOCK)', deadzone: 1.6, maxRange: 15.5, exp: 0.90 },
+    { id: 'high', btnLabel: '📱 Tilt+', callout: 'HIGH SENSITIVITY (11° LOCK)', deadzone: 1.4, maxRange: 11.0, exp: 0.85 },
+    { id: 'low', btnLabel: '📱 Tilt-', callout: 'SMOOTH (20° LOCK)', deadzone: 2.0, maxRange: 20.0, exp: 1.00 }
+  ];
+  let tiltSensIdx = 0;
+  try {
+    const savedSens = parseInt(localStorage.getItem('apex_tilt_sens'), 10);
+    if (savedSens >= 0 && savedSens < TILT_SENS_PRESETS.length) tiltSensIdx = savedSens;
+  } catch (_) {}
+
   const earlyUrlParams = new URLSearchParams(window.location.search);
   const mobileParam = earlyUrlParams.get('mobile');
   const hasCoarsePointer = ('ontouchstart' in window) ||
@@ -2510,18 +2521,16 @@
 
     if (angle === 180) rawTilt = -rawTilt;
 
-    // Deadzone 3.5 degrees, full lock at 30 degrees
-    const deadzone = 3.5;
-    const maxRange = 30;
+    const preset = TILT_SENS_PRESETS[tiltSensIdx] || TILT_SENS_PRESETS[0];
+    const deadzone = preset.deadzone;
+    const maxRange = preset.maxRange;
     if (Math.abs(rawTilt) < deadzone) {
       tiltSteerInput = 0;
     } else {
       const sign = rawTilt > 0 ? 1 : -1;
       const mag = Math.min(1, (Math.abs(rawTilt) - deadzone) / (maxRange - deadzone));
+      const curved = Math.pow(mag, preset.exp);
       // In physics: steerInput > 0 is LEFT, steerInput < 0 is RIGHT
-      // Tilting left (rawTilt < 0) -> turn left -> tiltSteerInput > 0
-      // Tilting right (rawTilt > 0) -> turn right -> tiltSteerInput < 0
-      const curved = Math.pow(mag, 1.35);
       tiltSteerInput = -sign * curved;
     }
   }
@@ -2579,7 +2588,10 @@
     const btnTilt = document.getElementById('btnModeTilt');
     const btnPedals = document.getElementById('btnModePedals');
     if (btnTouch) btnTouch.classList.toggle('active', mode === 'touch');
-    if (btnTilt) btnTilt.classList.toggle('active', mode === 'tilt');
+    if (btnTilt) {
+      btnTilt.classList.toggle('active', mode === 'tilt');
+      btnTilt.textContent = mode === 'tilt' ? (TILT_SENS_PRESETS[tiltSensIdx] || TILT_SENS_PRESETS[0]).btnLabel : '📱 Tilt';
+    }
     if (btnPedals) btnPedals.classList.toggle('active', mode === 'pedals');
 
     const hintEl = document.getElementById('mobileHintText');
@@ -2587,7 +2599,7 @@
       if (mode === 'touch') {
         hintEl.textContent = 'Smart Auto-Gas • Slide L/R Steer • Swipe ↑ N2O • Swipe ↓ Brake • 2nd Finger Drift';
       } else if (mode === 'tilt') {
-        hintEl.textContent = 'Auto-Gas • Tilt Device to Steer • Tap Left Drift • Tap Right N2O';
+        hintEl.textContent = 'Smart Auto-Gas • Tilt to Steer (Tap 📱 Tilt for Sens) • Left Drift • Right N2O';
       } else if (mode === 'pedals') {
         hintEl.textContent = 'Classic Multi-Touch Pedals • ◀ ▶ Steer • GAS • BRAKE • DRIFT • N2O';
       }
@@ -2621,6 +2633,17 @@
       e.stopPropagation();
       e.preventDefault();
       sfx.init();
+      if (mode === 'tilt' && mobileControlActive && mobileControlMode === 'tilt') {
+        tiltSensIdx = (tiltSensIdx + 1) % TILT_SENS_PRESETS.length;
+        const preset = TILT_SENS_PRESETS[tiltSensIdx];
+        try {
+          localStorage.setItem('apex_tilt_sens', String(tiltSensIdx));
+        } catch (_) {}
+        btn.textContent = preset.btnLabel;
+        showCallout('📱 TILT SENSITIVITY', preset.callout);
+        enableTiltSensor(true);
+        return;
+      }
       setMobileMode(mode, true);
     };
     btn.addEventListener('pointerdown', e => e.stopPropagation());
@@ -3563,7 +3586,8 @@
     const spdAbs = Math.abs(playerCar.speed);
     playerCar.smoothedSteer += (steerInput - playerCar.smoothedSteer) * Math.min(1, dt * 11);
 
-    const turnRate = (1.52 + (spec.handling / 100) * 1.18) * (isAutoGasMobile ? 1.22 : 1.0) * (handbrake ? 1.34 : 1.0) * (spdAbs > 3 ? Math.sign(playerCar.speed) : 0);
+    const mobileTurnMult = isAutoGasMobile ? (mobileControlMode === 'tilt' ? 1.32 : 1.22) : 1.0;
+    const turnRate = (1.52 + (spec.handling / 100) * 1.18) * mobileTurnMult * (handbrake ? 1.34 : 1.0) * (spdAbs > 3 ? Math.sign(playerCar.speed) : 0);
     playerCar.heading += playerCar.smoothedSteer * turnRate * dt;
 
     if (isAutoGasMobile) {
@@ -3574,8 +3598,8 @@
       while (dYaw > Math.PI) dYaw -= Math.PI * 2;
       while (dYaw < -Math.PI) dYaw += Math.PI * 2;
 
-      if (Math.abs(steerInput) < 0.06 && !handbrake && Math.abs(dYaw) < 0.45) {
-        playerCar.heading += dYaw * Math.min(1, dt * 1.8);
+      if (Math.abs(steerInput) < 0.03 && !handbrake && Math.abs(dYaw) < 0.45) {
+        playerCar.heading += dYaw * Math.min(1, dt * 1.2);
       }
 
       const latDot = Math.sin(playerCar.heading) * curR.x + Math.cos(playerCar.heading) * curR.z;
