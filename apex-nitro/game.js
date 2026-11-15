@@ -2510,9 +2510,9 @@
 
     if (angle === 180) rawTilt = -rawTilt;
 
-    // Deadzone 2.5 degrees, full lock at 26 degrees
-    const deadzone = 2.5;
-    const maxRange = 26;
+    // Deadzone 3.5 degrees, full lock at 30 degrees
+    const deadzone = 3.5;
+    const maxRange = 30;
     if (Math.abs(rawTilt) < deadzone) {
       tiltSteerInput = 0;
     } else {
@@ -2521,7 +2521,8 @@
       // In physics: steerInput > 0 is LEFT, steerInput < 0 is RIGHT
       // Tilting left (rawTilt < 0) -> turn left -> tiltSteerInput > 0
       // Tilting right (rawTilt > 0) -> turn right -> tiltSteerInput < 0
-      tiltSteerInput = -sign * mag;
+      const curved = Math.pow(mag, 1.35);
+      tiltSteerInput = -sign * curved;
     }
   }
 
@@ -2584,7 +2585,7 @@
     const hintEl = document.getElementById('mobileHintText');
     if (hintEl) {
       if (mode === 'touch') {
-        hintEl.textContent = 'Auto-Gas • Slide L/R Steer • Swipe ↑ N2O • Swipe ↓ Drift';
+        hintEl.textContent = 'Smart Auto-Gas • Slide L/R Steer • Swipe ↑ N2O • Swipe ↓ Brake • 2nd Finger Drift';
       } else if (mode === 'tilt') {
         hintEl.textContent = 'Auto-Gas • Tilt Device to Steer • Tap Left Drift • Tap Right N2O';
       } else if (mode === 'pedals') {
@@ -2683,7 +2684,7 @@
       const clientY = e.clientY;
       let dx = clientX - touchAnchorX;
       const dy = clientY - touchAnchorY;
-      const maxRadius = Math.max(58, Math.min(92, window.innerWidth * 0.14));
+      const maxRadius = Math.max(68, Math.min(108, window.innerWidth * 0.17));
 
       // Floating-leash follow
       const leashLimit = maxRadius * 1.35;
@@ -2695,15 +2696,15 @@
         if (stickBase) stickBase.style.left = `${touchAnchorX}px`;
       }
 
-      // 4px deadzone
-      const deadzone = 4;
+      // 6px deadzone with progressive curve
+      const deadzone = 6;
       if (Math.abs(dx) <= deadzone) {
         touchAnalogSteer = 0;
       } else {
         const effDx = dx > 0 ? dx - deadzone : dx + deadzone;
-        const norm = Math.max(-1, Math.min(1, effDx / (maxRadius - deadzone)));
+        const mag = Math.min(1, Math.abs(effDx) / (maxRadius - deadzone));
         // Drag right (dx > 0) -> turn right -> steerInput < 0
-        touchAnalogSteer = -norm;
+        touchAnalogSteer = -(effDx > 0 ? 1 : -1) * Math.pow(mag, 1.38);
       }
 
       // Vertical swipe detection
@@ -2712,9 +2713,9 @@
         touchSwipeN2oUntil = performance.now() + 950;
         touchAnchorY = clientY;
       }
-      if (dy > 38) {
+      if (dy > 30) {
         touchSwipeBrakeActive = true;
-      } else if (dy < 16) {
+      } else if (dy < 12) {
         touchSwipeBrakeActive = false;
       }
 
@@ -3373,22 +3374,26 @@
     raceElapsed += dt;
     document.getElementById('raceTimeVal').textContent = `TIME ${formatRaceTime(raceElapsed)}`;
 
+    const isAutoGasMobile = mobileControlActive && (mobileControlMode === 'touch' || mobileControlMode === 'tilt');
     let throttle, braking, steerInput, handbrake, nosPressed;
 
-    if (mobileControlActive && (mobileControlMode === 'touch' || mobileControlMode === 'tilt')) {
+    if (isAutoGasMobile) {
       const kbSteer = (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0) - (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0);
       const mobileSteer = mobileControlMode === 'tilt' ? tiltSteerInput : touchAnalogSteer;
       steerInput = Math.max(-1, Math.min(1, kbSteer !== 0 ? kbSteer : mobileSteer));
 
-      const brakeOrDrift = !!(keys['KeyS'] || keys['ArrowDown'] || touchSwipeBrakeActive ||
-        secondaryDriftPointers.size > 0 || tiltLeftPointers.size > 0 ||
-        keys['ShiftLeft'] || keys['ShiftRight'] || keys['KeyB']);
+      const explicitBrake = !!(keys['KeyS'] || keys['ArrowDown'] || touchSwipeBrakeActive);
+      const driftTrigger = !!(keys['ShiftLeft'] || keys['ShiftRight'] || keys['KeyB'] || secondaryDriftPointers.size > 0 || tiltLeftPointers.size > 0);
 
-      if (brakeOrDrift) {
-        if ((keys['ShiftLeft'] || keys['ShiftRight'] || keys['KeyB']) || (playerCar.speed > 18 && Math.abs(steerInput) > 0.12)) {
+      if (explicitBrake) {
+        handbrake = false;
+        braking = 1;
+        throttle = 0;
+      } else if (driftTrigger) {
+        if (playerCar.speed > 26 && Math.abs(steerInput) > 0.20) {
           handbrake = true;
-          braking = 0;
-          throttle = 1;
+          throttle = 0.35;
+          braking = 0.45;
         } else {
           handbrake = false;
           braking = 1;
@@ -3506,15 +3511,47 @@
     const powerBandMult = manualTransmission
       ? (playerCar.rpm > 8550 ? 0.45 : playerCar.rpm > 4200 ? 1.12 : 0.86)
       : 1.0;
-    const maxSpd = spec.maxSpdPhys * (nosFiring ? 1.32 : 1.0) * (inDraft ? 1.14 : 1.0);
+    const maxSpd = isAutoGasMobile ? spec.maxSpdPhys * (nosFiring ? 1.12 : 0.82) : spec.maxSpdPhys * (nosFiring ? 1.32 : 1.0) * (inDraft ? 1.14 : 1.0);
     const acc = spec.accel * (nosFiring ? 1.75 : 1.0) * (inDraft ? 1.12 : 1.0) * powerBandMult * (playerCar.shiftDelay > 0 ? 0.3 : 1.0);
 
-    if (throttle > 0) {
-      playerCar.speed += acc * dt;
-    } else if (braking > 0) {
-      playerCar.speed -= (playerCar.speed > 2 ? 78 : 34) * dt;
+    let autoApexBraking = false;
+    if (isAutoGasMobile) {
+      const s0 = playerCar.segIdx;
+      const curveLook = Math.max(
+        Math.abs(trackData.curvatures[s0]),
+        Math.abs(trackData.curvatures[(s0 + 6) % FRAMES_COUNT]),
+        Math.abs(trackData.curvatures[(s0 + 12) % FRAMES_COUNT]) * 0.95,
+        Math.abs(trackData.curvatures[(s0 + 18) % FRAMES_COUNT]) * 0.85,
+        Math.abs(trackData.curvatures[(s0 + 24) % FRAMES_COUNT]) * 0.72
+      );
+      const cornerSeverity = Math.max(0, Math.min(1, (curveLook - 0.04) / 0.14));
+      const autoCruiseRatio = Math.max(0.42, 0.76 - cornerSeverity * 0.28 - Math.abs(steerInput) * 0.10);
+      const autoTargetSpd = spec.maxSpdPhys * autoCruiseRatio * (inDraft ? 1.08 : 1.0);
+
+      if (nosFiring) {
+        playerCar.speed += acc * 0.92 * dt;
+      } else if (braking > 0 && !handbrake) {
+        playerCar.speed -= (playerCar.speed > 2 ? 84 : 34) * dt;
+      } else if (handbrake) {
+        if (playerCar.speed > autoTargetSpd * 0.92) playerCar.speed -= 34 * dt;
+        else playerCar.speed += acc * 0.45 * dt;
+      } else if (throttle > 0) {
+        if (playerCar.speed < autoTargetSpd) {
+          playerCar.speed += acc * 0.74 * dt;
+        } else {
+          const overSpd = playerCar.speed - autoTargetSpd;
+          playerCar.speed -= Math.min(68, 14 + overSpd * 2.8) * dt;
+          if (overSpd > 7) autoApexBraking = true;
+        }
+      }
     } else {
-      playerCar.speed *= Math.pow(0.45, dt);
+      if (throttle > 0) {
+        playerCar.speed += acc * dt;
+      } else if (braking > 0) {
+        playerCar.speed -= (playerCar.speed > 2 ? 78 : 34) * dt;
+      } else {
+        playerCar.speed *= Math.pow(0.45, dt);
+      }
     }
     if (manualTransmission && curGear !== 'R' && curGear < 6) {
       const capPhys = (gearMax * 1.03) / 1.95;
@@ -3526,13 +3563,37 @@
     const spdAbs = Math.abs(playerCar.speed);
     playerCar.smoothedSteer += (steerInput - playerCar.smoothedSteer) * Math.min(1, dt * 11);
 
-    const turnRate = (1.52 + (spec.handling / 100) * 1.18) * (handbrake ? 1.34 : 1.0) * (spdAbs > 3 ? Math.sign(playerCar.speed) : 0);
+    const turnRate = (1.52 + (spec.handling / 100) * 1.18) * (isAutoGasMobile ? 1.22 : 1.0) * (handbrake ? 1.34 : 1.0) * (spdAbs > 3 ? Math.sign(playerCar.speed) : 0);
     playerCar.heading += playerCar.smoothedSteer * turnRate * dt;
+
+    if (isAutoGasMobile) {
+      const curT = trackData.tangents[playerCar.segIdx];
+      const curR = trackData.rights[playerCar.segIdx];
+      const tYaw = Math.atan2(curT.x, curT.z);
+      let dYaw = tYaw - playerCar.heading;
+      while (dYaw > Math.PI) dYaw -= Math.PI * 2;
+      while (dYaw < -Math.PI) dYaw += Math.PI * 2;
+
+      if (Math.abs(steerInput) < 0.06 && !handbrake && Math.abs(dYaw) < 0.45) {
+        playerCar.heading += dYaw * Math.min(1, dt * 1.8);
+      }
+
+      const latDot = Math.sin(playerCar.heading) * curR.x + Math.cos(playerCar.heading) * curR.z;
+      if (Math.abs(playerCar.lat) > 7.8 && playerCar.lat * latDot > 0) {
+        const wallProx = Math.min(1, (Math.abs(playerCar.lat) - 7.8) / (MAX_LAT - 7.8));
+        playerCar.heading += dYaw * Math.min(1, dt * (2.2 + wallProx * 5.5));
+        let dVelYaw = tYaw - playerCar.velHeading;
+        while (dVelYaw > Math.PI) dVelYaw -= Math.PI * 2;
+        while (dVelYaw < -Math.PI) dVelYaw += Math.PI * 2;
+        playerCar.velHeading += dVelYaw * Math.min(1, dt * (2.0 + wallProx * 5.0));
+      }
+    }
+
     playerCar.steerAngle = playerCar.smoothedSteer;
 
     // Velocity Vector lags Body Yaw during weight transfer (handbrake / trail-braking / high-speed cornering)
     const driftRequested = handbrake || (Math.abs(steerInput) > 0 && spdAbs > 42 && (braking > 0 || throttle === 0));
-    const latGripRate = driftRequested ? 2.6 : (isDriftMode ? 6.5 : 8.2);
+    const latGripRate = isAutoGasMobile ? (driftRequested ? 4.4 : (isDriftMode ? 7.8 : 10.5)) : (driftRequested ? 2.6 : (isDriftMode ? 6.5 : 8.2));
     let slipDiff = playerCar.heading - playerCar.velHeading;
     while (slipDiff > Math.PI) slipDiff -= Math.PI * 2;
     while (slipDiff < -Math.PI) slipDiff += Math.PI * 2;
@@ -3542,7 +3603,7 @@
     let clampedSlip = playerCar.heading - playerCar.velHeading;
     while (clampedSlip > Math.PI) clampedSlip -= Math.PI * 2;
     while (clampedSlip < -Math.PI) clampedSlip += Math.PI * 2;
-    const maxSlip = driftRequested ? 0.62 : 0.28;
+    const maxSlip = isAutoGasMobile ? (driftRequested ? 0.46 : 0.18) : (driftRequested ? 0.62 : 0.28);
     if (Math.abs(clampedSlip) > maxSlip) {
       clampedSlip = Math.sign(clampedSlip) * maxSlip;
       playerCar.velHeading = playerCar.heading - clampedSlip;
@@ -3556,7 +3617,7 @@
     playerCar.loadPitch += (targetLoadPitch - playerCar.loadPitch) * Math.min(1, dt * 10);
     playerCar.loadRoll += (targetLoadRoll - playerCar.loadRoll) * Math.min(1, dt * 10);
     playerCar.meshObj.chassisGroup.rotation.z = playerCar.loadRoll;
-    playerCar.meshObj.tailMat.color.setHex(braking || handbrake ? 0xff7788 : 0xff2244);
+    playerCar.meshObj.tailMat.color.setHex(braking || handbrake || autoApexBraking ? 0xff7788 : 0xff2244);
 
     if (braking > 0 && spdAbs > 28) playerCar.brakeHeat = Math.min(1, playerCar.brakeHeat + dt * 2.4);
     else playerCar.brakeHeat = Math.max(0, playerCar.brakeHeat - dt * 1.1);
@@ -3670,7 +3731,8 @@
       const curveAhead = Math.abs(trackData.curvatures[lookSeg]);
       const gapToPlayer = ai.totalProgress - playerCar.totalProgress;
       const rbFactor = gapToPlayer > 0.14 ? 0.9 : gapToPlayer < -0.14 ? 1.1 : 1.0;
-      const aiMaxSpd = ai.spec.maxSpdPhys * ai.aiSkill * rbFactor * (curveAhead > 0.15 ? 0.72 : 0.96);
+      const aiCurveFactor = (isAutoGasMobile && curveAhead > 0.14) ? 0.68 : (curveAhead > 0.15 ? 0.72 : 0.96);
+      const aiMaxSpd = ai.spec.maxSpdPhys * ai.aiSkill * rbFactor * aiCurveFactor * (isAutoGasMobile ? 0.79 : 1.0);
 
       if (ai.speed < aiMaxSpd) ai.speed += ai.spec.accel * 0.72 * dt;
       else ai.speed *= Math.pow(0.55, dt);
