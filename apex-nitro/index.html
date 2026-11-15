@@ -600,6 +600,7 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+      z-index: 3;
     }
     .pos-card {
       padding: 10px 16px;
@@ -735,6 +736,7 @@
       flex-direction: column;
       align-items: flex-end;
       gap: 7px;
+      z-index: 4;
     }
     #minimapCanvas {
       width: 170px;
@@ -798,6 +800,231 @@
       filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.75));
     }
 
+    /* ==================== MOBILE GESTURE & MODE HUD ==================== */
+    #mobileGestureLayer {
+      position: fixed;
+      inset: 0;
+      pointer-events: auto;
+      touch-action: none;
+      z-index: 1;
+      display: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body.in-race.mobile-active:not(.mobile-mode-pedals) #mobileGestureLayer {
+      display: block;
+    }
+
+    /* Floating Thumbstick Indicator (Touch Mode) */
+    #touchStickBase {
+      position: absolute;
+      width: 110px;
+      height: 110px;
+      margin-left: -55px;
+      margin-top: -55px;
+      border-radius: 50%;
+      border: 2px solid rgba(0, 240, 255, 0.65);
+      background: radial-gradient(circle, rgba(0, 240, 255, 0.22) 0%, rgba(6, 12, 28, 0.52) 70%);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.38);
+      pointer-events: none;
+      display: none;
+      z-index: 2;
+    }
+    #touchStickKnob {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 48px;
+      height: 48px;
+      margin-left: -24px;
+      margin-top: -24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #00f0ff, #3b82f6);
+      border: 2px solid #e0f2fe;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.85);
+      pointer-events: none;
+    }
+
+    /* Split-Pedal Zones for Gyro Tilt Mode */
+    #tiltZoneLeft, #tiltZoneRight {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 50%;
+      pointer-events: none;
+      display: none;
+      transition: background 0.12s ease, opacity 0.12s ease;
+      opacity: 0.35;
+    }
+    #tiltZoneLeft {
+      left: 0;
+      border-right: 1px dashed rgba(255, 255, 255, 0.15);
+      background: linear-gradient(to top, rgba(239, 68, 68, 0.15) 0%, transparent 45%);
+    }
+    #tiltZoneRight {
+      right: 0;
+      border-left: 1px dashed rgba(255, 255, 255, 0.15);
+      background: linear-gradient(to top, rgba(0, 240, 255, 0.15) 0%, transparent 45%);
+    }
+    body.in-race.mobile-active.mobile-mode-tilt #tiltZoneLeft,
+    body.in-race.mobile-active.mobile-mode-tilt #tiltZoneRight {
+      display: block;
+    }
+    #tiltZoneLeft.active {
+      opacity: 0.95;
+      background: linear-gradient(to top, rgba(239, 68, 68, 0.45) 0%, transparent 60%);
+    }
+    #tiltZoneRight.active {
+      opacity: 0.95;
+      background: linear-gradient(to top, rgba(0, 240, 255, 0.45) 0%, transparent 60%);
+    }
+    .tilt-pedal-label {
+      position: absolute;
+      bottom: 24px;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+    }
+    #tiltZoneLeft .tilt-pedal-label {
+      left: 24px;
+      color: #fca5a5;
+    }
+    #tiltZoneRight .tilt-pedal-label {
+      right: 24px;
+      color: #7dd3fc;
+    }
+
+    /* Mobile 3-Way Mode Pill & Live Steer Gauge Dock */
+    #mobileModeHud {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 28;
+      pointer-events: none;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body.in-race.mobile-active #mobileModeHud {
+      display: flex;
+    }
+    /* In pedals mode, dock near top-center below mirror/HUD so bottom pads are clear */
+    body.in-race.mobile-active.mobile-mode-pedals #mobileModeHud {
+      bottom: auto;
+      top: 118px;
+    }
+    @media (max-width: 720px) {
+      body.in-race.mobile-active.mobile-mode-pedals #mobileModeHud {
+        top: 50px;
+      }
+    }
+    body.in-race.mobile-active.mirror-off.mobile-mode-pedals #mobileModeHud {
+      top: 50px;
+    }
+
+    .mobile-mode-pill-bar {
+      display: flex;
+      gap: 6px;
+      background: rgba(6, 11, 24, 0.85);
+      padding: 4px 6px;
+      border-radius: 12px;
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      pointer-events: auto;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+    }
+    .mobile-mode-btn {
+      background: rgba(255, 255, 255, 0.06);
+      color: #94a3b8;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 5px 11px;
+      font-size: 11.5px;
+      font-weight: 800;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.12s ease;
+    }
+    .mobile-mode-btn:hover {
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+    .mobile-mode-btn.active {
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.32), rgba(59, 130, 246, 0.32));
+      border-color: var(--nfs-cyan);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.55);
+    }
+
+    /* Live Steering Gauge Bar */
+    #steerGaugeWrap {
+      width: 140px;
+      height: 6px;
+      background: rgba(15, 23, 42, 0.85);
+      border-radius: 4px;
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+    }
+    body.mobile-mode-pedals #steerGaugeWrap {
+      display: none;
+    }
+    #steerGaugeCenter {
+      position: absolute;
+      left: 50%;
+      top: -2px;
+      width: 2px;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.55);
+      transform: translateX(-50%);
+    }
+    #steerGaugeDot {
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--nfs-cyan);
+      box-shadow: 0 0 10px var(--nfs-cyan);
+      transform: translateX(-50%);
+      transition: left 0.04s ease-out;
+    }
+
+    /* 1-Line Dynamic Control Hint */
+    #mobileHintText {
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #cbd5e1;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+
+    /* Quick N2O Button in Touch Mode */
+    #touchQuickN2oBtn {
+      position: fixed;
+      bottom: 20px;
+      left: 16px;
+      z-index: 28;
+      pointer-events: auto;
+      display: none;
+      transition: left 0.15s ease;
+    }
+    body.in-race.mobile-active.mobile-mode-touch #touchQuickN2oBtn {
+      display: flex;
+    }
+    body.in-race.mobile-active.mobile-mode-touch.manual-trans #touchQuickN2oBtn {
+      left: 80px;
+    }
+
     /* ==================== MOBILE / TOUCH CONTROLS ==================== */
     #touchControls {
       position: fixed;
@@ -806,7 +1033,16 @@
       z-index: 26;
       display: none;
     }
-    body.in-race.touch-enabled #touchControls { display: block; }
+    body.in-race.mobile-active.mobile-mode-pedals #touchControls,
+    body.in-race.mobile-active.manual-trans #touchControls {
+      display: block;
+    }
+    body.in-race.mobile-active:not(.mobile-mode-pedals) .touch-left-pad > .t-btn:not(.shift-btn) {
+      display: none !important;
+    }
+    body.in-race.mobile-active:not(.mobile-mode-pedals) .touch-right-pad {
+      display: none !important;
+    }
     .touch-left-pad {
       position: absolute;
       bottom: 18px;
@@ -954,13 +1190,15 @@
 
     /* Responsive Breakpoints */
     @media (pointer: coarse), (max-width: 900px) {
-      body.in-race #touchControls { display: block; }
       .hud-bottom-left { display: none; }
       .hud-bottom-right {
-        bottom: 106px;
+        bottom: 16px;
         right: 10px;
         transform: scale(0.68);
         transform-origin: bottom right;
+      }
+      body.mobile-mode-pedals .hud-bottom-right {
+        bottom: 106px;
       }
       #minimapCanvas { width: 112px; height: 112px; }
       .hud-top-left, .hud-top-right { transform: scale(0.84); }
@@ -1153,6 +1391,32 @@
 
   <!-- ==================== IN-RACE NFS HUD ==================== -->
   <div id="raceHud">
+    <!-- 1. Full-Screen Mobile Touch / Tilt Gesture Layer (Must be FIRST child inside #raceHud) -->
+    <div id="mobileGestureLayer">
+      <div id="touchStickBase">
+        <div id="touchStickKnob"></div>
+      </div>
+      <div id="tiltZoneLeft"><div class="tilt-pedal-label">🛑 DRIFT / BRAKE</div></div>
+      <div id="tiltZoneRight"><div class="tilt-pedal-label">🔥 N2O NITRO</div></div>
+    </div>
+
+    <!-- 2. 3-Way Mobile Mode Pill Bar, Live Steering Gauge & Control Hint Bar -->
+    <div id="mobileModeHud">
+      <div class="mobile-mode-pill-bar">
+        <button class="mobile-mode-btn" id="btnModeTouch" type="button">👆 Touch</button>
+        <button class="mobile-mode-btn" id="btnModeTilt" type="button">📱 Tilt</button>
+        <button class="mobile-mode-btn" id="btnModePedals" type="button">🎮 Pedals</button>
+      </div>
+      <div id="steerGaugeWrap">
+        <div id="steerGaugeCenter"></div>
+        <div id="steerGaugeDot"></div>
+      </div>
+      <div id="mobileHintText">Auto-Gas • Slide L/R Steer • Swipe ↑ N2O • Swipe ↓ Drift</div>
+    </div>
+
+    <!-- 3. One-Thumb Quick N2O Boost Button (Touch Mode) -->
+    <button class="t-btn n2o" id="touchQuickN2oBtn" type="button">🔥<span>N2O</span></button>
+
     <div id="rearMirrorFrame">
       <div id="rearMirrorTag">REAR VIEW</div>
     </div>

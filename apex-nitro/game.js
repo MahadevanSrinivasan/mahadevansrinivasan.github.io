@@ -2245,6 +2245,10 @@
   function launchRace() {
     sfx.init();
     setBodyScreen('in-race');
+    syncMobileUiState();
+    if (mobileControlActive && mobileControlMode === 'tilt' && !tiltAttached) {
+      enableTiltSensor(false);
+    }
     document.getElementById('resultsOverlay').classList.remove('active');
     showroomGroup.visible = false;
     raceWorldGroup.visible = true;
@@ -2426,9 +2430,359 @@
     keys[e.code] = false;
   });
 
-  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-    document.body.classList.add('touch-enabled');
+  // ===========================================================================
+  // 3-WAY NATIVE MOBILE CONTROLS (TOUCH, TILT, PEDALS) + URL OVERRIDES
+  // ===========================================================================
+  let mobileControlActive = false;
+  let mobileControlMode = 'touch'; // 'touch' | 'tilt' | 'pedals'
+  let tiltSteerInput = 0;
+  let touchAnalogSteer = 0;
+  let primaryPointerId = null;
+  let touchAnchorX = 0;
+  let touchAnchorY = 0;
+  let touchSwipeBrakeActive = false;
+  let touchSwipeN2oUntil = 0;
+  let quickN2oHeld = false;
+  const secondaryDriftPointers = new Set();
+  const tiltLeftPointers = new Set();
+  const tiltRightPointers = new Set();
+  let tiltAttached = false;
+  let tiltEnabled = false;
+
+  const earlyUrlParams = new URLSearchParams(window.location.search);
+  const mobileParam = earlyUrlParams.get('mobile');
+  const hasCoarsePointer = ('ontouchstart' in window) ||
+    (navigator.maxTouchPoints > 0) ||
+    !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+
+  if (mobileParam === 'touch' || mobileParam === 'tilt' || mobileParam === 'pedals') {
+    mobileControlActive = true;
+    mobileControlMode = mobileParam;
+  } else if (mobileParam === 'off' || mobileParam === '0' || mobileParam === 'false') {
+    mobileControlActive = false;
+  } else if (hasCoarsePointer) {
+    mobileControlActive = true;
+    let savedMode = null;
+    try {
+      savedMode = localStorage.getItem('apex_mobile_mode');
+    } catch (_) {}
+    if (savedMode === 'touch' || savedMode === 'tilt' || savedMode === 'pedals') {
+      mobileControlMode = savedMode;
+    } else {
+      mobileControlMode = 'touch';
+    }
+  } else {
+    mobileControlActive = false;
   }
+
+  function clearMobileHeldStates() {
+    primaryPointerId = null;
+    touchAnalogSteer = 0;
+    touchSwipeBrakeActive = false;
+    touchSwipeN2oUntil = 0;
+    secondaryDriftPointers.clear();
+    tiltLeftPointers.clear();
+    tiltRightPointers.clear();
+    quickN2oHeld = false;
+    tiltSteerInput = 0;
+
+    const stickBase = document.getElementById('touchStickBase');
+    if (stickBase) stickBase.style.display = 'none';
+    const zLeft = document.getElementById('tiltZoneLeft');
+    if (zLeft) zLeft.classList.remove('active');
+    const zRight = document.getElementById('tiltZoneRight');
+    if (zRight) zRight.classList.remove('active');
+    const btnQuickN2o = document.getElementById('touchQuickN2oBtn');
+    if (btnQuickN2o) btnQuickN2o.classList.remove('pressed');
+  }
+
+  function onDeviceOrientation(e) {
+    if (!tiltEnabled || !mobileControlActive || mobileControlMode !== 'tilt') return;
+    const angle = (screen.orientation && typeof screen.orientation.angle === 'number')
+      ? screen.orientation.angle
+      : (window.orientation || 0);
+
+    let rawTilt = (angle === 90)
+      ? (e.beta || 0)
+      : (angle === -90 || angle === 270)
+        ? -(e.beta || 0)
+        : (e.gamma || 0);
+
+    if (angle === 180) rawTilt = -rawTilt;
+
+    // Deadzone 2.5 degrees, full lock at 26 degrees
+    const deadzone = 2.5;
+    const maxRange = 26;
+    if (Math.abs(rawTilt) < deadzone) {
+      tiltSteerInput = 0;
+    } else {
+      const sign = rawTilt > 0 ? 1 : -1;
+      const mag = Math.min(1, (Math.abs(rawTilt) - deadzone) / (maxRange - deadzone));
+      // In physics: steerInput > 0 is LEFT, steerInput < 0 is RIGHT
+      // Tilting left (rawTilt < 0) -> turn left -> tiltSteerInput > 0
+      // Tilting right (rawTilt > 0) -> turn right -> tiltSteerInput < 0
+      tiltSteerInput = -sign * mag;
+    }
+  }
+
+  async function enableTiltSensor(fromUserGesture) {
+    tiltEnabled = true;
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      if (fromUserGesture) {
+        try {
+          const res = await DeviceOrientationEvent.requestPermission();
+          if (res !== 'granted') {
+            showCallout('TILT BLOCKED', 'Switched to Touch Steer');
+            setMobileMode('touch', false);
+            return;
+          }
+        } catch (_) {
+          showCallout('TILT BLOCKED', 'Switched to Touch Steer');
+          setMobileMode('touch', false);
+          return;
+        }
+      }
+    }
+
+    if (!tiltAttached) {
+      window.addEventListener('deviceorientation', onDeviceOrientation, true);
+      tiltAttached = true;
+    }
+  }
+
+  function disableTiltSensor() {
+    tiltEnabled = false;
+    tiltSteerInput = 0;
+    if (tiltAttached) {
+      window.removeEventListener('deviceorientation', onDeviceOrientation, true);
+      tiltAttached = false;
+    }
+  }
+
+  function setMobileMode(mode, fromUserGesture = false) {
+    if (mode !== 'touch' && mode !== 'tilt' && mode !== 'pedals') {
+      mode = 'touch';
+    }
+    mobileControlMode = mode;
+    clearMobileHeldStates();
+
+    if (mobileControlActive) {
+      document.body.classList.add('mobile-active');
+      document.body.classList.remove('mobile-mode-touch', 'mobile-mode-tilt', 'mobile-mode-pedals');
+      document.body.classList.add(`mobile-mode-${mode}`);
+    } else {
+      document.body.classList.remove('mobile-active', 'mobile-mode-touch', 'mobile-mode-tilt', 'mobile-mode-pedals');
+    }
+
+    const btnTouch = document.getElementById('btnModeTouch');
+    const btnTilt = document.getElementById('btnModeTilt');
+    const btnPedals = document.getElementById('btnModePedals');
+    if (btnTouch) btnTouch.classList.toggle('active', mode === 'touch');
+    if (btnTilt) btnTilt.classList.toggle('active', mode === 'tilt');
+    if (btnPedals) btnPedals.classList.toggle('active', mode === 'pedals');
+
+    const hintEl = document.getElementById('mobileHintText');
+    if (hintEl) {
+      if (mode === 'touch') {
+        hintEl.textContent = 'Auto-Gas • Slide L/R Steer • Swipe ↑ N2O • Swipe ↓ Drift';
+      } else if (mode === 'tilt') {
+        hintEl.textContent = 'Auto-Gas • Tilt Device to Steer • Tap Left Drift • Tap Right N2O';
+      } else if (mode === 'pedals') {
+        hintEl.textContent = 'Classic Multi-Touch Pedals • ◀ ▶ Steer • GAS • BRAKE • DRIFT • N2O';
+      }
+    }
+
+    if (mobileControlActive) {
+      try {
+        localStorage.setItem('apex_mobile_mode', mode);
+      } catch (_) {}
+    }
+
+    if (mode === 'tilt' && mobileControlActive) {
+      enableTiltSensor(fromUserGesture);
+    } else {
+      disableTiltSensor();
+    }
+  }
+
+  function syncMobileUiState() {
+    setMobileMode(mobileControlMode, false);
+  }
+
+  // Bind mode toggle buttons
+  const btnModeTouch = document.getElementById('btnModeTouch');
+  const btnModeTilt = document.getElementById('btnModeTilt');
+  const btnModePedals = document.getElementById('btnModePedals');
+
+  function bindMobileModeBtn(btn, mode) {
+    if (!btn) return;
+    const onActivate = e => {
+      e.stopPropagation();
+      e.preventDefault();
+      sfx.init();
+      setMobileMode(mode, true);
+    };
+    btn.addEventListener('pointerdown', e => e.stopPropagation());
+    btn.addEventListener('click', onActivate);
+  }
+  bindMobileModeBtn(btnModeTouch, 'touch');
+  bindMobileModeBtn(btnModeTilt, 'tilt');
+  bindMobileModeBtn(btnModePedals, 'pedals');
+
+  // Gesture layer pointer event handlers
+  const gestureLayer = document.getElementById('mobileGestureLayer');
+
+  function onGesturePointerDown(e) {
+    e.preventDefault();
+    sfx.init();
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+
+    if (mobileControlMode === 'touch') {
+      if (primaryPointerId === null) {
+        primaryPointerId = e.pointerId;
+        touchAnchorX = clientX;
+        touchAnchorY = clientY;
+        touchAnalogSteer = 0;
+        touchSwipeBrakeActive = false;
+        const stickBase = document.getElementById('touchStickBase');
+        const stickKnob = document.getElementById('touchStickKnob');
+        if (stickBase && stickKnob) {
+          stickBase.style.left = `${clientX}px`;
+          stickBase.style.top = `${clientY}px`;
+          stickBase.style.display = 'block';
+          stickKnob.style.transform = 'translate(0px, 0px)';
+        }
+        try {
+          if (gestureLayer && gestureLayer.setPointerCapture) {
+            gestureLayer.setPointerCapture(e.pointerId);
+          }
+        } catch (_) {}
+      } else {
+        // Second finger down during touch mode holds Drift/Brake
+        secondaryDriftPointers.add(e.pointerId);
+      }
+    } else if (mobileControlMode === 'tilt') {
+      const isLeft = clientX < window.innerWidth * 0.5;
+      if (isLeft) {
+        tiltLeftPointers.add(e.pointerId);
+        const zLeft = document.getElementById('tiltZoneLeft');
+        if (zLeft) zLeft.classList.add('active');
+      } else {
+        tiltRightPointers.add(e.pointerId);
+        const zRight = document.getElementById('tiltZoneRight');
+        if (zRight) zRight.classList.add('active');
+      }
+    }
+  }
+
+  function onGesturePointerMove(e) {
+    if (mobileControlMode === 'touch' && e.pointerId === primaryPointerId) {
+      e.preventDefault();
+      const clientX = e.clientX;
+      const clientY = e.clientY;
+      let dx = clientX - touchAnchorX;
+      const dy = clientY - touchAnchorY;
+      const maxRadius = Math.max(58, Math.min(92, window.innerWidth * 0.14));
+
+      // Floating-leash follow
+      const leashLimit = maxRadius * 1.35;
+      if (Math.abs(dx) > leashLimit) {
+        const excess = dx > 0 ? dx - leashLimit : dx + leashLimit;
+        touchAnchorX += excess;
+        dx = clientX - touchAnchorX;
+        const stickBase = document.getElementById('touchStickBase');
+        if (stickBase) stickBase.style.left = `${touchAnchorX}px`;
+      }
+
+      // 4px deadzone
+      const deadzone = 4;
+      if (Math.abs(dx) <= deadzone) {
+        touchAnalogSteer = 0;
+      } else {
+        const effDx = dx > 0 ? dx - deadzone : dx + deadzone;
+        const norm = Math.max(-1, Math.min(1, effDx / (maxRadius - deadzone)));
+        // Drag right (dx > 0) -> turn right -> steerInput < 0
+        touchAnalogSteer = -norm;
+      }
+
+      // Vertical swipe detection
+      if (dy < -42) {
+        // Swipe Up: 950ms nitro boost
+        touchSwipeN2oUntil = performance.now() + 950;
+        touchAnchorY = clientY;
+      }
+      if (dy > 38) {
+        touchSwipeBrakeActive = true;
+      } else if (dy < 16) {
+        touchSwipeBrakeActive = false;
+      }
+
+      const stickKnob = document.getElementById('touchStickKnob');
+      if (stickKnob) {
+        const clampedX = Math.max(-maxRadius, Math.min(maxRadius, dx));
+        const clampedY = Math.max(-maxRadius, Math.min(maxRadius, dy));
+        stickKnob.style.transform = `translate(${clampedX}px, ${clampedY}px)`;
+      }
+    }
+  }
+
+  function onGesturePointerEnd(e) {
+    if (mobileControlMode === 'touch') {
+      if (e.pointerId === primaryPointerId) {
+        primaryPointerId = null;
+        touchAnalogSteer = 0;
+        touchSwipeBrakeActive = false;
+        const stickBase = document.getElementById('touchStickBase');
+        if (stickBase) stickBase.style.display = 'none';
+      }
+      secondaryDriftPointers.delete(e.pointerId);
+    } else if (mobileControlMode === 'tilt') {
+      tiltLeftPointers.delete(e.pointerId);
+      tiltRightPointers.delete(e.pointerId);
+      if (tiltLeftPointers.size === 0) {
+        const zLeft = document.getElementById('tiltZoneLeft');
+        if (zLeft) zLeft.classList.remove('active');
+      }
+      if (tiltRightPointers.size === 0) {
+        const zRight = document.getElementById('tiltZoneRight');
+        if (zRight) zRight.classList.remove('active');
+      }
+    }
+  }
+
+  if (gestureLayer) {
+    gestureLayer.addEventListener('pointerdown', onGesturePointerDown, { passive: false });
+    gestureLayer.addEventListener('pointermove', onGesturePointerMove, { passive: false });
+    gestureLayer.addEventListener('pointerup', onGesturePointerEnd, { passive: false });
+    gestureLayer.addEventListener('pointercancel', onGesturePointerEnd, { passive: false });
+  }
+  window.addEventListener('pointerup', onGesturePointerEnd);
+  window.addEventListener('pointercancel', onGesturePointerEnd);
+  window.addEventListener('blur', clearMobileHeldStates);
+
+  // Quick N2O button (Touch mode)
+  const btnQuickN2o = document.getElementById('touchQuickN2oBtn');
+  if (btnQuickN2o) {
+    const pressQuickN2o = e => {
+      e.stopPropagation();
+      e.preventDefault();
+      sfx.init();
+      quickN2oHeld = true;
+      btnQuickN2o.classList.add('pressed');
+    };
+    const releaseQuickN2o = e => {
+      quickN2oHeld = false;
+      btnQuickN2o.classList.remove('pressed');
+    };
+    btnQuickN2o.addEventListener('pointerdown', pressQuickN2o);
+    btnQuickN2o.addEventListener('pointerup', releaseQuickN2o);
+    btnQuickN2o.addEventListener('pointercancel', releaseQuickN2o);
+    btnQuickN2o.addEventListener('pointerleave', releaseQuickN2o);
+  }
+
+  // Initial mobile mode synchronization
+  setMobileMode(mobileControlMode, false);
 
   document.querySelectorAll('#touchControls .t-btn[data-key]').forEach(btn => {
     const code = btn.getAttribute('data-key');
@@ -2453,6 +2807,10 @@
     btn.addEventListener('mousedown', press);
     btn.addEventListener('mouseup', release);
     btn.addEventListener('mouseleave', release);
+    btn.addEventListener('pointerdown', press);
+    btn.addEventListener('pointerup', release);
+    btn.addEventListener('pointercancel', release);
+    btn.addEventListener('pointerleave', release);
   });
 
   function toggleBloom() {
@@ -2500,8 +2858,15 @@
     document.getElementById('btnTitleAudio').classList.toggle('on', !sfx.muted);
   }
 
+  function onRaceLaunchTriggeredByUser() {
+    if (mobileControlActive && mobileControlMode === 'tilt') {
+      enableTiltSensor(true);
+    }
+  }
+
   // Title, Garage & HUD Button Bindings
   document.getElementById('btnTitleQuickRace').addEventListener('click', () => {
+    onRaceLaunchTriggeredByUser();
     selectedTrackIdx = 0;
     selectedModeIdx = 0;
     launchRace();
@@ -2511,11 +2876,13 @@
     enterGarage();
   });
   document.getElementById('btnTitlePursuit').addEventListener('click', () => {
+    onRaceLaunchTriggeredByUser();
     selectedTrackIdx = 0;
     selectedModeIdx = 2;
     launchRace();
   });
   document.getElementById('btnTitleDrift').addEventListener('click', () => {
+    onRaceLaunchTriggeredByUser();
     selectedTrackIdx = 1;
     selectedModeIdx = 1;
     launchRace();
@@ -2524,8 +2891,14 @@
   document.getElementById('btnTitleAudio').addEventListener('click', toggleAudioMute);
   document.getElementById('btnBackTitle').addEventListener('click', enterTitleScreen);
 
-  document.getElementById('launchRaceBtn').addEventListener('click', launchRace);
-  document.getElementById('raceAgainBtn').addEventListener('click', launchRace);
+  document.getElementById('launchRaceBtn').addEventListener('click', () => {
+    onRaceLaunchTriggeredByUser();
+    launchRace();
+  });
+  document.getElementById('raceAgainBtn').addEventListener('click', () => {
+    onRaceLaunchTriggeredByUser();
+    launchRace();
+  });
   document.getElementById('backGarageBtn').addEventListener('click', enterGarage);
   document.getElementById('btnGarage').addEventListener('click', enterGarage);
   document.getElementById('btnCam').addEventListener('click', cycleCamera);
@@ -2907,9 +3280,22 @@
       }
 
       // Interactive Rev-Matching on Start Grid!
-      const gas = keys['KeyW'] || keys['ArrowUp'];
+      let gas;
+      if (mobileControlActive && (mobileControlMode === 'touch' || mobileControlMode === 'tilt')) {
+        const mobileBrakeOrDrift = touchSwipeBrakeActive || secondaryDriftPointers.size > 0 || tiltLeftPointers.size > 0 || keys['KeyS'] || keys['ArrowDown'];
+        gas = !mobileBrakeOrDrift;
+      } else {
+        gas = keys['KeyW'] || keys['ArrowUp'];
+      }
       const targetCountdownRpm = gas ? 8800 : 1200;
       playerCar.rpm += (targetCountdownRpm - playerCar.rpm) * Math.min(1, dt * (gas ? 2.6 : 4.2));
+
+      const curSteer = mobileControlMode === 'tilt' ? tiltSteerInput : (mobileControlMode === 'touch' ? touchAnalogSteer : 0);
+      const steerGaugeDot = document.getElementById('steerGaugeDot');
+      if (steerGaugeDot && mobileControlActive) {
+        steerGaugeDot.style.left = `${50 - curSteer * 44}%`;
+      }
+
       drawTachometer(0, playerCar.rpm, 1, 100, false);
       drawMinimap();
 
@@ -2944,12 +3330,42 @@
       }
       updateRain(dt, isNightRain, 0, playerCar.heading);
       sfx.updateDrive(dt, true, playerCar.rpm / 9000, false, false);
+      window.__apexState = {
+        appState,
+        mobileControlActive,
+        mobileControlMode,
+        steerInput: curSteer,
+        smoothedSteer: playerCar ? playerCar.smoothedSteer : 0,
+        tiltSteerInput,
+        touchAnalogSteer,
+        throttle: gas ? 1 : 0,
+        braking: 0,
+        handbrake: false,
+        nosPressed: false,
+        cameraMode,
+        speed: playerCar ? playerCar.speed : 0
+      };
       return;
     }
 
     if (appState !== 'racing') {
       updateRain(dt, false, 0, 0);
       sfx.updateDrive(dt, false, 0, false, false);
+      window.__apexState = {
+        appState,
+        mobileControlActive,
+        mobileControlMode,
+        steerInput: 0,
+        smoothedSteer: playerCar ? playerCar.smoothedSteer : 0,
+        tiltSteerInput,
+        touchAnalogSteer,
+        throttle: 0,
+        braking: 0,
+        handbrake: false,
+        nosPressed: false,
+        cameraMode,
+        speed: playerCar ? playerCar.speed : 0
+      };
       return;
     }
 
@@ -2957,11 +3373,46 @@
     raceElapsed += dt;
     document.getElementById('raceTimeVal').textContent = `TIME ${formatRaceTime(raceElapsed)}`;
 
-    const throttle = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0);
-    const braking = (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
-    const steerInput = (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0) - (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0);
-    const handbrake = !!(keys['ShiftLeft'] || keys['ShiftRight'] || keys['KeyB']);
-    const nosPressed = !!keys['Space'];
+    let throttle, braking, steerInput, handbrake, nosPressed;
+
+    if (mobileControlActive && (mobileControlMode === 'touch' || mobileControlMode === 'tilt')) {
+      const kbSteer = (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0) - (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0);
+      const mobileSteer = mobileControlMode === 'tilt' ? tiltSteerInput : touchAnalogSteer;
+      steerInput = Math.max(-1, Math.min(1, kbSteer !== 0 ? kbSteer : mobileSteer));
+
+      const brakeOrDrift = !!(keys['KeyS'] || keys['ArrowDown'] || touchSwipeBrakeActive ||
+        secondaryDriftPointers.size > 0 || tiltLeftPointers.size > 0 ||
+        keys['ShiftLeft'] || keys['ShiftRight'] || keys['KeyB']);
+
+      if (brakeOrDrift) {
+        if ((keys['ShiftLeft'] || keys['ShiftRight'] || keys['KeyB']) || (playerCar.speed > 18 && Math.abs(steerInput) > 0.12)) {
+          handbrake = true;
+          braking = 0;
+          throttle = 1;
+        } else {
+          handbrake = false;
+          braking = 1;
+          throttle = 0;
+        }
+      } else {
+        throttle = 1;
+        braking = 0;
+        handbrake = false;
+      }
+
+      nosPressed = !!keys['Space'] || quickN2oHeld || tiltRightPointers.size > 0 || (performance.now() < touchSwipeN2oUntil);
+    } else {
+      throttle = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0);
+      braking = (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
+      steerInput = (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0) - (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0);
+      handbrake = !!(keys['ShiftLeft'] || keys['ShiftRight'] || keys['KeyB']);
+      nosPressed = !!keys['Space'];
+    }
+
+    const steerGaugeDot = document.getElementById('steerGaugeDot');
+    if (steerGaugeDot && mobileControlActive) {
+      steerGaugeDot.style.left = `${50 - steerInput * 44}%`;
+    }
 
     const spec = playerCar.spec;
     const isDriftMode = MODE_SPECS[selectedModeIdx].id === 'drift';
@@ -3328,6 +3779,23 @@
     sfx.updateDrive(dt, true, playerCar.rpm / 9000, isDrifting, nosFiring);
     drawTachometer(mph, playerCar.rpm, playerCar.gear, playerCar.n2o, nosFiring);
     drawMinimap();
+
+    // Live debug / test snapshot hook
+    window.__apexState = {
+      appState,
+      mobileControlActive,
+      mobileControlMode,
+      steerInput,
+      smoothedSteer: playerCar ? playerCar.smoothedSteer : 0,
+      tiltSteerInput,
+      touchAnalogSteer,
+      throttle,
+      braking,
+      handbrake,
+      nosPressed,
+      cameraMode,
+      speed: playerCar ? playerCar.speed : 0
+    };
   }
 
   // --- HANDLE WINDOW RESIZE ---

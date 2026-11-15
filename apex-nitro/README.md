@@ -24,16 +24,26 @@ Play live at **https://theshybulb.com/apex-nitro/**
 
 ## Controls
 
-| Action | Desktop | Mobile / Touch |
-| --- | --- | --- |
-| Accelerate / Brake & Reverse | `W` / `S` or `↑` / `↓` | `GAS` / `BRAKE` buttons |
-| Steer Left / Right | `A` / `D` or `←` / `→` | `◀ LEFT` / `▶ RIGHT` |
-| Weight-Transfer Drift (`+N2O`) | `Shift` or `B` | `DRIFT` |
-| Fire N2O Nitrous Boost | `Space` | `N2O` |
-| Manual Downshift / Upshift | `Q` / `E` (`T` toggles Auto/Manual) | `DN` / `UP` (when Manual is active) |
-| Cycle Camera (incl. Cockpit) | `C` | `Cam` HUD button |
-| Toggle Rear-View Mirror | `V` | `Mirror` HUD button |
-| Tuner Speedshop / Mute Audio | `G` / `M` | `Shop` / `Audio` HUD buttons |
+| Action | Desktop | Mobile (`👆 Touch`) | Mobile (`📱 Tilt`) | Mobile (`🎮 Pedals`) |
+| --- | --- | --- | --- | --- |
+| **Accelerate / Auto-Gas** | `W` or `↑` | Auto-Gas (always accelerating) | Auto-Gas (always accelerating) | `GAS` button |
+| **Steer Left / Right** | `A` / `D` or `←` / `→` | Analog thumb drag (floating stick) | Gyroscope device tilt (left/right) | `◀ LEFT` / `▶ RIGHT` |
+| **Brake / Reverse** | `S` or `↓` | Swipe down & hold thumb | Tap / hold left half of screen | `BRAKE` button |
+| **Weight-Transfer Drift (`+N2O`)** | `Shift` or `B` | Second finger tap OR drag steer + swipe down | Tap left half while steering | `DRIFT` button |
+| **Fire N2O Nitrous Boost** | `Space` | Swipe up flick OR `🔥 N2O` quick button | Tap right half of screen | `🔥 N2O` button |
+| **Manual Downshift / Upshift** | `Q` / `E` (`T` toggles Auto/Manual) | `DN` / `UP` (when Manual is active) | `DN` / `UP` (when Manual is active) | `DN` / `UP` (when Manual is active) |
+| **Cycle Camera (incl. Cockpit)** | `C` | `Cam` HUD button | `Cam` HUD button | `Cam` HUD button |
+| **Toggle Rear-View Mirror** | `V` | `Mirror` HUD button | `Mirror` HUD button | `Mirror` HUD button |
+| **Tuner Speedshop / Mute Audio** | `G` / `M` | `Shop` / `Audio` HUD buttons | `Shop` / `Audio` HUD buttons | `Shop` / `Audio` HUD buttons |
+
+### 3-Way Native Mobile Control Modes
+
+Apex Nitro 3D auto-detects touchscreen devices and includes an instant 3-way mode pill bar docked in the in-race HUD:
+- **`👆 Touch` (Default)**: Clean auto-gas arcade drive. Touch anywhere to spawn an analog floating thumbstick with floating-leash follow. Flick thumb **UP** for instant N2O boost, pull **DOWN** to brake/reverse, tap a **second finger** or turn sharply while pulling down for weight-transfer drift, or tap the dedicated **`🔥 N2O`** button.
+- **`📱 Tilt`**: Motion-sensor steering using the device's hardware gyroscope/accelerometer (`deviceorientation` with iOS 13+ permission support, 2.5° deadzone, and 26° full-lock). The screen acts as dual split-screen pedals: tap the **left half** for Drift / Brake and the **right half** for Nitro boost.
+- **`🎮 Pedals`**: Classic multi-touch on-screen arcade buttons with dedicated `◀ LEFT`, `▶ RIGHT`, `GAS`, `BRAKE`, `DRIFT`, and `🔥 N2O` pedals.
+
+> **Testing & URL Override**: Append `?mobile=touch`, `?mobile=tilt`, or `?mobile=pedals` to force mobile controls and HUD overlays on desktop browsers for mouse testing (`?mobile=off` disables mobile detection). Mode preferences persist across sessions via `localStorage`.
 
 ## Running Locally
 
