@@ -2436,6 +2436,9 @@
   let mobileControlActive = false;
   let mobileControlMode = 'touch'; // 'touch' | 'tilt' | 'pedals'
   let tiltSteerInput = 0;
+  let latestRawTiltDeg = 0;
+  let filteredTiltDeg = 0;
+  let tiltHasSample = false;
   let touchAnalogSteer = 0;
   let primaryPointerId = null;
   let touchAnchorX = 0;
@@ -2450,13 +2453,13 @@
   let tiltEnabled = false;
 
   const TILT_SENS_PRESETS = [
-    { id: 'std', btnLabel: '📱 Tilt', callout: 'STANDARD (15.5° LOCK)', deadzone: 1.6, maxRange: 15.5, exp: 0.90 },
-    { id: 'high', btnLabel: '📱 Tilt+', callout: 'HIGH SENSITIVITY (11° LOCK)', deadzone: 1.4, maxRange: 11.0, exp: 0.85 },
-    { id: 'low', btnLabel: '📱 Tilt-', callout: 'SMOOTH (20° LOCK)', deadzone: 2.0, maxRange: 20.0, exp: 1.00 }
+    { id: 'std', btnLabel: '📱 Tilt', callout: 'BALANCED + ASSIST (20° LOCK)', deadzone: 2.2, maxRange: 20.0, exp: 1.15, espRate: 2.8 },
+    { id: 'calm', btnLabel: '📱 Tilt-', callout: 'CALM / HIGH ASSIST (25° LOCK)', deadzone: 2.8, maxRange: 25.0, exp: 1.25, espRate: 3.6 },
+    { id: 'high', btnLabel: '📱 Tilt+', callout: 'SPORT / AGILE (15° LOCK)', deadzone: 1.8, maxRange: 15.0, exp: 1.00, espRate: 2.1 }
   ];
   let tiltSensIdx = 0;
   try {
-    const savedSens = parseInt(localStorage.getItem('apex_tilt_sens'), 10);
+    const savedSens = parseInt(localStorage.getItem('apex_tilt_sens_v2'), 10);
     if (savedSens >= 0 && savedSens < TILT_SENS_PRESETS.length) tiltSensIdx = savedSens;
   } catch (_) {}
 
@@ -2496,6 +2499,9 @@
     tiltRightPointers.clear();
     quickN2oHeld = false;
     tiltSteerInput = 0;
+    latestRawTiltDeg = 0;
+    filteredTiltDeg = 0;
+    tiltHasSample = false;
 
     const stickBase = document.getElementById('touchStickBase');
     if (stickBase) stickBase.style.display = 'none';
@@ -2507,32 +2513,42 @@
     if (btnQuickN2o) btnQuickN2o.classList.remove('pressed');
   }
 
+  function computeTiltSteerFromDeg(degVal) {
+    const preset = TILT_SENS_PRESETS[tiltSensIdx] || TILT_SENS_PRESETS[0];
+    if (Math.abs(degVal) < preset.deadzone) return 0;
+    const sign = degVal > 0 ? 1 : -1;
+    const mag = Math.min(1, (Math.abs(degVal) - preset.deadzone) / (preset.maxRange - preset.deadzone));
+    return -sign * Math.pow(mag, preset.exp);
+  }
+
   function onDeviceOrientation(e) {
     if (!tiltEnabled || !mobileControlActive || mobileControlMode !== 'tilt') return;
     const angle = (screen.orientation && typeof screen.orientation.angle === 'number')
       ? screen.orientation.angle
-      : (window.orientation || 0);
+      : (typeof window.orientation === 'number' ? window.orientation : 0);
 
-    let rawTilt = (angle === 90)
-      ? (e.beta || 0)
-      : (angle === -90 || angle === 270)
-        ? -(e.beta || 0)
-        : (e.gamma || 0);
-
-    if (angle === 180) rawTilt = -rawTilt;
-
-    const preset = TILT_SENS_PRESETS[tiltSensIdx] || TILT_SENS_PRESETS[0];
-    const deadzone = preset.deadzone;
-    const maxRange = preset.maxRange;
-    if (Math.abs(rawTilt) < deadzone) {
-      tiltSteerInput = 0;
+    const betaRad = ((e.beta || 0) * Math.PI) / 180;
+    const gammaRad = ((e.gamma || 0) * Math.PI) / 180;
+    let gScreenRight;
+    if (angle === 90) {
+      gScreenRight = Math.sin(betaRad);
+    } else if (angle === -90 || angle === 270) {
+      gScreenRight = -Math.sin(betaRad);
+    } else if (angle === 180) {
+      gScreenRight = -Math.cos(betaRad) * Math.sin(gammaRad);
     } else {
-      const sign = rawTilt > 0 ? 1 : -1;
-      const mag = Math.min(1, (Math.abs(rawTilt) - deadzone) / (maxRange - deadzone));
-      const curved = Math.pow(mag, preset.exp);
-      // In physics: steerInput > 0 is LEFT, steerInput < 0 is RIGHT
-      tiltSteerInput = -sign * curved;
+      gScreenRight = Math.cos(betaRad) * Math.sin(gammaRad);
     }
+
+    const trueRollDeg = Math.asin(Math.max(-1, Math.min(1, gScreenRight))) * (180 / Math.PI);
+    latestRawTiltDeg = trueRollDeg;
+    if (!tiltHasSample) {
+      filteredTiltDeg = trueRollDeg;
+      tiltHasSample = true;
+    } else {
+      filteredTiltDeg = filteredTiltDeg * 0.72 + trueRollDeg * 0.28;
+    }
+    tiltSteerInput = computeTiltSteerFromDeg(filteredTiltDeg);
   }
 
   async function enableTiltSensor(fromUserGesture) {
@@ -2563,6 +2579,9 @@
   function disableTiltSensor() {
     tiltEnabled = false;
     tiltSteerInput = 0;
+    latestRawTiltDeg = 0;
+    filteredTiltDeg = 0;
+    tiltHasSample = false;
     if (tiltAttached) {
       window.removeEventListener('deviceorientation', onDeviceOrientation, true);
       tiltAttached = false;
@@ -2637,7 +2656,7 @@
         tiltSensIdx = (tiltSensIdx + 1) % TILT_SENS_PRESETS.length;
         const preset = TILT_SENS_PRESETS[tiltSensIdx];
         try {
-          localStorage.setItem('apex_tilt_sens', String(tiltSensIdx));
+          localStorage.setItem('apex_tilt_sens_v2', String(tiltSensIdx));
         } catch (_) {}
         btn.textContent = preset.btnLabel;
         showCallout('📱 TILT SENSITIVITY', preset.callout);
@@ -3311,9 +3330,14 @@
       } else {
         gas = keys['KeyW'] || keys['ArrowUp'];
       }
-      const targetCountdownRpm = gas ? 8800 : 1200;
+      const isAutoGasCountdown = mobileControlActive && (mobileControlMode === 'touch' || mobileControlMode === 'tilt');
+      const targetCountdownRpm = gas ? (isAutoGasCountdown ? 6800 : 8800) : 1200;
       playerCar.rpm += (targetCountdownRpm - playerCar.rpm) * Math.min(1, dt * (gas ? 2.6 : 4.2));
 
+      if (mobileControlActive && mobileControlMode === 'tilt' && tiltHasSample) {
+        filteredTiltDeg += (latestRawTiltDeg - filteredTiltDeg) * Math.min(1, dt * 14);
+        tiltSteerInput = computeTiltSteerFromDeg(filteredTiltDeg);
+      }
       const curSteer = mobileControlMode === 'tilt' ? tiltSteerInput : (mobileControlMode === 'touch' ? touchAnalogSteer : 0);
       const steerGaugeDot = document.getElementById('steerGaugeDot');
       if (steerGaugeDot && mobileControlActive) {
@@ -3398,6 +3422,11 @@
     document.getElementById('raceTimeVal').textContent = `TIME ${formatRaceTime(raceElapsed)}`;
 
     const isAutoGasMobile = mobileControlActive && (mobileControlMode === 'touch' || mobileControlMode === 'tilt');
+    const isTiltMobile = mobileControlActive && mobileControlMode === 'tilt';
+    if (isTiltMobile && tiltHasSample) {
+      filteredTiltDeg += (latestRawTiltDeg - filteredTiltDeg) * Math.min(1, dt * 14);
+      tiltSteerInput = computeTiltSteerFromDeg(filteredTiltDeg);
+    }
     let throttle, braking, steerInput, handbrake, nosPressed;
 
     if (isAutoGasMobile) {
@@ -3548,7 +3577,9 @@
         Math.abs(trackData.curvatures[(s0 + 24) % FRAMES_COUNT]) * 0.72
       );
       const cornerSeverity = Math.max(0, Math.min(1, (curveLook - 0.04) / 0.14));
-      const autoCruiseRatio = Math.max(0.42, 0.76 - cornerSeverity * 0.28 - Math.abs(steerInput) * 0.10);
+      const baseCruise = isTiltMobile ? 0.72 : 0.76;
+      const minCruise = isTiltMobile ? 0.40 : 0.42;
+      const autoCruiseRatio = Math.max(minCruise, baseCruise - cornerSeverity * 0.28 - Math.abs(steerInput) * 0.10);
       const autoTargetSpd = spec.maxSpdPhys * autoCruiseRatio * (inDraft ? 1.08 : 1.0);
 
       if (nosFiring) {
@@ -3584,9 +3615,9 @@
 
     // Weight-Transfer Steering & True Velocity-Heading Drift Slip Angle
     const spdAbs = Math.abs(playerCar.speed);
-    playerCar.smoothedSteer += (steerInput - playerCar.smoothedSteer) * Math.min(1, dt * 11);
+    playerCar.smoothedSteer += (steerInput - playerCar.smoothedSteer) * Math.min(1, dt * (isTiltMobile ? 9.5 : 11));
 
-    const mobileTurnMult = isAutoGasMobile ? (mobileControlMode === 'tilt' ? 1.32 : 1.22) : 1.0;
+    const mobileTurnMult = isAutoGasMobile ? (isTiltMobile ? 1.05 : 1.22) : 1.0;
     const turnRate = (1.52 + (spec.handling / 100) * 1.18) * mobileTurnMult * (handbrake ? 1.34 : 1.0) * (spdAbs > 3 ? Math.sign(playerCar.speed) : 0);
     playerCar.heading += playerCar.smoothedSteer * turnRate * dt;
 
@@ -3598,18 +3629,30 @@
       while (dYaw > Math.PI) dYaw -= Math.PI * 2;
       while (dYaw < -Math.PI) dYaw += Math.PI * 2;
 
-      if (Math.abs(steerInput) < 0.03 && !handbrake && Math.abs(dYaw) < 0.45) {
-        playerCar.heading += dYaw * Math.min(1, dt * 1.2);
+      if (isTiltMobile) {
+        const preset = TILT_SENS_PRESETS[tiltSensIdx] || TILT_SENS_PRESETS[0];
+        const activeEsp = handbrake
+          ? preset.espRate * 0.42
+          : preset.espRate * (1 - 0.35 * Math.abs(playerCar.smoothedSteer));
+        playerCar.heading += dYaw * Math.min(1, dt * activeEsp);
+      } else if (Math.abs(steerInput) < 0.05 && !handbrake && Math.abs(dYaw) < 0.45) {
+        playerCar.heading += dYaw * Math.min(1, dt * 1.5);
       }
 
+      const edgeStart = isTiltMobile ? 7.2 : 7.8;
       const latDot = Math.sin(playerCar.heading) * curR.x + Math.cos(playerCar.heading) * curR.z;
-      if (Math.abs(playerCar.lat) > 7.8 && playerCar.lat * latDot > 0) {
-        const wallProx = Math.min(1, (Math.abs(playerCar.lat) - 7.8) / (MAX_LAT - 7.8));
-        playerCar.heading += dYaw * Math.min(1, dt * (2.2 + wallProx * 5.5));
-        let dVelYaw = tYaw - playerCar.velHeading;
-        while (dVelYaw > Math.PI) dVelYaw -= Math.PI * 2;
-        while (dVelYaw < -Math.PI) dVelYaw += Math.PI * 2;
-        playerCar.velHeading += dVelYaw * Math.min(1, dt * (2.0 + wallProx * 5.0));
+      if (Math.abs(playerCar.lat) > edgeStart && playerCar.lat * latDot > -0.04) {
+        const wallProx = Math.min(1, (Math.abs(playerCar.lat) - edgeStart) / (MAX_LAT - edgeStart));
+        const inwardYaw = tYaw - Math.sign(playerCar.lat) * (0.06 + wallProx * 0.28);
+        let inDiff = inwardYaw - playerCar.heading;
+        while (inDiff > Math.PI) inDiff -= Math.PI * 2;
+        while (inDiff < -Math.PI) inDiff += Math.PI * 2;
+        playerCar.heading += inDiff * Math.min(1, dt * (2.2 + wallProx * 7.5));
+
+        let inVelDiff = inwardYaw - playerCar.velHeading;
+        while (inVelDiff > Math.PI) inVelDiff -= Math.PI * 2;
+        while (inVelDiff < -Math.PI) inVelDiff += Math.PI * 2;
+        playerCar.velHeading += inVelDiff * Math.min(1, dt * (2.0 + wallProx * 6.5));
       }
     }
 
@@ -3617,7 +3660,7 @@
 
     // Velocity Vector lags Body Yaw during weight transfer (handbrake / trail-braking / high-speed cornering)
     const driftRequested = handbrake || (Math.abs(steerInput) > 0 && spdAbs > 42 && (braking > 0 || throttle === 0));
-    const latGripRate = isAutoGasMobile ? (driftRequested ? 4.4 : (isDriftMode ? 7.8 : 10.5)) : (driftRequested ? 2.6 : (isDriftMode ? 6.5 : 8.2));
+    const latGripRate = isTiltMobile ? (driftRequested ? 4.8 : (isDriftMode ? 8.5 : 12.0)) : isAutoGasMobile ? (driftRequested ? 4.4 : (isDriftMode ? 7.8 : 10.5)) : (driftRequested ? 2.6 : (isDriftMode ? 6.5 : 8.2));
     let slipDiff = playerCar.heading - playerCar.velHeading;
     while (slipDiff > Math.PI) slipDiff -= Math.PI * 2;
     while (slipDiff < -Math.PI) slipDiff += Math.PI * 2;
@@ -3627,7 +3670,7 @@
     let clampedSlip = playerCar.heading - playerCar.velHeading;
     while (clampedSlip > Math.PI) clampedSlip -= Math.PI * 2;
     while (clampedSlip < -Math.PI) clampedSlip += Math.PI * 2;
-    const maxSlip = isAutoGasMobile ? (driftRequested ? 0.46 : 0.18) : (driftRequested ? 0.62 : 0.28);
+    const maxSlip = isTiltMobile ? (driftRequested ? 0.42 : 0.14) : isAutoGasMobile ? (driftRequested ? 0.46 : 0.18) : (driftRequested ? 0.62 : 0.28);
     if (Math.abs(clampedSlip) > maxSlip) {
       clampedSlip = Math.sign(clampedSlip) * maxSlip;
       playerCar.velHeading = playerCar.heading - clampedSlip;
@@ -3756,7 +3799,8 @@
       const gapToPlayer = ai.totalProgress - playerCar.totalProgress;
       const rbFactor = gapToPlayer > 0.14 ? 0.9 : gapToPlayer < -0.14 ? 1.1 : 1.0;
       const aiCurveFactor = (isAutoGasMobile && curveAhead > 0.14) ? 0.68 : (curveAhead > 0.15 ? 0.72 : 0.96);
-      const aiMaxSpd = ai.spec.maxSpdPhys * ai.aiSkill * rbFactor * aiCurveFactor * (isAutoGasMobile ? 0.79 : 1.0);
+      const aiMobileScale = isTiltMobile ? 0.75 : (isAutoGasMobile ? 0.79 : 1.0);
+      const aiMaxSpd = ai.spec.maxSpdPhys * ai.aiSkill * rbFactor * aiCurveFactor * aiMobileScale;
 
       if (ai.speed < aiMaxSpd) ai.speed += ai.spec.accel * 0.72 * dt;
       else ai.speed *= Math.pow(0.55, dt);
