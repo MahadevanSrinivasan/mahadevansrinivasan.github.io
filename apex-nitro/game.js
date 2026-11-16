@@ -187,6 +187,10 @@
       roadMetalness: 0.36,
       barrierTrim: 0x00f0ff,
       chevronColor: 0x00f0ff,
+      exposure: 1.08,
+      bloomStrength: 0.72,
+      bloomRadius: 0.34,
+      bloomThreshold: 0.72,
       envType: 'tokyo',
       waypoints: [
         [0, 0, 0],
@@ -219,18 +223,22 @@
     {
       id: 'canyon',
       name: '🌅 Pacific Sunset Canyon',
-      desc: 'Golden coastal cliffs, ocean bridge, palms & rock tunnels',
-      sky: 0xfb7b50,
-      fogColor: 0xf4845f,
-      fogDensity: 0.00085,
-      ambient: 0xffd4b8,
-      ambientInt: 0.95,
-      sunColor: 0xffd166,
-      sunInt: 1.45,
-      roadRoughness: 0.72,
-      roadMetalness: 0.16,
-      barrierTrim: 0xffaa00,
-      chevronColor: 0xff4500,
+      desc: 'Crimson-amber dusk cliffs, coastal bridge, palms & glowing portals',
+      sky: 0x1a0e2a,
+      fogColor: 0x33172e,
+      fogDensity: 0.00108,
+      ambient: 0x705072,
+      ambientInt: 0.68,
+      sunColor: 0xff9e44,
+      sunInt: 0.88,
+      roadRoughness: 0.80,
+      roadMetalness: 0.22,
+      barrierTrim: 0xff9500,
+      chevronColor: 0xff5500,
+      exposure: 0.96,
+      bloomStrength: 0.46,
+      bloomRadius: 0.30,
+      bloomThreshold: 0.82,
       envType: 'canyon',
       waypoints: [
         [0, 0, 0],
@@ -250,26 +258,31 @@
         [-450, 18, 490],
         [-610, 14, 310],
         [-560, 6, 100],
-        [-360, 0, 20],
-        [-240, 0, 140],
-        [-80, 0, 210]
+        [-380, 0, 40],
+        [-250, 0, 175],
+        [-105, 0, 225],
+        [0, 0, 165]
       ]
     },
     {
       id: 'alpine',
       name: '🏔️ Alpine Horizon Speedway',
-      desc: 'Crisp daylight high-speed chicanes, pines & snow peaks',
-      sky: 0x38bdf8,
-      fogColor: 0x93c5fd,
-      fogDensity: 0.00062,
-      ambient: 0xdbeafe,
-      ambientInt: 1.0,
-      sunColor: 0xfffbeb,
-      sunInt: 1.5,
-      roadRoughness: 0.45,
-      roadMetalness: 0.1,
+      desc: 'Alpenglow mountain twilight, high-speed chicanes, pines & snow peaks',
+      sky: 0x0a182e,
+      fogColor: 0x122644,
+      fogDensity: 0.00105,
+      ambient: 0x54729c,
+      ambientInt: 0.70,
+      sunColor: 0xbad7ff,
+      sunInt: 0.86,
+      roadRoughness: 0.80,
+      roadMetalness: 0.22,
       barrierTrim: 0x38bdf8,
       chevronColor: 0xfacc15,
+      exposure: 0.95,
+      bloomStrength: 0.46,
+      bloomRadius: 0.30,
+      bloomThreshold: 0.82,
       envType: 'alpine',
       waypoints: [
         [0, 0, 0],
@@ -289,9 +302,10 @@
         [-320, 8, 520],
         [-540, 14, 390],
         [-580, 10, 150],
-        [-400, 2, -20],
-        [-210, 0, 50],
-        [-80, 0, 220]
+        [-410, 2, 20],
+        [-260, 0, 155],
+        [-110, 0, 220],
+        [0, 0, 165]
       ]
     }
   ];
@@ -493,7 +507,7 @@
 
   function makeRoadTexture(isNight) {
     return makeCanvasTex(512, 512, (ctx, w, h) => {
-      ctx.fillStyle = isNight ? '#151c2c' : '#242b38';
+      ctx.fillStyle = isNight ? '#151c2c' : '#182030';
       ctx.fillRect(0, 0, w, h);
 
       for (let i = 0; i < 4200; i++) {
@@ -505,16 +519,16 @@
         ctx.fillStyle = '#ef4444';
         ctx.fillRect(0, y, 24, 32);
         ctx.fillRect(w - 24, y, 24, 32);
-        ctx.fillStyle = '#f8fafc';
+        ctx.fillStyle = isNight ? '#f8fafc' : '#cbd5e1';
         ctx.fillRect(0, y + 32, 24, 32);
         ctx.fillRect(w - 24, y + 32, 24, 32);
       }
 
-      ctx.fillStyle = isNight ? '#00f0ff' : '#ffffff';
+      ctx.fillStyle = isNight ? '#00f0ff' : '#fbbf24';
       ctx.fillRect(28, 0, 6, h);
       ctx.fillRect(w - 34, 0, 6, h);
 
-      ctx.fillStyle = isNight ? '#e2e8f0' : '#f8fafc';
+      ctx.fillStyle = isNight ? '#e2e8f0' : '#cbd5e1';
       for (let y = 24; y < h; y += 128) {
         ctx.fillRect(w * 0.25 - 4, y, 8, 68);
         ctx.fillRect(w * 0.75 - 4, y, 8, 68);
@@ -711,15 +725,15 @@
         [30, 20, 0, 4, 26, 28, 0xe0f2fe],
         [0, 32, 26, 28, 3, 4, 0x38bdf8]
       ]);
-      ENV_MAPS.canyon = createEnv(0xff8c5a, 0x7c2d12, [
-        [0, 14, -36, 48, 12, 4, 0xffd166],
-        [0, 36, 0, 36, 4, 36, 0xfef3c7],
-        [34, 6, 0, 4, 10, 48, 0x38bdf8]
+      ENV_MAPS.canyon = createEnv(0x2a1433, 0x160b10, [
+        [0, 18, -36, 42, 8, 4, 0xff8c42],
+        [-30, 18, 0, 4, 20, 24, 0xf59e0b],
+        [30, 14, 0, 4, 16, 28, 0x38bdf8]
       ]);
-      ENV_MAPS.alpine = createEnv(0x60a5fa, 0x1e3a2f, [
-        [0, 36, 0, 42, 6, 42, 0xffffff],
-        [-34, 18, -20, 18, 16, 4, 0xf8fafc],
-        [34, 18, 20, 18, 16, 4, 0xe0f2fe]
+      ENV_MAPS.alpine = createEnv(0x0f223d, 0x081714, [
+        [0, 26, -32, 36, 5, 4, 0x7dd3fc],
+        [-30, 18, 0, 4, 20, 24, 0x38bdf8],
+        [30, 18, 0, 4, 20, 24, 0xfacc15]
       ]);
       ENV_MAPS.garage = createEnv(0x091124, 0x060912, [
         [-10, 28, 0, 4, 2, 42, 0xe0f2fe],
@@ -1418,10 +1432,10 @@
     const roadRoughMap = isNight ? TEXTURES.roughNight : TEXTURES.roughDay;
     const roadMat = new THREE.MeshStandardMaterial({
       map: roadTex,
-      roughnessMap: spec.envType === 'alpine' ? null : roadRoughMap,
+      roughnessMap: roadRoughMap,
       roughness: spec.roadRoughness,
       metalness: spec.roadMetalness,
-      envMapIntensity: isNight ? 1.5 : 1.0,
+      envMapIntensity: isNight ? 1.5 : 0.68,
       side: THREE.DoubleSide
     });
     const roadMesh = createContinuousRibbon(idx => {
@@ -1496,12 +1510,12 @@
 
     // 3b. Overhead Highway Streetlights along Barriers (Every 18 segments)
     const poleMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.78, roughness: 0.28 });
-    const bulbMat = new THREE.MeshBasicMaterial({ color: isNight ? 0xe0f2fe : 0xfef08a });
+    const bulbMat = new THREE.MeshBasicMaterial({ color: isNight ? 0xe0f2fe : (spec.envType === 'canyon' ? 0xffd166 : 0xbae6fd) });
     const poolMat = new THREE.MeshBasicMaterial({
-      color: isNight ? 0x38bdf8 : 0xffd166,
+      color: isNight ? 0x38bdf8 : (spec.envType === 'canyon' ? 0xff9e44 : 0x38bdf8),
       map: TEXTURES.radialGlow,
       transparent: true,
-      opacity: isNight ? 0.28 : 0.14,
+      opacity: isNight ? 0.28 : 0.18,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
@@ -1519,12 +1533,11 @@
       fixture.position.set(-side * 3.8, 10.95, 0);
       lamp.add(post, arm, fixture);
 
-      if (spec.envType !== 'alpine') {
-        const pool = new THREE.Mesh(new THREE.PlaneGeometry(16, 16), poolMat);
-        pool.rotation.x = -Math.PI / 2;
-        pool.position.set(-side * 5.2, 0.06, 0);
-        lamp.add(pool);
-      }
+      const pool = new THREE.Mesh(new THREE.PlaneGeometry(16, 16), poolMat);
+      pool.rotation.x = -Math.PI / 2;
+      pool.position.set(-side * 5.2, 0.06, 0);
+      lamp.add(pool);
+
       lamp.position.copy(p).addScaledVector(r, side * (ROAD_HALF_W + 1.5));
       lamp.rotation.y = Math.atan2(t.x, t.z);
       raceWorldGroup.add(lamp);
@@ -1590,16 +1603,17 @@
       if (p.y > 2.2) {
         const r = rights[i];
         [-ROAD_HALF_W * 0.6, ROAD_HALF_W * 0.6].forEach(px => {
-          const pil = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.8, p.y + 4, 8), pillarMat);
+          const pilH = Math.max(2, p.y + 3.4);
+          const pil = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.8, pilH, 8), pillarMat);
           pil.position.copy(p).addScaledVector(r, px);
-          pil.position.y = p.y / 2 - 2;
+          pil.position.y = (p.y - 0.6) / 2 - 2;
           raceWorldGroup.add(pil);
         });
       }
     }
 
     // 6. Ground Plane & Trackside Environment Scenery
-    const groundColor = isNight ? 0x060a14 : spec.envType === 'canyon' ? 0xb45309 : 0x166534;
+    const groundColor = isNight ? 0x060a14 : spec.envType === 'canyon' ? 0x26120e : 0x0a1f18;
     const groundMesh = new THREE.Mesh(
       new THREE.PlaneGeometry(3400, 3400),
       new THREE.MeshStandardMaterial({ color: groundColor, roughness: 0.9 })
@@ -1612,7 +1626,7 @@
     if (spec.envType === 'canyon') {
       const ocean = new THREE.Mesh(
         new THREE.PlaneGeometry(3400, 1400),
-        new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.16, metalness: 0.6 })
+        new THREE.MeshStandardMaterial({ color: 0x082f49, roughness: 0.28, metalness: 0.45 })
       );
       ocean.rotation.x = -Math.PI / 2;
       ocean.position.set(1200, -1.5, 0);
@@ -1632,8 +1646,8 @@
 
     const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
     const palmMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.7 });
-    const rockMat = new THREE.MeshStandardMaterial({ color: 0x9a3412, roughness: 0.88 });
-    const snowMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 });
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x5c2415, roughness: 0.9 });
+    const snowMat = new THREE.MeshStandardMaterial({ color: 0x8ea6c4, roughness: 0.78 });
 
     for (let i = 0; i < FRAMES_COUNT; i += 4) {
       const p = pts[i];
@@ -1685,7 +1699,7 @@
           if (i % 12 === 0) {
             const mh = 55 + (i % 5) * 24;
             const mtn = new THREE.Group();
-            const base = new THREE.Mesh(new THREE.ConeGeometry(28, mh, 7), new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 }));
+            const base = new THREE.Mesh(new THREE.ConeGeometry(28, mh, 7), new THREE.MeshStandardMaterial({ color: 0x293548, roughness: 0.88 }));
             base.position.y = mh / 2 - 2;
             const cap = new THREE.Mesh(new THREE.ConeGeometry(12, mh * 0.44, 7), snowMat);
             cap.position.y = mh * 0.78 - 2;
@@ -1717,6 +1731,13 @@
     sunLight.color.setHex(spec.sunColor);
     sunLight.intensity = spec.sunInt;
     scene.environment = isNight ? ENV_MAPS.night : spec.envType === 'canyon' ? ENV_MAPS.canyon : ENV_MAPS.alpine;
+
+    renderer.toneMappingExposure = spec.exposure !== undefined ? spec.exposure : 1.08;
+    if (bloomPass) {
+      bloomPass.strength = spec.bloomStrength !== undefined ? spec.bloomStrength : 0.72;
+      bloomPass.radius = spec.bloomRadius !== undefined ? spec.bloomRadius : 0.34;
+      bloomPass.threshold = spec.bloomThreshold !== undefined ? spec.bloomThreshold : 0.72;
+    }
 
     trackData = { spec, curve, pts, tangents, rights, ups, curvatures };
   }
@@ -2236,6 +2257,12 @@
     sunLight.color.setHex(0xe0f2fe);
     sunLight.intensity = 1.35;
     scene.environment = ENV_MAPS.garage;
+    renderer.toneMappingExposure = 1.08;
+    if (bloomPass) {
+      bloomPass.strength = 0.72;
+      bloomPass.radius = 0.34;
+      bloomPass.threshold = 0.72;
+    }
 
     camera.fov = 52;
     camera.updateProjectionMatrix();
@@ -2330,7 +2357,7 @@
       rimId: selectedRimId,
       wingStyle: selectedWing,
       withCockpit: true,
-      withHeadlight: TRACK_SPECS[selectedTrackIdx].envType !== 'alpine'
+      withHeadlight: true
     });
 
     playerRibbonL = new TailRibbon(raceWorldGroup, 22, 0.15, 0xff1e42);
