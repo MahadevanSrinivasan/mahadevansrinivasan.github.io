@@ -2144,6 +2144,14 @@
   // 6-Speed Torque Gearbox Constants
   const GEAR_MAX_MPH = [0, 42, 76, 114, 152, 192, 275];
 
+  function trackEvent(eventName, params) {
+    try {
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', eventName, params || {});
+      }
+    } catch (_) {}
+  }
+
   let calloutTimeout = null;
   function showCallout(main, sub) {
     const el = document.getElementById('calloutBanner');
@@ -2397,6 +2405,13 @@
     document.getElementById('styleScoreVal').textContent = 'STYLE: 0 PTS';
     document.getElementById('draftHud').classList.remove('active');
     document.getElementById('comboHud').classList.remove('active');
+
+    trackEvent('race_start', {
+      track_id: TRACK_SPECS[selectedTrackIdx].id,
+      game_mode: MODE_SPECS[selectedModeIdx].id,
+      car_id: CAR_SPECS[selectedCarIdx].id,
+      control_mode: mobileControlActive ? mobileControlMode : 'desktop'
+    });
   }
 
   function finishRace(place) {
@@ -2416,6 +2431,15 @@
     document.getElementById('resScore').textContent = totalStyleScore.toLocaleString() + ' PTS';
     document.getElementById('resTopSpeed').textContent = `${Math.round(maxMphReached)} MPH`;
     document.getElementById('resultsOverlay').classList.add('active');
+
+    trackEvent('race_finish', {
+      track_id: TRACK_SPECS[selectedTrackIdx].id,
+      game_mode: MODE_SPECS[selectedModeIdx].id,
+      place,
+      style_score: totalStyleScore,
+      top_mph: Math.round(maxMphReached),
+      control_mode: mobileControlActive ? mobileControlMode : 'desktop'
+    });
   }
 
   // --- INPUT LISTENERS (DESKTOP + MANUAL SHIFTING + MOBILE MULTI-TOUCH) ---
@@ -2662,6 +2686,13 @@
     } else {
       disableTiltSensor();
     }
+
+    if (fromUserGesture) {
+      trackEvent('control_mode_select', {
+        control_mode: mode,
+        tilt_preset: mode === 'tilt' ? (TILT_SENS_PRESETS[tiltSensIdx] || TILT_SENS_PRESETS[0]).id : 'none'
+      });
+    }
   }
 
   function syncMobileUiState() {
@@ -2688,6 +2719,10 @@
         btn.textContent = preset.btnLabel;
         showCallout('📱 TILT SENSITIVITY', preset.callout);
         enableTiltSensor(true);
+        trackEvent('control_mode_select', {
+          control_mode: mode,
+          tilt_preset: mode === 'tilt' ? (TILT_SENS_PRESETS[tiltSensIdx] || TILT_SENS_PRESETS[0]).id : 'none'
+        });
         return;
       }
       setMobileMode(mode, true);
