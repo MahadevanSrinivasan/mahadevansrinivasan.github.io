@@ -45,6 +45,15 @@ Apex Nitro 3D auto-detects touchscreen devices and includes an instant 3-way mod
 
 > **Testing & URL Override**: Append `?mobile=touch`, `?mobile=tilt`, or `?mobile=pedals` to force mobile controls and HUD overlays on desktop browsers for mouse testing (`?mobile=off` disables mobile detection). Mode preferences persist across sessions via `localStorage`.
 
+### Difficulty & Assist Modes (`🟢 Easy` / `🟡 Medium` / `🔴 Hard`)
+
+Switch anytime from the **Title Screen**, **3D Speedshop** (header or `🏁 Event` tab), **In-Race HUD**, or **Mobile Pill Bar**:
+- **`🟢 Easy — Arcade Assist` (Default)**: Full stability assist, smart hairpin corner braking, strong edge wall-cushioning, and approachable AI rivals.
+- **`🟡 Medium — Street Tuner`**: 188+ MPH auto-cruise pace, lighter stability & wall-cushioning assist, and faster, more competitive street rivals.
+- **`🔴 Hard — Pro Touge`**: 200+ MPH full throttle pace, minimal driving assist, and an aggressive pro AI pack.
+
+> **Difficulty URL Override**: Append `?diff=easy`, `?diff=medium`, or `?diff=hard` to preselect a difficulty tier on load (persisted via `localStorage`).
+
 ## Running Locally
 
 All dependencies (`three.min.js` and `postprocessing.min.js`) are bundled locally. Serve the directory with any static HTTP server:

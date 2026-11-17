@@ -316,6 +316,48 @@
     { id: 'pursuit', name: '🚓 Hot Pursuit Escape', desc: '2 Laps — Outrun 3 AI Interceptors on Heat 3!', laps: 2 }
   ];
 
+  const DIFF_SPECS = [
+    {
+      id: 'easy',
+      name: '🟢 Easy — Arcade Assist',
+      desc: 'Smart hairpin braking, full stability assist & approachable rivals',
+      hudBtn: '🟢 Easy',
+      mobileBtn: '🟢 Easy',
+      headerBtn: '🟢 Mode: EASY',
+      callout: 'Full Stability & Smart Hairpin Assist',
+      cruiseTilt: 0.86, cruiseTouch: 0.88, minTilt: 0.58, minTouch: 0.60,
+      kStart: 0.15, kSpan: 0.28, cornerDrop: 0.24, capNoNos: 0.92, capNos: 1.24,
+      espMult: 1.00, edgeTilt: 7.0, edgeTouch: 7.6, cushMult: 1.00,
+      aiTilt: 0.76, aiTouch: 0.80, aiDesktop: 0.94, aiCrn: 0.66, aiStr: 0.94, aiAcc: 0.72, rbLead: 0.88, rbBehind: 1.06
+    },
+    {
+      id: 'medium',
+      name: '🟡 Medium — Street Tuner',
+      desc: '188+ MPH cruise, lighter corner assist & competitive street rivals',
+      hudBtn: '🟡 Med',
+      mobileBtn: '🟡 Med',
+      headerBtn: '🟡 Mode: MED',
+      callout: '188+ MPH Pace • Lighter Assist & Faster Rivals',
+      cruiseTilt: 0.93, cruiseTouch: 0.95, minTilt: 0.68, minTouch: 0.70,
+      kStart: 0.19, kSpan: 0.28, cornerDrop: 0.21, capNoNos: 0.98, capNos: 1.28,
+      espMult: 0.72, edgeTilt: 8.4, edgeTouch: 8.8, cushMult: 0.62,
+      aiTilt: 0.95, aiTouch: 0.97, aiDesktop: 1.00, aiCrn: 0.76, aiStr: 0.97, aiAcc: 0.86, rbLead: 0.93, rbBehind: 1.09
+    },
+    {
+      id: 'hard',
+      name: '🔴 Hard — Pro Touge',
+      desc: '200+ MPH full throttle, minimal assist & aggressive pro AI pack',
+      hudBtn: '🔴 Hard',
+      mobileBtn: '🔴 Hard',
+      headerBtn: '🔴 Mode: HARD',
+      callout: '200+ MPH Pro Speed • Minimal Assist & Fierce AI',
+      cruiseTilt: 0.99, cruiseTouch: 1.00, minTilt: 0.78, minTouch: 0.80,
+      kStart: 0.24, kSpan: 0.28, cornerDrop: 0.17, capNoNos: 1.03, capNos: 1.34,
+      espMult: 0.45, edgeTilt: 9.6, edgeTouch: 10.0, cushMult: 0.30,
+      aiTilt: 1.00, aiTouch: 1.03, aiDesktop: 1.06, aiCrn: 0.82, aiStr: 1.00, aiAcc: 0.96, rbLead: 0.96, rbBehind: 1.12
+    }
+  ];
+
   // --- PROCEDURAL WEB AUDIO ENGINE (RPM ENGINE + TURBO + TIRE SQUEAL + N2O + BACKFIRE + SYNTH) ---
   class AudioEngine {
     constructor() {
@@ -1921,6 +1963,16 @@
   let selectedWing = CAR_SPECS[0].defaultWing;
   let selectedTrackIdx = 0;
   let selectedModeIdx = 0;
+  let selectedDiffIdx = 0;
+  (() => {
+    const initParams = new URLSearchParams(window.location.search);
+    const diffParam = initParams.get('diff');
+    let savedDiff = null;
+    try { savedDiff = localStorage.getItem('apex_difficulty'); } catch (_) {}
+    const chosenId = diffParam || savedDiff;
+    const di = DIFF_SPECS.findIndex(d => d.id === chosenId);
+    if (di >= 0) selectedDiffIdx = di;
+  })();
   let manualTransmission = false;
 
   let showroomCar = null;
@@ -1949,12 +2001,14 @@
   function updateEventSummary() {
     const tr = TRACK_SPECS[selectedTrackIdx];
     const md = MODE_SPECS[selectedModeIdx];
-    document.getElementById('eventSummaryLbl').textContent = `${tr.name} • ${md.name}`;
+    const df = DIFF_SPECS[selectedDiffIdx] || DIFF_SPECS[0];
+    document.getElementById('eventSummaryLbl').textContent = `${tr.name} • ${md.name} • ${df.hudBtn}`;
   }
 
   function syncTrackModeActiveCards() {
     document.querySelectorAll('#trackSelector .mode-card-btn').forEach((el, j) => el.classList.toggle('active', j === selectedTrackIdx));
     document.querySelectorAll('#modeSelector .mode-card-btn').forEach((el, j) => el.classList.toggle('active', j === selectedModeIdx));
+    document.querySelectorAll('#diffSelector .mode-card-btn').forEach((el, j) => el.classList.toggle('active', j === selectedDiffIdx));
     updateEventSummary();
   }
 
@@ -2075,6 +2129,18 @@
         syncTrackModeActiveCards();
       });
       modeWrap.appendChild(card);
+    });
+
+    const diffWrap = document.getElementById('diffSelector');
+    DIFF_SPECS.forEach((df, idx) => {
+      const card = document.createElement('button');
+      card.className = 'mode-card-btn' + (idx === selectedDiffIdx ? ' active' : '');
+      card.innerHTML = `<div class="mode-title">${df.name}</div><div class="mode-desc">${df.desc}</div>`;
+      card.addEventListener('click', () => {
+        sfx.init();
+        setDifficulty(idx, true);
+      });
+      diffWrap.appendChild(card);
     });
 
     syncCustomizationPills();
@@ -2409,6 +2475,7 @@
     trackEvent('race_start', {
       track_id: TRACK_SPECS[selectedTrackIdx].id,
       game_mode: MODE_SPECS[selectedModeIdx].id,
+      difficulty: (DIFF_SPECS[selectedDiffIdx] || DIFF_SPECS[0]).id,
       car_id: CAR_SPECS[selectedCarIdx].id,
       control_mode: mobileControlActive ? mobileControlMode : 'desktop'
     });
@@ -2424,7 +2491,8 @@
     }
 
     const modeSpec = MODE_SPECS[selectedModeIdx];
-    document.getElementById('resModeTag').textContent = `${TRACK_SPECS[selectedTrackIdx].name} • ${modeSpec.name}`;
+    const diffSpec = DIFF_SPECS[selectedDiffIdx] || DIFF_SPECS[0];
+    document.getElementById('resModeTag').textContent = `${TRACK_SPECS[selectedTrackIdx].name} • ${modeSpec.name} • ${diffSpec.hudBtn}`;
     document.getElementById('resPlace').textContent = place === 1 ? '🏆 1ST PLACE!' : `${ordinal(place)} PLACE!`;
     document.getElementById('resTime').textContent = formatRaceTime(raceElapsed);
     document.getElementById('resBestLap').textContent = formatRaceTime(bestLapTime);
@@ -2435,6 +2503,7 @@
     trackEvent('race_finish', {
       track_id: TRACK_SPECS[selectedTrackIdx].id,
       game_mode: MODE_SPECS[selectedModeIdx].id,
+      difficulty: diffSpec.id,
       place,
       style_score: totalStyleScore,
       top_mph: Math.round(maxMphReached),
@@ -2969,6 +3038,46 @@
     }
   }
 
+  function setDifficulty(idx, fromUserGesture = false) {
+    const safeIdx = Math.max(0, Math.min(DIFF_SPECS.length - 1, idx | 0));
+    selectedDiffIdx = safeIdx;
+    const df = DIFF_SPECS[selectedDiffIdx];
+    const tierClass = `diff-tier-${df.id}`;
+
+    const btnTitleDiff = document.getElementById('btnTitleDiff');
+    const btnGarageDiff = document.getElementById('btnGarageDiff');
+    const btnHudDiff = document.getElementById('btnHudDiff');
+    const btnMobileDiff = document.getElementById('btnMobileDiff');
+
+    [btnTitleDiff, btnGarageDiff, btnHudDiff, btnMobileDiff].forEach(btn => {
+      if (!btn) return;
+      btn.classList.remove('diff-tier-easy', 'diff-tier-medium', 'diff-tier-hard');
+      btn.classList.add(tierClass);
+    });
+
+    if (btnTitleDiff) btnTitleDiff.textContent = df.headerBtn;
+    if (btnGarageDiff) btnGarageDiff.textContent = df.headerBtn;
+    if (btnHudDiff) btnHudDiff.textContent = df.hudBtn;
+    if (btnMobileDiff) btnMobileDiff.textContent = df.mobileBtn;
+
+    syncTrackModeActiveCards();
+
+    try {
+      localStorage.setItem('apex_difficulty', df.id);
+    } catch (_) {}
+
+    if (fromUserGesture) {
+      if (appState === 'racing' || appState === 'countdown') {
+        showCallout(df.name.toUpperCase(), df.callout);
+      }
+      trackEvent('difficulty_select', { difficulty: df.id });
+    }
+  }
+
+  function cycleDifficulty() {
+    setDifficulty((selectedDiffIdx + 1) % DIFF_SPECS.length, true);
+  }
+
   // Title, Garage & HUD Button Bindings
   document.getElementById('btnTitleQuickRace').addEventListener('click', () => {
     onRaceLaunchTriggeredByUser();
@@ -2994,6 +3103,20 @@
   });
   document.getElementById('btnTitleBloom').addEventListener('click', toggleBloom);
   document.getElementById('btnTitleAudio').addEventListener('click', toggleAudioMute);
+  document.getElementById('btnTitleDiff').addEventListener('click', () => { sfx.init(); cycleDifficulty(); });
+  document.getElementById('btnGarageDiff').addEventListener('click', () => { sfx.init(); cycleDifficulty(); });
+  document.getElementById('btnHudDiff').addEventListener('click', () => { sfx.init(); cycleDifficulty(); });
+  const btnMobileDiff = document.getElementById('btnMobileDiff');
+  if (btnMobileDiff) {
+    btnMobileDiff.addEventListener('pointerdown', e => e.stopPropagation());
+    btnMobileDiff.addEventListener('click', e => {
+      e.stopPropagation();
+      e.preventDefault();
+      sfx.init();
+      cycleDifficulty();
+    });
+  }
+  setDifficulty(selectedDiffIdx, false);
   document.getElementById('btnBackTitle').addEventListener('click', enterTitleScreen);
 
   document.getElementById('launchRaceBtn').addEventListener('click', () => {
@@ -3372,6 +3495,7 @@
     }
 
     const isNightRain = trackData && trackData.spec.envType === 'tokyo';
+    const diffSpec = DIFF_SPECS[selectedDiffIdx] || DIFF_SPECS[0];
 
     if (appState === 'countdown') {
       countdownTimer -= dt;
@@ -3442,6 +3566,7 @@
       sfx.updateDrive(dt, true, playerCar.rpm / 9000, false, false);
       window.__apexState = {
         appState,
+        difficulty: diffSpec.id,
         mobileControlActive,
         mobileControlMode,
         steerInput: curSteer,
@@ -3463,6 +3588,7 @@
       sfx.updateDrive(dt, false, 0, false, false);
       window.__apexState = {
         appState,
+        difficulty: diffSpec.id,
         mobileControlActive,
         mobileControlMode,
         steerInput: 0,
@@ -3626,7 +3752,7 @@
       ? (playerCar.rpm > 8550 ? 0.45 : playerCar.rpm > 4200 ? 1.12 : 0.86)
       : 1.0;
     const maxSpd = isAutoGasMobile
-      ? spec.maxSpdPhys * (nosFiring ? 1.24 : 0.92) * (inDraft ? 1.10 : 1.0)
+      ? spec.maxSpdPhys * (nosFiring ? diffSpec.capNos : diffSpec.capNoNos) * (inDraft ? 1.10 : 1.0)
       : spec.maxSpdPhys * (nosFiring ? 1.32 : 1.0) * (inDraft ? 1.14 : 1.0);
     const acc = spec.accel * (nosFiring ? 1.75 : 1.0) * (inDraft ? 1.12 : 1.0) * powerBandMult * (playerCar.shiftDelay > 0 ? 0.3 : 1.0);
 
@@ -3639,10 +3765,10 @@
         Math.abs(trackData.curvatures[(s0 + 10) % FRAMES_COUNT]) * 0.88,
         Math.abs(trackData.curvatures[(s0 + 15) % FRAMES_COUNT]) * 0.75
       );
-      const cornerSeverity = Math.max(0, Math.min(1, (curveLook - 0.15) / 0.28));
-      const baseCruise = isTiltMobile ? 0.86 : 0.88;
-      const minCruise = isTiltMobile ? 0.58 : 0.60;
-      const autoCruiseRatio = Math.max(minCruise, baseCruise - cornerSeverity * 0.24 - Math.abs(steerInput) * 0.05);
+      const cornerSeverity = Math.max(0, Math.min(1, (curveLook - diffSpec.kStart) / diffSpec.kSpan));
+      const baseCruise = isTiltMobile ? diffSpec.cruiseTilt : diffSpec.cruiseTouch;
+      const minCruise = isTiltMobile ? diffSpec.minTilt : diffSpec.minTouch;
+      const autoCruiseRatio = Math.max(minCruise, baseCruise - cornerSeverity * diffSpec.cornerDrop - Math.abs(steerInput) * 0.05);
       const autoTargetSpd = spec.maxSpdPhys * autoCruiseRatio * (inDraft ? 1.08 : 1.0);
 
       if (nosFiring) {
@@ -3694,15 +3820,15 @@
 
       if (isTiltMobile) {
         const preset = TILT_SENS_PRESETS[tiltSensIdx] || TILT_SENS_PRESETS[0];
-        const activeEsp = handbrake
+        const activeEsp = (handbrake
           ? preset.espRate * 0.42
-          : preset.espRate * (1 - 0.30 * Math.abs(playerCar.smoothedSteer));
+          : preset.espRate * (1 - 0.30 * Math.abs(playerCar.smoothedSteer))) * diffSpec.espMult;
         playerCar.heading += dYaw * Math.min(1, dt * activeEsp);
       } else if (Math.abs(steerInput) < 0.05 && !handbrake && Math.abs(dYaw) < 0.45) {
         playerCar.heading += dYaw * Math.min(1, dt * 1.5);
       }
 
-      const edgeStart = isTiltMobile ? 7.0 : 7.6;
+      const edgeStart = isTiltMobile ? diffSpec.edgeTilt : diffSpec.edgeTouch;
       const latDot = Math.sin(playerCar.heading) * curR.x + Math.cos(playerCar.heading) * curR.z;
       if (Math.abs(playerCar.lat) > edgeStart && playerCar.lat * latDot > -0.04) {
         const wallProx = Math.min(1, (Math.abs(playerCar.lat) - edgeStart) / (MAX_LAT - edgeStart));
@@ -3710,12 +3836,12 @@
         let inDiff = inwardYaw - playerCar.heading;
         while (inDiff > Math.PI) inDiff -= Math.PI * 2;
         while (inDiff < -Math.PI) inDiff += Math.PI * 2;
-        playerCar.heading += inDiff * Math.min(1, dt * (2.5 + wallProx * 8.0));
+        playerCar.heading += inDiff * Math.min(1, dt * (2.5 + wallProx * 8.0) * diffSpec.cushMult);
 
         let inVelDiff = inwardYaw - playerCar.velHeading;
         while (inVelDiff > Math.PI) inVelDiff -= Math.PI * 2;
         while (inVelDiff < -Math.PI) inVelDiff += Math.PI * 2;
-        playerCar.velHeading += inVelDiff * Math.min(1, dt * (2.2 + wallProx * 7.0));
+        playerCar.velHeading += inVelDiff * Math.min(1, dt * (2.2 + wallProx * 7.0) * diffSpec.cushMult);
       }
     }
 
@@ -3860,16 +3986,12 @@
 
       const curveAhead = Math.abs(trackData.curvatures[lookSeg]);
       const gapToPlayer = ai.totalProgress - playerCar.totalProgress;
-      const rbFactor = isAutoGasMobile
-        ? (gapToPlayer > 0.14 ? 0.88 : gapToPlayer < -0.14 ? 1.06 : 1.0)
-        : (gapToPlayer > 0.14 ? 0.9 : gapToPlayer < -0.14 ? 1.1 : 1.0);
-      const aiCurveFactor = isAutoGasMobile
-        ? (curveAhead > 0.14 ? 0.66 : 0.94)
-        : (curveAhead > 0.15 ? 0.72 : 0.96);
-      const aiMobileScale = isTiltMobile ? 0.76 : (isAutoGasMobile ? 0.80 : 1.0);
+      const rbFactor = gapToPlayer > 0.14 ? diffSpec.rbLead : gapToPlayer < -0.14 ? diffSpec.rbBehind : 1.0;
+      const aiCurveFactor = curveAhead > 0.14 ? diffSpec.aiCrn : diffSpec.aiStr;
+      const aiMobileScale = isTiltMobile ? diffSpec.aiTilt : (isAutoGasMobile ? diffSpec.aiTouch : diffSpec.aiDesktop);
       const aiMaxSpd = ai.spec.maxSpdPhys * ai.aiSkill * rbFactor * aiCurveFactor * aiMobileScale;
 
-      if (ai.speed < aiMaxSpd) ai.speed += ai.spec.accel * 0.72 * dt;
+      if (ai.speed < aiMaxSpd) ai.speed += ai.spec.accel * diffSpec.aiAcc * dt;
       else ai.speed *= Math.pow(0.55, dt);
 
       ai.x += Math.sin(ai.heading) * ai.speed * dt;
@@ -3980,6 +4102,7 @@
     // Live debug / test snapshot hook
     window.__apexState = {
       appState,
+      difficulty: diffSpec.id,
       mobileControlActive,
       mobileControlMode,
       steerInput,
