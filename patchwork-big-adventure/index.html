@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Patchwork Big Adventure</title>
+  <style>
+    :root {
+      --felt-cream: #fff7e6;
+      --felt-tan: #f4dfba;
+      --kraft: #d7ab76;
+      --kraft-dark: #a67645;
+      --stitch-ink: #3e281b;
+      --berry: #eb4d70;
+      --mint: #2ec492;
+      --sky: #34a8eb;
+      --gold: #f6b928;
+      --violet: #7f5af0;
+      --shadow: 0 10px 28px rgba(45, 25, 12, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #9ad8ff;
+      font-family: 'Trebuchet MS', 'Nunito', 'Segoe UI', system-ui, sans-serif;
+      color: var(--stitch-ink);
+    }
+
+    #gameCanvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      touch-action: none;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Craft Card / Stitched Felt Panels */
+    .craft-panel {
+      background: linear-gradient(160deg, var(--felt-cream), var(--felt-tan));
+      border: 3px solid var(--kraft-dark);
+      border-radius: 20px;
+      box-shadow: var(--shadow), inset 0 0 0 3px rgba(255,255,255,0.65);
+      position: relative;
+    }
+
+    .craft-panel::after {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border: 2px dashed rgba(166, 118, 69, 0.55);
+      border-radius: 14px;
+      pointer-events: none;
+    }
+
+    .craft-btn {
+      font-family: inherit;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      border: 3px solid var(--stitch-ink);
+      border-radius: 14px;
+      padding: 10px 18px;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(180deg, #ff6b8b, var(--berry));
+      box-shadow: 0 4px 0 var(--stitch-ink), 0 8px 16px rgba(45,25,12,0.2);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
+    }
+
+    .craft-btn:hover {
+      filter: brightness(1.06);
+      transform: translateY(-1px);
+    }
+
+    .craft-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 var(--stitch-ink);
+    }
+
+    .craft-btn.mint { background: linear-gradient(180deg, #42dca8, var(--mint)); color: #0f3828; }
+    .craft-btn.sky { background: linear-gradient(180deg, #56c2ff, var(--sky)); color: #0b2d47; }
+    .craft-btn.gold { background: linear-gradient(180deg, #ffd257, var(--gold)); color: #3e281b; }
+    .craft-btn.violet { background: linear-gradient(180deg, #9d7dff, var(--violet)); }
+    .craft-btn.cream {
+      background: linear-gradient(180deg, #fffdf8, #f2dfc0);
+      color: var(--stitch-ink);
+    }
+
+    /* ================= TITLE OVERLAY ================= */
+    #titleOverlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 28px 36px;
+      z-index: 20;
+    }
+
+    .title-card {
+      pointer-events: auto;
+      width: min(440px, 92vw);
+      padding: 24px 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      backdrop-filter: blur(4px);
+    }
+
+    .title-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      align-self: flex-start;
+      background: var(--gold);
+      border: 2px solid var(--stitch-ink);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .title-marquee {
+      margin: 0;
+      font-size: 36px;
+      line-height: 1.02;
+      font-weight: 900;
+      color: var(--stitch-ink);
+      text-shadow: 0 3px 0 #fff, 0 5px 0 rgba(166,118,69,0.45);
+    }
+
+    .title-marquee span {
+      color: var(--berry);
+    }
+
+    .title-sub {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.45;
+      color: #5c3c28;
+      font-weight: 600;
+    }
+
+    .biome-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .biome-pill {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 2px solid rgba(62,40,27,0.35);
+      background: rgba(255,255,255,0.75);
+    }
+
+    .title-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 2px;
+    }
+
+    .title-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .title-toggles {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .mini-toggle {
+      flex: 1;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 7px 10px;
+      border-radius: 11px;
+      border: 2px solid var(--stitch-ink);
+      background: #fff9ee;
+      color: var(--stitch-ink);
+      cursor: pointer;
+    }
+
+    .mini-toggle.active {
+      background: #cff7e6;
+      border-color: #167a56;
+    }
+
+    /* ================= HUD OVERLAY ================= */
+    #hudOverlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 15;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .hud-stats {
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .stat-strip {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 13px;
+      background: rgba(255, 248, 232, 0.94);
+      border: 2.5px solid var(--stitch-ink);
+      border-radius: 999px;
+      box-shadow: 0 3px 0 rgba(62,40,27,0.85);
+      font-weight: 900;
+      font-size: 14px;
+    }
+
+    .dot-orb {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fff8a8, #f59e0b 55%, #06b6d4);
+      border: 1.5px solid var(--stitch-ink);
+    }
+    .dot-bell {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fff, #fbbf24 65%, #d97706);
+      border: 1.5px solid var(--stitch-ink);
+    }
+    .dot-critter {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #ffd4e5, #ec4899);
+      border: 1.5px solid var(--stitch-ink);
+    }
+
+    .biome-banner {
+      align-self: flex-start;
+      padding: 6px 14px;
+      background: rgba(62, 40, 27, 0.88);
+      color: #fff6df;
+      border-radius: 12px;
+      border: 2px dashed rgba(255, 231, 179, 0.65);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+    }
+
+    .hud-right {
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .compass-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #radarCanvas {
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      border: 3px solid var(--stitch-ink);
+      background: rgba(255, 248, 232, 0.92);
+      box-shadow: 0 4px 0 rgba(62,40,27,0.85);
+    }
+
+    .quick-pills {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+      max-width: 360px;
+    }
+
+    .hud-pill-btn {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 6px 11px;
+      border-radius: 11px;
+      border: 2px solid var(--stitch-ink);
+      background: rgba(255, 249, 236, 0.95);
+      color: var(--stitch-ink);
+      cursor: pointer;
+      box-shadow: 0 2px 0 var(--stitch-ink);
+    }
+
+    .hud-pill-btn.active {
+      background: #c7f9e5;
+    }
+
+    .hud-bottom {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .gadget-dock {
+      pointer-events: auto;
+      display: flex;
+      gap: 8px;
+      padding: 6px 10px;
+      background: rgba(255, 247, 230, 0.92);
+      border: 2.5px solid var(--stitch-ink);
+      border-radius: 16px;
+      box-shadow: 0 4px 0 rgba(62,40,27,0.85);
+    }
+
+    .gadget-slot {
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 11px;
+      border: 2px solid transparent;
+      background: rgba(215, 171, 118, 0.25);
+      color: var(--stitch-ink);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .gadget-slot.active {
+      background: var(--gold);
+      border-color: var(--stitch-ink);
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.6);
+    }
+
+    .hint-strip {
+      padding: 5px 14px;
+      border-radius: 999px;
+      background: rgba(45, 25, 12, 0.72);
+      color: #fff6e0;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    #toastBanner {
+      position: fixed;
+      top: 96px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 22px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #ffe066, #f59e0b);
+      border: 3px solid var(--stitch-ink);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.28);
+      font-weight: 900;
+      font-size: 15px;
+      color: var(--stitch-ink);
+      z-index: 30;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    /* ================= WARDROBE OVERLAY ================= */
+    #wardrobeOverlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 24px 28px;
+      z-index: 25;
+    }
+
+    .wardrobe-panel {
+      pointer-events: auto;
+      width: min(460px, 94vw);
+      max-height: 90vh;
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .cat-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .cat-tab {
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 8px 6px;
+      border-radius: 12px;
+      border: 2px solid var(--stitch-ink);
+      background: #fff8ea;
+      color: var(--stitch-ink);
+      cursor: pointer;
+    }
+
+    .cat-tab.active {
+      background: var(--berry);
+      color: #fff;
+    }
+
+    .item-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .item-card {
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 13px;
+      border: 2.5px solid rgba(62,40,27,0.45);
+      background: #fffdf7;
+      color: var(--stitch-ink);
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .item-card.selected {
+      border-color: var(--stitch-ink);
+      background: #ffe89e;
+      box-shadow: 0 3px 0 var(--stitch-ink);
+    }
+
+    .swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--stitch-ink);
+      flex-shrink: 0;
+    }
+
+    /* ================= WORLD MAP OVERLAY ================= */
+    #mapOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(30, 22, 16, 0.55);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 26;
+    }
+
+    .map-panel {
+      width: min(940px, 95vw);
+      max-height: 92vh;
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .map-body {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 14px;
+      min-height: 0;
+    }
+
+    #worldMapCanvas {
+      width: 100%;
+      height: 410px;
+      border-radius: 16px;
+      border: 3px solid var(--stitch-ink);
+      background: #d9f1ff;
+      cursor: pointer;
+    }
+
+    .map-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      max-height: 410px;
+      padding-right: 4px;
+    }
+
+    .travel-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .travel-btn {
+      font-family: inherit;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 12px;
+      border-radius: 12px;
+      border: 2px solid var(--stitch-ink);
+      background: #fffaf0;
+      color: var(--stitch-ink);
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .travel-btn:hover {
+      background: #ffe9ad;
+    }
+
+    .travel-tag {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #dff6ec;
+      border: 1.5px solid #167a56;
+    }
+
+    /* ================= TOUCH CONTROLS ================= */
+    #touchControls {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 18;
+      display: none;
+    }
+
+    @media (pointer: coarse) {
+      #touchControls.active {
+        display: block;
+      }
+    }
+
+    .touch-stick-base {
+      pointer-events: auto;
+      position: fixed;
+      left: 24px;
+      bottom: 28px;
+      width: 116px;
+      height: 116px;
+      border-radius: 50%;
+      background: rgba(255, 248, 232, 0.38);
+      border: 3px solid rgba(62, 40, 27, 0.65);
+    }
+
+    .touch-stick-knob {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 48px;
+      height: 48px;
+      margin: -24px 0 0 -24px;
+      border-radius: 50%;
+      background: var(--gold);
+      border: 2.5px solid var(--stitch-ink);
+    }
+
+    .touch-actions {
+      pointer-events: auto;
+      position: fixed;
+      right: 22px;
+      bottom: 24px;
+      display: grid;
+      grid-template-columns: repeat(2, 66px);
+      gap: 10px;
+    }
+
+    .touch-btn {
+      width: 66px;
+      height: 66px;
+      border-radius: 50%;
+      border: 3px solid var(--stitch-ink);
+      font-family: inherit;
+      font-weight: 900;
+      font-size: 11px;
+      color: #fff;
+      background: var(--berry);
+      box-shadow: 0 4px 0 var(--stitch-ink);
+    }
+
+    .touch-btn.jump { background: var(--mint); color: #0e3827; }
+    .touch-btn.gadget { background: var(--sky); color: #0a2940; }
+    .touch-btn.roll { background: var(--gold); color: var(--stitch-ink); }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Title Overlay -->
+  <div id="titleOverlay">
+    <div class="craft-panel title-card">
+      <div class="title-badge">Handcrafted 3D Platformer</div>
+      <h1 class="title-marquee">PATCHWORK <span>BIG ADVENTURE</span></h1>
+      <p class="title-sub">
+        Leap across sunlit stitched felt hills, musical piano bridges, cardboard castles, and infinite floating frontier islands!
+      </p>
+      <div class="biome-pills">
+        <span class="biome-pill">Stitching Meadows</span>
+        <span class="biome-pill">Cardboard Peaks</span>
+        <span class="biome-pill">Button Bay</span>
+        <span class="biome-pill">Clockwork Loft</span>
+        <span class="biome-pill">Origami Canyon</span>
+        <span class="biome-pill">∞ Frontier Islands</span>
+      </div>
+      <div class="title-actions">
+        <button id="playBtn" class="craft-btn" style="font-size:17px; padding:13px 20px;">EXPLORE WORLD</button>
+        <div class="title-row">
+          <button id="openWardrobeTitleBtn" class="craft-btn gold">ZOMZOM'S WARDROBE</button>
+          <button id="openMapTitleBtn" class="craft-btn sky">WORLD MAP &amp; ISLANDS</button>
+        </div>
+        <div class="title-toggles">
+          <button id="coopTitleBtn" class="mini-toggle active">CO-OP BUDDY: ON</button>
+          <button id="bloomTitleBtn" class="mini-toggle active">BLOOM: ON</button>
+          <button id="audioTitleBtn" class="mini-toggle active">AUDIO: ON</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- In-Game HUD -->
+  <div id="hudOverlay" class="hidden">
+    <div class="hud-top">
+      <div class="hud-stats">
+        <div class="stat-strip">
+          <div class="stat-pill"><span class="dot-orb"></span> <span id="orbCount">0</span> Orbs</div>
+          <div class="stat-pill"><span class="dot-bell"></span> <span id="bellCount">0</span> Bells</div>
+          <div class="stat-pill"><span class="dot-critter"></span> <span id="critterCount">0</span> Critters</div>
+        </div>
+        <div id="biomeBadge" class="biome-banner">Soaring Stitching Meadows</div>
+      </div>
+
+      <div class="hud-right">
+        <div class="compass-row">
+          <canvas id="radarCanvas" width="110" height="110"></canvas>
+        </div>
+        <div class="quick-pills">
+          <button id="hudWardrobeBtn" class="hud-pill-btn">Wardrobe [G]</button>
+          <button id="hudMapBtn" class="hud-pill-btn">Map [M]</button>
+          <button id="hudCoopBtn" class="hud-pill-btn active">Co-Op [P]</button>
+          <button id="hudBloomBtn" class="hud-pill-btn active">Bloom</button>
+          <button id="hudMuteBtn" class="hud-pill-btn">Audio</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="hud-bottom">
+      <div class="gadget-dock">
+        <button class="gadget-slot active" data-gadget="0">[1] Grapple Claw</button>
+        <button class="gadget-slot" data-gadget="1">[2] Whirltool</button>
+        <button class="gadget-slot" data-gadget="2">[3] Jet Boots</button>
+      </div>
+      <div class="hint-strip">
+        WASD Move • Space Jump/Flutter • Shift Roll • J/Click Slap • E Pound • F Grab • K/Q Gadget • B Call Buddy
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Banner -->
+  <div id="toastBanner" class="hidden">NEW ISLAND DISCOVERED!</div>
+
+  <!-- ZomZom's Wardrobe Overlay -->
+  <div id="wardrobeOverlay" class="hidden">
+    <div class="craft-panel wardrobe-panel">
+      <div class="panel-header">
+        <h2>ZomZom's Wardrobe</h2>
+        <button id="closeWardrobeBtn" class="craft-btn mint" style="padding:7px 14px; font-size:13px;">Done [G]</button>
+      </div>
+      <div class="cat-tabs">
+        <button class="cat-tab active" data-cat="yarn">Yarn (8)</button>
+        <button class="cat-tab" data-cat="hat">3D Hats (8)</button>
+        <button class="cat-tab" data-cat="outfit">Outfits (6)</button>
+      </div>
+      <div id="wardrobeGrid" class="item-grid"></div>
+    </div>
+  </div>
+
+  <!-- World Map & Balloon Fast-Travel Overlay -->
+  <div id="mapOverlay" class="hidden">
+    <div class="craft-panel map-panel">
+      <div class="panel-header">
+        <h2>Craft World Map &amp; Hot-Air Balloon</h2>
+        <div style="display:flex; gap:8px;">
+          <button id="sailNewFrontierBtn" class="craft-btn gold" style="padding:8px 14px; font-size:13px;">Sail Balloon to New Frontier Island!</button>
+          <button id="closeMapBtn" class="craft-btn cream" style="padding:8px 14px; font-size:13px;">Close [M]</button>
+        </div>
+      </div>
+      <div class="map-body">
+        <canvas id="worldMapCanvas" width="520" height="410"></canvas>
+        <div class="map-sidebar">
+          <div style="font-size:12px; font-weight:800; color:#6b462e;">Click any biome or discovered island to Balloon Fast-Travel:</div>
+          <div id="travelList" class="travel-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Touch Controls -->
+  <div id="touchControls">
+    <div class="touch-stick-base" id="touchStickBase">
+      <div class="touch-stick-knob" id="touchStickKnob"></div>
+    </div>
+    <div class="touch-actions">
+      <button class="touch-btn jump" id="touchJump">JUMP</button>
+      <button class="touch-btn" id="touchSlap">SLAP</button>
+      <button class="touch-btn gadget" id="touchGadget">GADGET</button>
+      <button class="touch-btn roll" id="touchRoll">ROLL</button>
+    </div>
+  </div>
+
+  <script src="./three.min.js"></script>
+  <script src="./postprocessing.min.js"></script>
+  <script src="./game.js"></script>
+</body>
+</html>
