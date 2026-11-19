@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Apex Nitro 3D — Street &amp; Canyon Racing</title>
-  <meta name="description" content="Zero-asset 3D WebGL street &amp; canyon arcade racer built with Three.js and Web Audio — featuring Touch, Gyro Tilt, and Pedal controls." />
-  <meta property="og:title" content="Apex Nitro 3D — Zero-Asset WebGL Arcade Racer" />
-  <meta property="og:description" content="Procedural 3D supercars, PBR clear-coat, UnrealBloom, Web Audio engine synth, and 3-way mobile Touch / Gyro Tilt controls." />
+  <title>Apex Nitro 3D — Neon Scramble Edition</title>
+  <meta name="description" content="Zero-asset 3D WebGL street &amp; canyon arcade racer built with Three.js HDR bloom, FXAA, procedural sky dome, and 3D Neon Transit Map." />
+  <meta property="og:title" content="Apex Nitro 3D — Neon Scramble Edition" />
+  <meta property="og:description" content="3D Aerial Neon Transit Map, HDR UnrealBloom + FXAA, wet-asphalt light pillars, clear-coat supercars, and 3-way mobile controls." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://theshybulb.com/apex-nitro/" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@macsdev" />
-  <meta name="twitter:title" content="Apex Nitro 3D — Zero-Asset WebGL Arcade Racer" />
-  <meta name="twitter:description" content="Procedural 3D supercars, PBR clear-coat, UnrealBloom, Web Audio engine synth, and 3-way mobile Touch / Gyro Tilt controls." />
+  <meta name="twitter:title" content="Apex Nitro 3D — Neon Scramble Edition" />
+  <meta name="twitter:description" content="3D Aerial Neon Transit Map, HDR UnrealBloom + FXAA, wet-asphalt light pillars, clear-coat supercars, and 3-way mobile controls." />
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7BM4FSL4YP"></script>
   <script>
@@ -23,12 +23,16 @@
   </script>
   <style>
     :root {
-      --nfs-cyan: #00f0ff;
-      --nfs-magenta: #ff2a85;
-      --nfs-gold: #ffd166;
+      --nfs-cyan: #22d3ee;
+      --nfs-magenta: #ec4899;
+      --nfs-amber: #f59e0b;
+      --nfs-gold: #fbbf24;
       --nfs-lime: #4ade80;
-      --nfs-bg: rgba(8, 11, 22, 0.8);
-      --nfs-border: rgba(0, 240, 255, 0.34);
+      --nfs-violet: #a855f7;
+      --glass-bg: rgba(8, 13, 24, 0.80);
+      --glass-bg-strong: rgba(8, 13, 24, 0.90);
+      --glass-border: rgba(255, 255, 255, 0.12);
+      --glass-border-cyan: rgba(34, 211, 238, 0.32);
     }
     * {
       box-sizing: border-box;
@@ -41,8 +45,8 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #05070e;
-      font-family: 'Segoe UI', 'Rajdhani', system-ui, -apple-system, sans-serif;
+      background: #060b16;
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
       color: #f8fafc;
     }
     #gameCanvas {
@@ -52,17 +56,17 @@
       touch-action: none;
     }
 
-    /* Glass Panels */
+    /* Editorial Frosted Glass Panels */
     .nfs-panel {
-      background: var(--nfs-bg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1.5px solid var(--nfs-border);
-      border-radius: 14px;
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
 
-    /* ==================== LIVE 3D CINEMATIC TITLE SCREEN ==================== */
+    /* ==================== 3D AERIAL NEON TRANSIT MAP TITLE SCREEN ==================== */
     #titleOverlay {
       position: fixed;
       inset: 0;
@@ -70,161 +74,283 @@
       display: none;
       flex-direction: column;
       justify-content: space-between;
-      padding: 22px 28px;
+      padding: 18px 22px;
       pointer-events: none;
-      background: linear-gradient(92deg, rgba(4, 6, 15, 0.9) 0%, rgba(4, 6, 15, 0.56) 40%, rgba(4, 6, 15, 0.06) 76%);
+      background: radial-gradient(circle at 50% 45%, rgba(6, 11, 22, 0) 48%, rgba(4, 8, 18, 0.34) 100%);
+      transition: opacity 0.32s ease;
     }
     body.in-title #titleOverlay {
       display: flex;
     }
-    .title-top-bar {
+    body.in-swoop #titleOverlay {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      pointer-events: auto;
+      opacity: 0;
+      pointer-events: none;
     }
-    .title-ribbon {
-      display: inline-block;
-      background: linear-gradient(135deg, rgba(255, 42, 133, 0.95), rgba(255, 107, 0, 0.95));
-      color: #fff;
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: 1.8px;
-      padding: 4px 14px;
-      border-radius: 6px;
-      transform: skewX(-10deg);
-      box-shadow: 0 6px 20px rgba(255, 42, 133, 0.45);
-      text-transform: uppercase;
+
+    /* 3D Projected Landmark Callout Layer */
+    #mapLabelsLayer {
+      position: fixed;
+      inset: 0;
+      z-index: 33;
+      pointer-events: none;
+      overflow: hidden;
+      display: none;
+      transition: opacity 0.25s ease;
     }
-    .title-hero-left {
-      max-width: 470px;
-      pointer-events: auto;
-      margin-top: auto;
-      margin-bottom: auto;
+    body.in-title #mapLabelsLayer {
+      display: block;
     }
-    .title-logo-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-top: 12px;
+    body.in-swoop #mapLabelsLayer {
+      display: block;
+      opacity: 0;
     }
-    .title-logo {
-      font-size: 54px;
-      line-height: 0.96;
-      font-weight: 900;
-      font-style: italic;
-      letter-spacing: 1.5px;
-      background: linear-gradient(100deg, #ffffff 10%, var(--nfs-cyan) 62%, var(--nfs-magenta) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 0 24px rgba(0, 240, 255, 0.4));
-    }
-    .title-3d-badge {
-      background: linear-gradient(135deg, var(--nfs-cyan), #3b82f6);
-      color: #060914;
-      font-size: 20px;
-      font-weight: 900;
-      font-style: italic;
-      padding: 4px 11px;
-      border-radius: 8px;
-      transform: skewX(-10deg);
-      box-shadow: 0 0 22px rgba(0, 240, 255, 0.55);
-    }
-    .title-sub {
-      margin-top: 10px;
-      margin-bottom: 20px;
-      font-size: 13.5px;
-      font-weight: 700;
-      color: #cbd5e1;
-      letter-spacing: 0.35px;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);
-    }
-    .title-menu {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .title-btn {
+    #mapLabelsSvg {
+      position: absolute;
+      inset: 0;
       width: 100%;
-      text-align: left;
-      padding: 12px 18px;
-      border-radius: 10px;
-      background: rgba(10, 15, 29, 0.82);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1.5px solid rgba(255, 255, 255, 0.16);
-      border-left: 5px solid var(--nfs-cyan);
-      color: #f8fafc;
-      cursor: pointer;
-      transform: skewX(-8deg);
-      transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+      height: 100%;
+      pointer-events: none;
     }
-    .title-btn:hover {
-      transform: skewX(-8deg) translateX(8px);
-      border-color: var(--nfs-cyan);
-      background: rgba(16, 25, 48, 0.94);
-      box-shadow: 0 10px 28px rgba(0, 240, 255, 0.32);
-    }
-    .title-btn.primary {
-      background: linear-gradient(125deg, rgba(255, 42, 133, 0.94) 0%, rgba(255, 107, 0, 0.94) 58%, rgba(255, 209, 102, 0.96) 100%);
-      border-color: #ffd166;
-      border-left: 5px solid #ffffff;
-      color: #080b14;
-      box-shadow: 0 12px 32px rgba(255, 42, 133, 0.45);
-    }
-    .title-btn.primary:hover {
-      box-shadow: 0 16px 40px rgba(255, 42, 133, 0.7);
-    }
-    .title-btn.pursuit { border-left-color: var(--nfs-magenta); }
-    .title-btn.drift { border-left-color: var(--nfs-gold); }
-    .title-btn-inner {
-      transform: skewX(8deg);
-      display: flex;
-      justify-content: space-between;
+    .map-pill {
+      position: absolute;
+      transform: translate(14px, -50%);
+      display: inline-flex;
       align-items: center;
-      gap: 12px;
+      gap: 7px;
+      padding: 4px 10px 4px 8px;
+      background: rgba(8, 13, 24, 0.84);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+      white-space: nowrap;
+      transition: opacity 0.15s ease;
     }
-    .title-btn-main {
-      font-size: 16.5px;
-      font-weight: 900;
-      letter-spacing: 0.7px;
-      text-transform: uppercase;
+    .map-pill-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
     }
-    .title-btn-sub {
-      font-size: 11.5px;
+    .map-pill-text {
+      font-size: 11px;
       font-weight: 700;
-      opacity: 0.85;
-      margin-top: 1px;
+      letter-spacing: 0.2px;
+      color: #e2e8f0;
     }
-    .title-btn.primary .title-btn-sub {
-      color: #111827;
-      opacity: 0.9;
-    }
-    .title-btn-arrow {
-      font-size: 16px;
-      font-weight: 900;
-      opacity: 0.8;
-    }
-    .title-bottom-bar {
+
+    .title-top-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       gap: 12px;
       flex-wrap: wrap;
+      position: relative;
+      z-index: 2;
     }
-    .attract-badge {
-      padding: 7px 14px;
+
+    /* Top-Left Compact Frosted Selector Pill */
+    .title-top-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 14px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+      pointer-events: auto;
+      flex-wrap: wrap;
+    }
+    .pill-seg-group {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 2px;
+      border-radius: 10px;
+    }
+    .pill-seg-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: #94a3b8;
       font-size: 11.5px;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .pill-seg-btn:hover {
+      color: #f8fafc;
+    }
+    .pill-seg-btn.active {
+      background: rgba(34, 211, 238, 0.16);
+      border-color: rgba(34, 211, 238, 0.42);
+      color: #f8fafc;
+      box-shadow: 0 0 14px rgba(34, 211, 238, 0.18);
+    }
+    .pill-seg-btn.mode-btn.active {
+      background: rgba(245, 158, 11, 0.18);
+      border-color: rgba(245, 158, 11, 0.46);
+      color: #fde68a;
+    }
+    .pill-divider {
+      width: 1px;
+      height: 18px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* Top-Right Compact Utility Strip */
+    .title-utility-strip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px;
+      border-radius: 14px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+      pointer-events: auto;
+    }
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.05);
+      color: #cbd5e1;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 9px;
+      padding: 6px 11px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.14s ease;
+      white-space: nowrap;
+    }
+    .btn-ghost:hover {
+      border-color: rgba(34, 211, 238, 0.55);
+      color: #ffffff;
+      background: rgba(34, 211, 238, 0.12);
+    }
+    .btn-ghost.on {
+      border-color: rgba(34, 211, 238, 0.48);
+      color: #67e8f9;
+      background: rgba(34, 211, 238, 0.1);
+    }
+
+    /* Bottom-Center Editorial Frosted Capsule */
+    .title-capsule-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      position: relative;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .title-capsule {
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 18px 11px;
+      border-radius: 18px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(34, 211, 238, 0.08);
+      min-width: 420px;
+      max-width: 94vw;
+    }
+    .capsule-main-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .capsule-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .capsule-title-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .capsule-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22d3ee;
+      box-shadow: 0 0 12px #22d3ee, 0 0 4px #ffffff;
+    }
+    .capsule-name {
+      font-size: 16px;
       font-weight: 900;
-      letter-spacing: 1px;
-      color: var(--nfs-cyan);
+      letter-spacing: 3.2px;
+      color: #f8fafc;
       text-transform: uppercase;
     }
-    .title-controls-note {
-      padding: 7px 14px;
-      font-size: 11px;
-      font-weight: 700;
-      color: #cbd5e1;
+    .capsule-route {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #94a3b8;
+      padding-left: 16px;
+      letter-spacing: 0.25px;
+    }
+    .capsule-play-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 24px;
+      background: linear-gradient(135deg, #f59e0b, #fb923c);
+      color: #080d18;
+      font-size: 13.5px;
+      font-weight: 900;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 6px 24px rgba(245, 158, 11, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+      transition: transform 0.14s ease, box-shadow 0.14s ease;
+      white-space: nowrap;
+    }
+    .capsule-play-btn:hover {
+      transform: translateY(-1px) scale(1.03);
+      box-shadow: 0 10px 30px rgba(245, 158, 11, 0.68);
+    }
+    .capsule-key-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #94a3b8;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 8px;
+      width: 100%;
+    }
+    .micro-kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #e2e8f0;
+      font-size: 9.5px;
+      font-weight: 800;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      margin-right: 2px;
     }
 
     /* ==================== 3D SPEEDSHOP GARAGE OVERLAY ==================== */
@@ -236,8 +362,8 @@
       display: none;
       flex-direction: column;
       justify-content: space-between;
-      padding: 14px 18px;
-      background: radial-gradient(circle at 60% 50%, rgba(0, 0, 0, 0) 36%, rgba(4, 6, 14, 0.44) 100%);
+      padding: 16px 20px;
+      background: radial-gradient(circle at 60% 50%, rgba(0, 0, 0, 0) 40%, rgba(4, 7, 16, 0.45) 100%);
     }
     body.in-garage #garageOverlay {
       display: flex;
@@ -258,55 +384,40 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 7px 15px;
+      padding: 8px 16px;
     }
     .car-hero-title {
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 900;
-      font-style: italic;
-      color: #fff;
       letter-spacing: 0.6px;
+      color: #fff;
     }
     .car-hero-meta {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-top: 1px;
+      margin-top: 2px;
     }
     .brand-kicker {
-      background: linear-gradient(135deg, var(--nfs-magenta), #ff6b00);
-      color: #fff;
-      font-size: 10px;
+      background: linear-gradient(135deg, #22d3ee, #3b82f6);
+      color: #060b16;
+      font-size: 9.5px;
       font-weight: 900;
-      letter-spacing: 1.2px;
+      letter-spacing: 1px;
       padding: 2px 8px;
       border-radius: 5px;
       text-transform: uppercase;
     }
     .header-actions {
       display: flex;
-      gap: 8px;
+      gap: 7px;
       flex-wrap: wrap;
-    }
-    .btn-ghost {
-      background: rgba(12, 18, 34, 0.88);
-      color: #e2e8f0;
-      border: 1.5px solid rgba(255, 255, 255, 0.22);
-      border-radius: 10px;
-      padding: 7px 12px;
-      font-size: 12px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: all 0.14s ease;
-    }
-    .btn-ghost:hover {
-      border-color: var(--nfs-cyan);
-      color: #fff;
-      box-shadow: 0 0 14px rgba(0, 240, 255, 0.35);
-    }
-    .btn-ghost.on {
-      border-color: var(--nfs-cyan);
-      color: var(--nfs-cyan);
+      padding: 5px 7px;
+      border-radius: 13px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
     }
 
     .garage-body {
@@ -315,16 +426,16 @@
       align-items: flex-end;
       flex: 1;
       min-height: 0;
-      margin-top: 10px;
+      margin-top: 12px;
     }
     .garage-left-drawer {
-      width: 348px;
+      width: 344px;
       max-width: 92vw;
       max-height: calc(100vh - 96px);
       display: flex;
       flex-direction: column;
       pointer-events: auto;
-      padding: 10px 12px;
+      padding: 12px;
       align-self: flex-start;
     }
     .garage-tabs {
@@ -336,24 +447,21 @@
     }
     .tab-btn {
       padding: 8px 6px;
-      border-radius: 9px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1.5px solid rgba(255, 255, 255, 0.14);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.10);
       color: #94a3b8;
       font-size: 11.5px;
-      font-weight: 900;
+      font-weight: 800;
       cursor: pointer;
       transition: all 0.14s ease;
     }
-    .tab-btn:hover {
-      color: #fff;
-      border-color: rgba(0, 240, 255, 0.5);
-    }
+    .tab-btn:hover { color: #fff; border-color: rgba(34, 211, 238, 0.45); }
     .tab-btn.active {
-      background: linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(255, 42, 133, 0.2));
+      background: rgba(34, 211, 238, 0.16);
       border-color: var(--nfs-cyan);
       color: #fff;
-      box-shadow: 0 0 14px rgba(0, 240, 255, 0.28);
+      box-shadow: 0 0 16px rgba(34, 211, 238, 0.18);
     }
     .tab-pane {
       display: none;
@@ -362,19 +470,17 @@
       overflow-y: auto;
       padding-right: 2px;
     }
-    .tab-pane.active {
-      display: flex;
-    }
+    .tab-pane.active { display: flex; }
     .tab-pane::-webkit-scrollbar { width: 4px; }
     .tab-pane::-webkit-scrollbar-thumb {
-      background: rgba(0, 240, 255, 0.35);
+      background: rgba(34, 211, 238, 0.35);
       border-radius: 4px;
     }
 
     .sec-title {
       font-size: 10.5px;
-      font-weight: 900;
-      letter-spacing: 1.2px;
+      font-weight: 800;
+      letter-spacing: 1.1px;
       text-transform: uppercase;
       color: var(--nfs-cyan);
       margin-bottom: 6px;
@@ -383,51 +489,44 @@
       align-items: center;
     }
 
-    /* Car Roster Cards */
-    .car-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 5px;
-    }
+    .car-grid { display: grid; grid-template-columns: 1fr; gap: 5px; }
     .car-btn {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 7px 10px;
-      border-radius: 9px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.10);
       color: #cbd5e1;
       cursor: pointer;
       text-align: left;
       transition: all 0.14s ease;
     }
     .car-btn:hover {
-      background: rgba(0, 240, 255, 0.12);
-      border-color: rgba(0, 240, 255, 0.55);
+      background: rgba(34, 211, 238, 0.10);
+      border-color: rgba(34, 211, 238, 0.45);
       color: #fff;
     }
     .car-btn.active {
-      background: linear-gradient(90deg, rgba(0, 240, 255, 0.24), rgba(255, 42, 133, 0.16));
+      background: linear-gradient(90deg, rgba(34, 211, 238, 0.22), rgba(245, 158, 11, 0.10));
       border-color: var(--nfs-cyan);
       color: #fff;
-      box-shadow: 0 0 18px rgba(0, 240, 255, 0.28);
     }
-    .car-name { font-size: 13px; font-weight: 900; letter-spacing: 0.3px; }
-    .car-tag { font-size: 10px; color: #94a3b8; font-weight: 700; }
+    .car-name { font-size: 13px; font-weight: 800; letter-spacing: 0.2px; }
+    .car-tag { font-size: 10px; color: #94a3b8; font-weight: 600; }
     .car-rating {
       font-size: 10.5px;
       font-weight: 900;
       color: var(--nfs-gold);
-      background: rgba(255, 209, 102, 0.12);
+      background: rgba(251, 191, 36, 0.12);
       padding: 2px 7px;
       border-radius: 6px;
     }
 
-    /* Stat Bars */
     .specs-box {
       background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.09);
       border-radius: 10px;
       padding: 9px 10px;
     }
@@ -437,35 +536,29 @@
       display: flex;
       justify-content: space-between;
       font-size: 10.5px;
-      font-weight: 800;
+      font-weight: 700;
       color: #cbd5e1;
       margin-bottom: 3px;
     }
     .stat-track {
-      height: 6px;
-      background: rgba(255, 255, 255, 0.12);
+      height: 5px;
+      background: rgba(255, 255, 255, 0.10);
       border-radius: 999px;
       overflow: hidden;
     }
     .stat-fill {
       height: 100%;
       border-radius: 999px;
-      background: linear-gradient(90deg, var(--nfs-cyan), var(--nfs-magenta));
+      background: linear-gradient(90deg, var(--nfs-cyan), var(--nfs-amber));
       transition: width 0.25s ease;
     }
 
-    /* Swatches & Option Pills */
-    .swatch-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 4px;
-    }
+    .swatch-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
     .swatch-btn {
       width: 24px;
       height: 24px;
       border-radius: 50%;
-      border: 2px solid rgba(255, 255, 255, 0.32);
+      border: 2px solid rgba(255, 255, 255, 0.28);
       cursor: pointer;
       transition: transform 0.12s ease, box-shadow 0.12s ease;
     }
@@ -473,99 +566,81 @@
     .swatch-btn.active {
       border-color: #fff;
       transform: scale(1.16);
-      box-shadow: 0 0 12px rgba(255, 255, 255, 0.78);
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.72);
     }
-    .pill-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 5px;
-    }
+    .pill-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; }
     .opt-pill {
       padding: 6px 8px;
       border-radius: 8px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1.5px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       color: #cbd5e1;
       font-size: 11px;
-      font-weight: 800;
+      font-weight: 700;
       cursor: pointer;
       text-align: center;
       transition: all 0.12s ease;
     }
     .opt-pill:hover { border-color: var(--nfs-cyan); color: #fff; }
     .opt-pill.active {
-      background: rgba(0, 240, 255, 0.22);
+      background: rgba(34, 211, 238, 0.20);
       border-color: var(--nfs-cyan);
       color: #fff;
-      box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
     }
 
-    /* Track & Mode Cards */
     .stack-list { display: flex; flex-direction: column; gap: 5px; }
     .mode-card-btn {
       padding: 7px 10px;
       border-radius: 9px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1.5px solid rgba(255, 255, 255, 0.13);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.10);
       color: #cbd5e1;
       text-align: left;
       cursor: pointer;
       transition: all 0.14s ease;
     }
-    .mode-card-btn:hover { border-color: var(--nfs-magenta); color: #fff; }
+    .mode-card-btn:hover { border-color: var(--nfs-amber); color: #fff; }
     .mode-card-btn.active {
-      background: linear-gradient(90deg, rgba(255, 42, 133, 0.25), rgba(0, 240, 255, 0.15));
-      border-color: var(--nfs-magenta);
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.20), rgba(34, 211, 238, 0.12));
+      border-color: var(--nfs-amber);
       color: #fff;
-      box-shadow: 0 0 16px rgba(255, 42, 133, 0.3);
     }
-    .mode-title { font-size: 12px; font-weight: 900; }
-    .mode-desc { font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 1px; }
+    .mode-title { font-size: 12px; font-weight: 800; }
+    .mode-desc { font-size: 10px; color: #94a3b8; font-weight: 500; margin-top: 1px; }
 
-    /* Bottom-Right Speedshop Launch Pod */
     .garage-launch-pod {
       pointer-events: auto;
-      width: 320px;
+      width: 312px;
       max-width: 92vw;
-      padding: 10px 12px;
+      padding: 12px 14px;
       display: flex;
       flex-direction: column;
-      gap: 7px;
+      gap: 8px;
       align-items: stretch;
     }
-    .orbit-hint {
-      font-size: 11px;
-      font-weight: 800;
-      color: #94a3b8;
-      text-align: center;
-    }
-    .event-summary-lbl {
-      font-size: 11.5px;
-      font-weight: 800;
-      color: var(--nfs-gold);
-      text-align: center;
-    }
+    .orbit-hint { font-size: 11px; font-weight: 700; color: #94a3b8; text-align: center; }
+    .event-summary-lbl { font-size: 11.5px; font-weight: 700; color: var(--nfs-gold); text-align: center; }
     .launch-btn {
       width: 100%;
-      padding: 12px 16px;
+      padding: 11px 16px;
       border: none;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #ff2a85 0%, #ff6b00 50%, #ffd166 100%);
-      color: #0b0f19;
-      font-size: 15.5px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #f59e0b, #fb923c);
+      color: #080d18;
+      font-size: 14px;
       font-weight: 900;
       letter-spacing: 1px;
       text-transform: uppercase;
       cursor: pointer;
-      box-shadow: 0 10px 28px rgba(255, 42, 133, 0.52);
+      box-shadow: 0 8px 26px rgba(245, 158, 11, 0.45);
       transition: transform 0.14s ease, box-shadow 0.14s ease;
     }
     .launch-btn:hover {
-      transform: translateY(-2px) scale(1.02);
-      box-shadow: 0 14px 36px rgba(255, 42, 133, 0.74);
+      transform: translateY(-1px) scale(1.02);
+      box-shadow: 0 12px 32px rgba(245, 158, 11, 0.65);
     }
 
-    /* ==================== IN-RACE NFS HUD ==================== */
+    /* ==================== MINIMALIST IN-RACE HUD ==================== */
     #raceHud {
       position: fixed;
       inset: 0;
@@ -577,82 +652,83 @@
       display: block;
     }
 
-    /* Live Top-Center 3D Rear-View Mirror Frame */
+    /* Slim Top-Center Rear-View Mirror */
     #rearMirrorFrame {
       position: fixed;
       top: 12px;
       left: 50%;
       transform: translateX(-50%);
-      width: 268px;
-      height: 62px;
-      border-radius: 10px;
-      border: 2px solid rgba(0, 240, 255, 0.72);
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75), inset 0 0 10px rgba(0, 240, 255, 0.25);
+      width: 248px;
+      height: 54px;
+      border-radius: 12px;
+      border: 1.5px solid rgba(34, 211, 238, 0.52);
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.65), inset 0 0 10px rgba(34, 211, 238, 0.14);
       pointer-events: none;
       overflow: hidden;
       background: transparent;
     }
     #rearMirrorTag {
       position: absolute;
-      top: 2px;
+      top: 3px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 8.5px;
-      font-weight: 900;
-      letter-spacing: 1.4px;
-      color: rgba(224, 242, 254, 0.9);
-      background: rgba(5, 9, 20, 0.72);
-      padding: 1px 8px;
-      border-radius: 4px;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: rgba(224, 242, 254, 0.85);
+      background: rgba(6, 11, 22, 0.68);
+      padding: 1px 7px;
+      border-radius: 999px;
     }
     body.mirror-off #rearMirrorFrame {
       display: none;
     }
 
-    /* Top-Left Telemetry */
+    /* Top-Left Sleek Telemetry Pill */
     .hud-top-left {
       position: absolute;
       top: 14px;
       left: 16px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 7px;
       z-index: 3;
     }
     .pos-card {
-      padding: 10px 16px;
+      padding: 8px 15px;
       display: flex;
       align-items: center;
-      gap: 16px;
-      border-left: 4px solid var(--nfs-cyan);
+      gap: 14px;
+      border-radius: 14px;
+      border-left: 3px solid var(--nfs-cyan);
     }
     .pos-big {
-      font-size: 32px;
+      font-size: 28px;
       font-weight: 900;
       font-style: italic;
       color: var(--nfs-cyan);
       line-height: 1;
-      text-shadow: 0 0 14px rgba(0, 240, 255, 0.5);
+      text-shadow: 0 0 14px rgba(34, 211, 238, 0.45);
     }
-    .pos-total { font-size: 13px; color: #94a3b8; font-weight: 800; }
+    .pos-total { font-size: 12px; color: #94a3b8; font-weight: 700; }
     .lap-block {
-      border-left: 1.5px solid rgba(255, 255, 255, 0.16);
-      padding-left: 14px;
+      border-left: 1px solid rgba(255, 255, 255, 0.14);
+      padding-left: 12px;
     }
-    .lap-val { font-size: 18px; font-weight: 900; color: #fff; }
-    .time-val { font-size: 12.5px; font-weight: 800; color: var(--nfs-gold); font-variant-numeric: tabular-nums; }
-    .best-val { font-size: 11px; color: #94a3b8; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .lap-val { font-size: 14.5px; font-weight: 900; color: #fff; letter-spacing: 0.4px; }
+    .time-val { font-size: 12px; font-weight: 700; color: var(--nfs-gold); font-variant-numeric: tabular-nums; }
+    .best-val { font-size: 10.5px; color: #94a3b8; font-weight: 600; font-variant-numeric: tabular-nums; }
     #pursuitBarCard {
-      padding: 8px 14px;
-      border-left: 4px solid var(--nfs-magenta);
+      padding: 7px 13px;
+      border-left: 3px solid var(--nfs-magenta);
       display: none;
     }
-    .heat-label { font-size: 11.5px; font-weight: 900; color: #ff5ca8; letter-spacing: 0.8px; }
+    .heat-label { font-size: 11px; font-weight: 800; color: #f472b6; letter-spacing: 0.6px; }
 
-    /* Top-Center Combo, Slipstream Draft & Countdown */
+    /* Top-Center Style / Drift / Draft Pills */
     .hud-top-center {
       position: absolute;
-      top: 82px;
+      top: 74px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -661,40 +737,36 @@
       gap: 5px;
       transition: top 0.15s ease;
     }
-    body.mirror-off .hud-top-center {
-      top: 14px;
-    }
+    body.mirror-off .hud-top-center { top: 14px; }
     .style-score-pill {
-      padding: 5px 16px;
-      font-size: 13.5px;
-      font-weight: 900;
+      padding: 4px 13px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 800;
       color: var(--nfs-gold);
-      letter-spacing: 0.8px;
+      letter-spacing: 0.7px;
       font-variant-numeric: tabular-nums;
+      opacity: 0.92;
     }
     #draftHud {
-      padding: 5px 14px;
-      border-color: var(--nfs-cyan);
-      background: linear-gradient(90deg, rgba(0, 240, 255, 0.28), rgba(59, 130, 246, 0.22));
-      font-size: 13px;
-      font-weight: 900;
-      font-style: italic;
-      color: #e0f2fe;
-      text-shadow: 0 0 12px rgba(0, 240, 255, 0.85);
+      padding: 4px 13px;
+      border-radius: 999px;
+      border-color: rgba(34, 211, 238, 0.55);
+      background: rgba(8, 22, 42, 0.84);
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #a5f3fc;
       display: none;
     }
-    #draftHud.active {
-      display: block;
-    }
+    #draftHud.active { display: block; }
     #comboHud {
-      padding: 6px 16px;
-      border-color: var(--nfs-magenta);
-      background: linear-gradient(90deg, rgba(255, 42, 133, 0.25), rgba(0, 240, 255, 0.18));
-      font-size: 15px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      border-color: rgba(245, 158, 11, 0.55);
+      background: rgba(24, 14, 28, 0.85);
+      font-size: 13px;
       font-weight: 900;
-      font-style: italic;
-      color: #fff;
-      text-shadow: 0 0 12px rgba(255, 42, 133, 0.85);
+      color: #fde68a;
       opacity: 0;
       transform: scale(0.9);
       transition: opacity 0.15s ease, transform 0.15s ease;
@@ -706,11 +778,11 @@
       top: 34%;
       left: 50%;
       transform: translate(-50%, -50%) scale(0.85);
-      font-size: 82px;
+      font-size: 80px;
       font-weight: 900;
       font-style: italic;
       color: #fff;
-      text-shadow: 0 0 36px var(--nfs-cyan), 0 6px 0 #0f172a;
+      text-shadow: 0 0 32px var(--nfs-cyan), 0 6px 0 #090d18;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.18s ease, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -731,20 +803,20 @@
     }
     #calloutBanner.active { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     .callout-main {
-      font-size: 30px;
+      font-size: 28px;
       font-weight: 900;
       font-style: italic;
       color: var(--nfs-cyan);
-      text-shadow: 0 0 20px rgba(0, 240, 255, 0.75), 0 4px 0 #090d16;
+      text-shadow: 0 0 20px rgba(34, 211, 238, 0.7), 0 4px 0 #090d16;
     }
     .callout-sub {
-      font-size: 14.5px;
-      font-weight: 800;
+      font-size: 13.5px;
+      font-weight: 700;
       color: var(--nfs-gold);
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
     }
 
-    /* Top-Right Radar & Controls */
+    /* Top-Right Neon Tactical Minimap + Compact 3-Button Glass Bar + Settings Popover */
     .hud-top-right {
       position: absolute;
       top: 14px;
@@ -756,55 +828,91 @@
       z-index: 4;
     }
     #minimapCanvas {
-      width: 170px;
-      height: 170px;
-      border-radius: 20px;
-      border: 2px solid var(--nfs-border);
-      background: rgba(7, 11, 22, 0.82);
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
+      width: 166px;
+      height: 166px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(6, 11, 22, 0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
     }
-    .quick-toggles {
-      display: grid;
-      grid-template-columns: repeat(3, auto);
+    .compact-hud-bar {
+      display: flex;
+      align-items: center;
       gap: 5px;
+      padding: 4px 5px;
+      border-radius: 12px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
       pointer-events: auto;
     }
     .hud-btn {
-      background: rgba(11, 16, 30, 0.88);
+      background: rgba(255, 255, 255, 0.05);
       color: #e2e8f0;
-      border: 1.5px solid rgba(255, 255, 255, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 8px;
-      padding: 5px 8px;
+      padding: 5px 9px;
       font-size: 11px;
-      font-weight: 800;
+      font-weight: 700;
       cursor: pointer;
       transition: all 0.14s ease;
     }
     .hud-btn:hover { border-color: var(--nfs-cyan); color: #fff; }
-    .hud-btn.on { border-color: var(--nfs-cyan); color: var(--nfs-cyan); }
+    .hud-btn.on { border-color: rgba(34, 211, 238, 0.55); color: var(--nfs-cyan); background: rgba(34, 211, 238, 0.1); }
+    #hudSettingsPopover {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      padding: 8px;
+      border-radius: 12px;
+      background: var(--glass-bg-strong);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.68);
+      pointer-events: auto;
+      min-width: 146px;
+    }
+    #hudSettingsPopover.open {
+      display: flex;
+    }
+    #hudSettingsPopover .hud-btn {
+      width: 100%;
+      text-align: left;
+    }
 
-    /* Bottom-Left Key Legend */
+    /* Bottom-Left Faint Key-Hint Pill (Auto-fades after 6s) */
     .hud-bottom-left {
       position: absolute;
       bottom: 16px;
       left: 16px;
-      padding: 9px 13px;
-      font-size: 11px;
-      line-height: 1.58;
-      color: #cbd5e1;
+      padding: 7px 12px;
+      border-radius: 12px;
+      font-size: 10.5px;
+      line-height: 1.55;
+      color: #94a3b8;
+      pointer-events: none;
+      opacity: 0.76;
+      transition: opacity 0.9s ease;
+    }
+    body.hud-hints-faded .hud-bottom-left {
+      opacity: 0;
     }
     .key-pill {
       display: inline-block;
-      background: rgba(255, 255, 255, 0.14);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      border-radius: 5px;
-      padding: 0 5px;
-      font-weight: 900;
-      color: var(--nfs-cyan);
-      font-size: 10px;
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 4px;
+      padding: 0 4px;
+      font-weight: 800;
+      color: #e2e8f0;
+      font-size: 9.5px;
     }
 
-    /* Bottom-Right Curved RPM Tachometer + N2O */
+    /* Bottom-Right Open-Arc Digital Telemetry Cluster */
     .hud-bottom-right {
       position: absolute;
       bottom: 12px;
@@ -814,7 +922,7 @@
     #tachCanvas {
       width: 244px;
       height: 220px;
-      filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.75));
+      filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.65));
     }
 
     /* ==================== MOBILE GESTURE & MODE HUD ==================== */
@@ -828,11 +936,7 @@
       user-select: none;
       -webkit-user-select: none;
     }
-    body.in-race.mobile-active:not(.mobile-mode-pedals) #mobileGestureLayer {
-      display: block;
-    }
-
-    /* Floating Thumbstick Indicator (Touch Mode) */
+    body.in-race.mobile-active:not(.mobile-mode-pedals) #mobileGestureLayer { display: block; }
     #touchStickBase {
       position: absolute;
       width: 110px;
@@ -840,9 +944,9 @@
       margin-left: -55px;
       margin-top: -55px;
       border-radius: 50%;
-      border: 2px solid rgba(0, 240, 255, 0.65);
-      background: radial-gradient(circle, rgba(0, 240, 255, 0.22) 0%, rgba(6, 12, 28, 0.52) 70%);
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.38);
+      border: 2px solid rgba(34, 211, 238, 0.65);
+      background: radial-gradient(circle, rgba(34, 211, 238, 0.20) 0%, rgba(6, 12, 28, 0.52) 70%);
+      box-shadow: 0 0 20px rgba(34, 211, 238, 0.35);
       pointer-events: none;
       display: none;
       z-index: 2;
@@ -856,13 +960,11 @@
       margin-left: -24px;
       margin-top: -24px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #00f0ff, #3b82f6);
+      background: linear-gradient(135deg, #22d3ee, #3b82f6);
       border: 2px solid #e0f2fe;
-      box-shadow: 0 0 16px rgba(0, 240, 255, 0.85);
+      box-shadow: 0 0 16px rgba(34, 211, 238, 0.85);
       pointer-events: none;
     }
-
-    /* Split-Pedal Zones for Gyro Tilt Mode */
     #tiltZoneLeft, #tiltZoneRight {
       position: absolute;
       top: 0;
@@ -881,20 +983,12 @@
     #tiltZoneRight {
       right: 0;
       border-left: 1px dashed rgba(255, 255, 255, 0.15);
-      background: linear-gradient(to top, rgba(0, 240, 255, 0.15) 0%, transparent 45%);
+      background: linear-gradient(to top, rgba(34, 211, 238, 0.15) 0%, transparent 45%);
     }
     body.in-race.mobile-active.mobile-mode-tilt #tiltZoneLeft,
-    body.in-race.mobile-active.mobile-mode-tilt #tiltZoneRight {
-      display: block;
-    }
-    #tiltZoneLeft.active {
-      opacity: 0.95;
-      background: linear-gradient(to top, rgba(239, 68, 68, 0.45) 0%, transparent 60%);
-    }
-    #tiltZoneRight.active {
-      opacity: 0.95;
-      background: linear-gradient(to top, rgba(0, 240, 255, 0.45) 0%, transparent 60%);
-    }
+    body.in-race.mobile-active.mobile-mode-tilt #tiltZoneRight { display: block; }
+    #tiltZoneLeft.active { opacity: 0.95; background: linear-gradient(to top, rgba(239, 68, 68, 0.45) 0%, transparent 60%); }
+    #tiltZoneRight.active { opacity: 0.95; background: linear-gradient(to top, rgba(34, 211, 238, 0.45) 0%, transparent 60%); }
     .tilt-pedal-label {
       position: absolute;
       bottom: 24px;
@@ -904,16 +998,9 @@
       text-transform: uppercase;
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
     }
-    #tiltZoneLeft .tilt-pedal-label {
-      left: 24px;
-      color: #fca5a5;
-    }
-    #tiltZoneRight .tilt-pedal-label {
-      right: 24px;
-      color: #7dd3fc;
-    }
+    #tiltZoneLeft .tilt-pedal-label { left: 24px; color: #fca5a5; }
+    #tiltZoneRight .tilt-pedal-label { right: 24px; color: #7dd3fc; }
 
-    /* Mobile 3-Way Mode Pill & Live Steer Gauge Dock */
     #mobileModeHud {
       position: fixed;
       bottom: 12px;
@@ -928,39 +1015,29 @@
       user-select: none;
       -webkit-user-select: none;
     }
-    body.in-race.mobile-active #mobileModeHud {
-      display: flex;
-    }
-    /* In pedals mode, dock near top-center below mirror/HUD so bottom pads are clear */
-    body.in-race.mobile-active.mobile-mode-pedals #mobileModeHud {
-      bottom: auto;
-      top: 118px;
-    }
+    body.in-race.mobile-active #mobileModeHud { display: flex; }
+    body.in-race.mobile-active.mobile-mode-pedals #mobileModeHud { bottom: auto; top: 112px; }
     @media (max-width: 720px) {
-      body.in-race.mobile-active.mobile-mode-pedals #mobileModeHud {
-        top: 50px;
-      }
+      body.in-race.mobile-active.mobile-mode-pedals #mobileModeHud { top: 50px; }
     }
-    body.in-race.mobile-active.mirror-off.mobile-mode-pedals #mobileModeHud {
-      top: 50px;
-    }
+    body.in-race.mobile-active.mirror-off.mobile-mode-pedals #mobileModeHud { top: 50px; }
 
     .mobile-mode-pill-bar {
       display: flex;
       gap: 6px;
-      background: rgba(6, 11, 24, 0.85);
+      background: var(--glass-bg);
       padding: 4px 6px;
       border-radius: 12px;
-      border: 1.5px solid rgba(255, 255, 255, 0.2);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       pointer-events: auto;
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
     }
     .mobile-mode-btn {
       background: rgba(255, 255, 255, 0.06);
       color: #94a3b8;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: 8px;
       padding: 5px 11px;
       font-size: 11.5px;
@@ -969,72 +1046,31 @@
       touch-action: manipulation;
       transition: all 0.12s ease;
     }
-    .mobile-mode-btn:hover {
-      color: #fff;
-      border-color: rgba(255, 255, 255, 0.4);
-    }
+    .mobile-mode-btn:hover { color: #fff; border-color: rgba(255, 255, 255, 0.4); }
     .mobile-mode-btn.active {
-      background: linear-gradient(135deg, rgba(0, 240, 255, 0.32), rgba(59, 130, 246, 0.32));
+      background: rgba(34, 211, 238, 0.25);
       border-color: var(--nfs-cyan);
       color: #fff;
-      box-shadow: 0 0 12px rgba(0, 240, 255, 0.55);
     }
-    .mobile-pill-sep {
-      width: 1px;
-      align-self: stretch;
-      background: rgba(255, 255, 255, 0.2);
-      margin: 2px 1px;
-    }
-    .diff-tier-easy { border-color: rgba(74, 222, 128, 0.72) !important; color: #4ade80 !important; }
-    .diff-tier-medium { border-color: rgba(255, 209, 102, 0.78) !important; color: #ffd166 !important; }
-    .diff-tier-hard { border-color: rgba(251, 113, 133, 0.82) !important; color: #fb7185 !important; }
+    .mobile-pill-sep { width: 1px; align-self: stretch; background: rgba(255, 255, 255, 0.18); margin: 2px 1px; }
+    .diff-tier-easy { border-color: rgba(74, 222, 128, 0.68) !important; color: #4ade80 !important; }
+    .diff-tier-medium { border-color: rgba(251, 191, 36, 0.72) !important; color: #fbbf24 !important; }
+    .diff-tier-hard { border-color: rgba(251, 113, 133, 0.78) !important; color: #fb7185 !important; }
 
-    /* Live Steering Gauge Bar */
     #steerGaugeWrap {
       width: 140px;
       height: 6px;
       background: rgba(15, 23, 42, 0.85);
       border-radius: 4px;
       position: relative;
-      border: 1px solid rgba(255, 255, 255, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.22);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
     }
-    body.mobile-mode-pedals #steerGaugeWrap {
-      display: none;
-    }
-    #steerGaugeCenter {
-      position: absolute;
-      left: 50%;
-      top: -2px;
-      width: 2px;
-      height: 10px;
-      background: rgba(255, 255, 255, 0.55);
-      transform: translateX(-50%);
-    }
-    #steerGaugeDot {
-      position: absolute;
-      top: -4px;
-      left: 50%;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: var(--nfs-cyan);
-      box-shadow: 0 0 10px var(--nfs-cyan);
-      transform: translateX(-50%);
-      transition: left 0.04s ease-out;
-    }
+    body.mobile-mode-pedals #steerGaugeWrap { display: none; }
+    #steerGaugeCenter { position: absolute; left: 50%; top: -2px; width: 2px; height: 10px; background: rgba(255, 255, 255, 0.55); transform: translateX(-50%); }
+    #steerGaugeDot { position: absolute; top: -4px; left: 50%; width: 14px; height: 14px; border-radius: 50%; background: var(--nfs-cyan); box-shadow: 0 0 10px var(--nfs-cyan); transform: translateX(-50%); transition: left 0.04s ease-out; }
+    #mobileHintText { font-size: 10.5px; font-weight: 700; color: #cbd5e1; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9); letter-spacing: 0.25px; white-space: nowrap; }
 
-    /* 1-Line Dynamic Control Hint */
-    #mobileHintText {
-      font-size: 10.5px;
-      font-weight: 800;
-      color: #cbd5e1;
-      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
-      letter-spacing: 0.3px;
-      white-space: nowrap;
-    }
-
-    /* Quick N2O Button in Touch Mode */
     #touchQuickN2oBtn {
       position: fixed;
       bottom: 20px;
@@ -1044,14 +1080,9 @@
       display: none;
       transition: left 0.15s ease;
     }
-    body.in-race.mobile-active.mobile-mode-touch #touchQuickN2oBtn {
-      display: flex;
-    }
-    body.in-race.mobile-active.mobile-mode-touch.manual-trans #touchQuickN2oBtn {
-      left: 80px;
-    }
+    body.in-race.mobile-active.mobile-mode-touch #touchQuickN2oBtn { display: flex; }
+    body.in-race.mobile-active.mobile-mode-touch.manual-trans #touchQuickN2oBtn { left: 80px; }
 
-    /* ==================== MOBILE / TOUCH CONTROLS ==================== */
     #touchControls {
       position: fixed;
       inset: 0;
@@ -1060,50 +1091,21 @@
       display: none;
     }
     body.in-race.mobile-active.mobile-mode-pedals #touchControls,
-    body.in-race.mobile-active.manual-trans #touchControls {
-      display: block;
-    }
-    body.in-race.mobile-active:not(.mobile-mode-pedals) .touch-left-pad > .t-btn:not(.shift-btn) {
-      display: none !important;
-    }
-    body.in-race.mobile-active:not(.mobile-mode-pedals) .touch-right-pad {
-      display: none !important;
-    }
-    .touch-left-pad {
-      position: absolute;
-      bottom: 18px;
-      left: 14px;
-      display: flex;
-      gap: 9px;
-      align-items: flex-end;
-      pointer-events: auto;
-    }
-    .touch-manual-pads {
-      display: none;
-      flex-direction: column;
-      gap: 6px;
-      margin-left: 6px;
-    }
-    body.manual-trans .touch-manual-pads {
-      display: flex;
-    }
-    .touch-right-pad {
-      position: absolute;
-      bottom: 18px;
-      right: 14px;
-      display: flex;
-      align-items: flex-end;
-      gap: 8px;
-      pointer-events: auto;
-    }
+    body.in-race.mobile-active.manual-trans #touchControls { display: block; }
+    body.in-race.mobile-active:not(.mobile-mode-pedals) .touch-left-pad > .t-btn:not(.shift-btn) { display: none !important; }
+    body.in-race.mobile-active:not(.mobile-mode-pedals) .touch-right-pad { display: none !important; }
+    .touch-left-pad { position: absolute; bottom: 18px; left: 14px; display: flex; gap: 9px; align-items: flex-end; pointer-events: auto; }
+    .touch-manual-pads { display: none; flex-direction: column; gap: 6px; margin-left: 6px; }
+    body.manual-trans .touch-manual-pads { display: flex; }
+    .touch-right-pad { position: absolute; bottom: 18px; right: 14px; display: flex; align-items: flex-end; gap: 8px; pointer-events: auto; }
     .t-btn {
       width: 64px;
       height: 64px;
       border-radius: 16px;
-      background: rgba(12, 18, 34, 0.82);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border: 2px solid rgba(255, 255, 255, 0.32);
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1.5px solid rgba(255, 255, 255, 0.26);
       color: #fff;
       font-size: 18px;
       font-weight: 900;
@@ -1115,36 +1117,13 @@
       cursor: pointer;
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55);
     }
-    .t-btn.shift-btn {
-      width: 52px;
-      height: 44px;
-      font-size: 13px;
-      border-radius: 12px;
-      border-color: var(--nfs-gold);
-    }
+    .t-btn.shift-btn { width: 52px; height: 44px; font-size: 13px; border-radius: 12px; border-color: var(--nfs-gold); }
     .t-btn span { font-size: 9.5px; font-weight: 900; margin-top: 2px; color: #cbd5e1; }
-    .t-btn.pressed {
-      transform: scale(0.92);
-      border-color: var(--nfs-cyan);
-      background: rgba(0, 240, 255, 0.42);
-    }
-    .t-btn.gas {
-      height: 78px;
-      background: rgba(22, 163, 74, 0.8);
-      border-color: #86efac;
-    }
-    .t-btn.brake {
-      background: rgba(220, 38, 38, 0.78);
-      border-color: #fca5a5;
-    }
-    .t-btn.drift {
-      background: rgba(255, 42, 133, 0.8);
-      border-color: #f9a8d4;
-    }
-    .t-btn.n2o {
-      background: rgba(0, 180, 255, 0.82);
-      border-color: #a5f3fc;
-    }
+    .t-btn.pressed { transform: scale(0.92); border-color: var(--nfs-cyan); background: rgba(34, 211, 238, 0.42); }
+    .t-btn.gas { height: 78px; background: rgba(22, 163, 74, 0.8); border-color: #86efac; }
+    .t-btn.brake { background: rgba(220, 38, 38, 0.78); border-color: #fca5a5; }
+    .t-btn.drift { background: rgba(236, 72, 153, 0.8); border-color: #f9a8d4; }
+    .t-btn.n2o { background: rgba(14, 165, 233, 0.82); border-color: #a5f3fc; }
 
     /* ==================== POST-RACE RESULTS OVERLAY ==================== */
     #resultsOverlay {
@@ -1154,79 +1133,53 @@
       display: none;
       align-items: center;
       justify-content: center;
-      background: rgba(4, 7, 16, 0.82);
-      backdrop-filter: blur(8px);
+      background: rgba(4, 8, 18, 0.78);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
     #resultsOverlay.active { display: flex; }
     .results-box {
       width: 92%;
-      max-width: 520px;
+      max-width: 500px;
       padding: 28px 30px;
       text-align: center;
-      border: 2px solid var(--nfs-cyan);
+      border: 1px solid rgba(34, 211, 238, 0.35);
     }
     .res-kicker {
-      font-size: 12px;
-      font-weight: 900;
+      font-size: 11px;
+      font-weight: 800;
       letter-spacing: 2px;
-      color: var(--nfs-magenta);
+      color: var(--nfs-cyan);
       text-transform: uppercase;
     }
     .res-place {
-      font-size: 46px;
+      font-size: 44px;
       font-weight: 900;
       font-style: italic;
       color: var(--nfs-gold);
       margin: 6px 0 18px;
-      text-shadow: 0 0 24px rgba(255, 209, 102, 0.5);
+      text-shadow: 0 0 24px rgba(251, 191, 36, 0.45);
     }
-    .res-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: 22px;
-    }
+    .res-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 22px; }
     .res-stat {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.10);
       border-radius: 12px;
       padding: 11px;
     }
-    .res-stat-lbl { font-size: 11px; color: #94a3b8; font-weight: 800; text-transform: uppercase; }
-    .res-stat-val { font-size: 20px; font-weight: 900; color: #fff; margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .res-stat-lbl { font-size: 10.5px; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
+    .res-stat-val { font-size: 19px; font-weight: 900; color: #fff; margin-top: 2px; font-variant-numeric: tabular-nums; }
     .res-actions { display: flex; gap: 12px; }
-    .res-actions button {
-      flex: 1;
-      padding: 13px 16px;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 900;
-      cursor: pointer;
-    }
-    .btn-rematch {
-      border: none;
-      background: linear-gradient(135deg, var(--nfs-cyan), #3b82f6);
-      color: #090d16;
-    }
-    .btn-back-garage {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1.5px solid rgba(255, 255, 255, 0.25);
-      color: #fff;
-    }
+    .res-actions button { flex: 1; padding: 12px 16px; border-radius: 999px; font-size: 14px; font-weight: 900; cursor: pointer; }
+    .btn-rematch { border: none; background: linear-gradient(135deg, #f59e0b, #fb923c); color: #080d18; }
+    .btn-back-garage { background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.20); color: #fff; }
 
     /* Responsive Breakpoints */
     @media (pointer: coarse), (max-width: 900px) {
       .hud-bottom-left { display: none; }
-      .hud-bottom-right {
-        bottom: 16px;
-        right: 10px;
-        transform: scale(0.68);
-        transform-origin: bottom right;
-      }
-      body.mobile-mode-pedals .hud-bottom-right {
-        bottom: 106px;
-      }
-      #minimapCanvas { width: 112px; height: 112px; }
+      .hud-bottom-right { bottom: 16px; right: 10px; transform: scale(0.68); transform-origin: bottom right; }
+      body.mobile-mode-pedals .hud-bottom-right { bottom: 106px; }
+      #minimapCanvas { width: 114px; height: 114px; }
       .hud-top-left, .hud-top-right { transform: scale(0.84); }
       .hud-top-left { transform-origin: top left; }
       .hud-top-right { transform-origin: top right; }
@@ -1234,22 +1187,13 @@
     @media (max-width: 720px) {
       #rearMirrorFrame { display: none; }
       .hud-top-center { top: 14px; }
-      #titleOverlay { padding: 14px; }
-      .title-logo { font-size: 38px; }
-      #garageOverlay {
-        padding: 10px;
-        overflow-y: auto;
-        justify-content: flex-start;
-      }
-      .garage-body {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-      }
-      .garage-left-drawer, .garage-launch-pod {
-        width: 100%;
-        max-height: none;
-      }
+      #titleOverlay { padding: 12px; }
+      .title-capsule { min-width: 0; width: 100%; padding: 11px 13px; }
+      .capsule-main-row { gap: 12px; }
+      .capsule-name { font-size: 14px; letter-spacing: 2px; }
+      #garageOverlay { padding: 10px; overflow-y: auto; justify-content: flex-start; }
+      .garage-body { flex-direction: column; align-items: stretch; gap: 10px; }
+      .garage-left-drawer, .garage-launch-pod { width: 100%; max-height: none; }
     }
     @media (max-width: 480px) {
       .mobile-mode-pill-bar { gap: 4px; padding: 4px 5px; }
@@ -1260,70 +1204,57 @@
 <body class="in-title">
   <canvas id="gameCanvas"></canvas>
 
-  <!-- ==================== LIVE 3D CINEMATIC OPENING SCREEN ==================== -->
+  <!-- 3D-Projected Aerial Landmark Callout Layer -->
+  <div id="mapLabelsLayer">
+    <svg id="mapLabelsSvg"></svg>
+  </div>
+
+  <!-- ==================== 3D AERIAL NEON TRANSIT MAP TITLE SCREEN ==================== -->
   <div id="titleOverlay">
-    <div class="title-top-bar">
-      <div class="title-ribbon">Street &amp; Canyon Edition • Three.js PBR</div>
-      <div class="header-actions">
-        <button class="btn-ghost diff-tier-easy" id="btnTitleDiff">🟢 Mode: EASY</button>
-        <button class="btn-ghost on" id="btnTitleBloom">✨ Bloom: ON</button>
-        <button class="btn-ghost on" id="btnTitleAudio">🔊 Sound: ON</button>
+    <div class="title-top-row">
+      <div class="title-top-pill">
+        <div class="pill-seg-group" id="titleCircuitTabs">
+          <button class="pill-seg-btn active" data-track="0" type="button">Tokyo</button>
+          <button class="pill-seg-btn" data-track="1" type="button">Canyon</button>
+          <button class="pill-seg-btn" data-track="2" type="button">Alpine</button>
+        </div>
+        <div class="pill-divider"></div>
+        <div class="pill-seg-group" id="titleModeTabs">
+          <button class="pill-seg-btn mode-btn active" data-mode="0" type="button">Circuit</button>
+          <button class="pill-seg-btn mode-btn" data-mode="1" type="button">Drift</button>
+          <button class="pill-seg-btn mode-btn" data-mode="2" type="button">Pursuit</button>
+        </div>
+        <div class="pill-divider"></div>
+        <button class="btn-ghost diff-tier-easy" id="btnTitleDiff" type="button">🟢 Mode: EASY</button>
+      </div>
+
+      <div class="title-utility-strip">
+        <button class="btn-ghost" id="btnTitleGarage" type="button">Garage (G)</button>
+        <button class="btn-ghost on" id="btnTitleBloom" type="button">✨ Bloom: ON</button>
+        <button class="btn-ghost on" id="btnTitleAudio" type="button">🔊 Sound: ON</button>
       </div>
     </div>
 
-    <div class="title-hero-left">
-      <div class="title-logo-row">
-        <div class="title-logo">APEX NITRO</div>
-        <div class="title-3d-badge">3D</div>
+    <div class="title-capsule-wrap">
+      <div class="title-capsule">
+        <div class="capsule-main-row">
+          <div class="capsule-brand">
+            <div class="capsule-title-line">
+              <span class="capsule-dot"></span>
+              <span class="capsule-name">APEX NITRO</span>
+            </div>
+            <div class="capsule-route" id="titleRouteSub">Shibuya Crossing → Wangan Finale</div>
+          </div>
+          <button class="capsule-play-btn" id="btnTitlePlay" type="button">▶ PLAY</button>
+        </div>
+        <div class="capsule-key-row">
+          <span><span class="micro-kbd">A</span><span class="micro-kbd">D</span> Steer</span>
+          <span><span class="micro-kbd">Space</span> Nitro</span>
+          <span><span class="micro-kbd">Shift</span> Drift</span>
+          <span><span class="micro-kbd">C</span> Cam</span>
+          <span><span class="micro-kbd">G</span> Garage</span>
+        </div>
       </div>
-      <div class="title-sub">Glossy Clear-Coat Reflections • Weight-Transfer Drift • Cockpit &amp; Live Mirror</div>
-
-      <div class="title-menu">
-        <button class="title-btn primary" id="btnTitleQuickRace">
-          <div class="title-btn-inner">
-            <div>
-              <div class="title-btn-main">🔥 Quick Race</div>
-              <div class="title-btn-sub">Jump straight onto the Tokyo Neon grid • [Enter]</div>
-            </div>
-            <div class="title-btn-arrow">▶</div>
-          </div>
-        </button>
-
-        <button class="title-btn" id="btnTitleGarage">
-          <div class="title-btn-inner">
-            <div>
-              <div class="title-btn-main">🔧 Tuner Speedshop</div>
-              <div class="title-btn-sub">6 Supercars, Clear-Coat Paint, Rims, Gearbox &amp; 3 Circuits</div>
-            </div>
-            <div class="title-btn-arrow">▶</div>
-          </div>
-        </button>
-
-        <button class="title-btn pursuit" id="btnTitlePursuit">
-          <div class="title-btn-inner">
-            <div>
-              <div class="title-btn-main">🚓 Hot Pursuit</div>
-              <div class="title-btn-sub">Outrun Heat-3 Interceptors across midnight avenues</div>
-            </div>
-            <div class="title-btn-arrow">▶</div>
-          </div>
-        </button>
-
-        <button class="title-btn drift" id="btnTitleDrift">
-          <div class="title-btn-inner">
-            <div>
-              <div class="title-btn-main">💨 Drift Touge</div>
-              <div class="title-btn-sub">Pacific Sunset Canyon counterweight drift showdown</div>
-            </div>
-            <div class="title-btn-arrow">▶</div>
-          </div>
-        </button>
-      </div>
-    </div>
-
-    <div class="title-bottom-bar">
-      <div class="nfs-panel attract-badge" id="attractBadge">🎥 LIVE STREET CAM • VORTEX GT-R</div>
-      <div class="nfs-panel title-controls-note">[Enter] Quick Race • [G] Speedshop • [Space] N2O • [Q / E] Shift</div>
     </div>
   </div>
 
@@ -1331,7 +1262,7 @@
   <div id="garageOverlay">
     <div class="garage-header">
       <div class="garage-header-left">
-        <button class="btn-ghost" id="btnBackTitle">← Title</button>
+        <button class="btn-ghost" id="btnBackTitle" style="background:var(--glass-bg);backdrop-filter:blur(20px);">← Map</button>
         <div class="nfs-panel car-hero-badge">
           <div>
             <div class="car-hero-title" id="garageCarTitle">Vortex GT-R</div>
@@ -1351,7 +1282,6 @@
     </div>
 
     <div class="garage-body">
-      <!-- Left 3-Tab Drawer leaving 70%+ canvas clear for 3/4 car view -->
       <div class="nfs-panel garage-left-drawer">
         <div class="garage-tabs">
           <button class="tab-btn active" data-tab="cars">🏎️ Cars</button>
@@ -1416,18 +1346,16 @@
         </div>
       </div>
 
-      <!-- Bottom-Right Launch Pod -->
       <div class="nfs-panel garage-launch-pod">
         <div class="orbit-hint">🖱️ Drag / Swipe Car to Orbit 360°</div>
         <div class="event-summary-lbl" id="eventSummaryLbl">🌃 Tokyo Neon • 🏁 Underground Circuit</div>
-        <button class="launch-btn" id="launchRaceBtn">🔥 Hit The Streets [Enter]</button>
+        <button class="launch-btn" id="launchRaceBtn">▶ Hit The Streets [Enter]</button>
       </div>
     </div>
   </div>
 
-  <!-- ==================== IN-RACE NFS HUD ==================== -->
+  <!-- ==================== IN-RACE MINIMALIST HUD ==================== -->
   <div id="raceHud">
-    <!-- 1. Full-Screen Mobile Touch / Tilt Gesture Layer (Must be FIRST child inside #raceHud) -->
     <div id="mobileGestureLayer">
       <div id="touchStickBase">
         <div id="touchStickKnob"></div>
@@ -1436,7 +1364,6 @@
       <div id="tiltZoneRight"><div class="tilt-pedal-label">🔥 N2O NITRO</div></div>
     </div>
 
-    <!-- 2. 3-Way Mobile Mode Pill Bar, Live Steering Gauge & Control Hint Bar -->
     <div id="mobileModeHud">
       <div class="mobile-mode-pill-bar">
         <button class="mobile-mode-btn" id="btnModeTouch" type="button">👆 Touch</button>
@@ -1452,7 +1379,6 @@
       <div id="mobileHintText">Smart Auto-Gas • Slide L/R Steer • Swipe ↑ N2O • Swipe ↓ Brake</div>
     </div>
 
-    <!-- 3. One-Thumb Quick N2O Boost Button (Touch Mode) -->
     <button class="t-btn n2o" id="touchQuickN2oBtn" type="button">🔥<span>N2O</span></button>
 
     <div id="rearMirrorFrame">
@@ -1474,7 +1400,7 @@
 
       <div class="nfs-panel" id="pursuitBarCard">
         <div class="heat-label" id="pursuitStatus">🚨 HEAT LEVEL 3 • OUTRUN INTERCEPTORS!</div>
-        <div class="best-val" id="pursuitTimer" style="color:#ffd166;margin-top:2px;">EVASION WINDOW: 02:00</div>
+        <div class="best-val" id="pursuitTimer" style="color:#fbbf24;margin-top:2px;">EVASION WINDOW: 02:00</div>
       </div>
     </div>
 
@@ -1492,29 +1418,30 @@
     </div>
 
     <div class="hud-top-right">
-      <canvas id="minimapCanvas" width="170" height="170"></canvas>
-      <div class="quick-toggles">
+      <canvas id="minimapCanvas" width="166" height="166"></canvas>
+      <div class="compact-hud-bar">
+        <button class="hud-btn" id="btnCam" title="Switch Camera (C)">🎥 Chase</button>
+        <button class="hud-btn" id="btnGarage" title="Open 3D Speedshop (G)">🔧 Shop</button>
+        <button class="hud-btn" id="btnHudSettings" title="HUD Settings">⚙</button>
+      </div>
+      <div id="hudSettingsPopover">
         <button class="hud-btn diff-tier-easy" id="btnHudDiff" title="Cycle Difficulty: Easy / Medium / Hard">🟢 Easy</button>
         <button class="hud-btn on" id="btnMirror" title="Toggle Rear-View Mirror (V)">🪞 Mirror</button>
         <button class="hud-btn" id="btnTransHud" title="Toggle Auto / Manual Gearbox (T)">⚙️ AUTO</button>
-        <button class="hud-btn" id="btnCam" title="Switch Camera (C)">🎥 Chase</button>
         <button class="hud-btn on" id="btnBloom" title="Toggle Neon Bloom">✨ Bloom</button>
-        <button class="hud-btn" id="btnGarage" title="Open 3D Speedshop (G)">🔧 Shop</button>
         <button class="hud-btn on" id="btnMute" title="Toggle Audio (M)">🔊 Audio</button>
       </div>
     </div>
 
-    <div class="nfs-panel hud-bottom-left">
-      <div><span class="key-pill">W A S D</span> / <span class="key-pill">ARROWS</span> Drive • <span class="key-pill">SHIFT / B</span> Drift (+N2O)</div>
-      <div><span class="key-pill">SPACE</span> Fire N2O • Hold <b>Green RPM</b> on GO!</div>
-      <div><span class="key-pill">Q / E</span> Shift (<span class="key-pill">T</span> Auto/Man) • <span class="key-pill">C</span> Cockpit • <span class="key-pill">V</span> Mirror • <span class="key-pill">G</span> Shop</div>
+    <div class="nfs-panel hud-bottom-left" id="hudKeyHint">
+      <div><span class="key-pill">W A S D</span> Drive • <span class="key-pill">SHIFT</span> Drift • <span class="key-pill">SPACE</span> Nitro</div>
+      <div><span class="key-pill">Q / E</span> Shift (<span class="key-pill">T</span> Auto/Man) • <span class="key-pill">C</span> Cam • <span class="key-pill">V</span> Mirror • <span class="key-pill">G</span> Shop</div>
     </div>
 
     <div class="hud-bottom-right">
       <canvas id="tachCanvas" width="244" height="220"></canvas>
     </div>
 
-    <!-- Mobile / Tablet Multi-Touch Racing Pedals -->
     <div id="touchControls">
       <div class="touch-left-pad">
         <div class="t-btn" data-key="ArrowLeft">◀<span>LEFT</span></div>
@@ -1549,11 +1476,11 @@
         </div>
         <div class="res-stat">
           <div class="res-stat-lbl">Style &amp; Drift Score</div>
-          <div class="res-stat-val" id="resScore" style="color:#ffd166;">12,450 PTS</div>
+          <div class="res-stat-val" id="resScore" style="color:#fbbf24;">12,450 PTS</div>
         </div>
         <div class="res-stat">
           <div class="res-stat-lbl">Top Speed</div>
-          <div class="res-stat-val" id="resTopSpeed" style="color:#00f0ff;">208 MPH</div>
+          <div class="res-stat-val" id="resTopSpeed" style="color:#22d3ee;">208 MPH</div>
         </div>
       </div>
       <div class="res-actions">

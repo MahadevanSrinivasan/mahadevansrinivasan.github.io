@@ -1,18 +1,20 @@
 # Apex Nitro 3D
 
-A wholesome, kid-friendly 3D arcade street and canyon racing game built with Three.js WebGL, PBR clear-coat reflections (`PMREMGenerator`), and `UnrealBloomPass` post-processing.
+A wholesome, kid-friendly 3D arcade street and canyon racing game built with Three.js WebGL, HDR `UnrealBloomPass` + custom `OutputFXAAShader` post-processing, procedural GLSL sky domes, and `PMREMGenerator` clear-coat reflections.
 
 Play live at **https://theshybulb.com/apex-nitro/**
 
 ## Features
 
-- **Live 3D Cinematic Title Screen**: Opens straight into a live 6-car **Tokyo Neon Underground** street race with sweeping cinema cameras, falling rain streaks, and direct shortcuts to **Quick Race**, **Tuner Speedshop**, **Hot Pursuit**, and **Drift Touge**.
-- **3D Underground Speedshop Garage**: Orbit 360° around **6 sculpted supercars** (**Vortex GT-R**, **Diablo V12**, **Titan GT500**, **Phantom RS**, **Cyber Valkyrie**, and **Interceptor X**) inside an illuminated concrete & steel tuning bay. Customize metallic clear-coat paint, radial neon underglow, **4 rim finishes** (**Chrome**, **Solar Gold**, **Stealth Matte**, **Electric Cyan**), and **4 aero wing kits** (**GT Pro Wing**, **Street Ducktail**, **Cyber Twin-Fin**, **Clean Stock**).
+- **Interactive 3D Aerial Neon Transit Map Opening + 1.35s Dive-In Swoop**: Opens on an elevated dark-mode **3D Aerial Neon Transit Map** around the live circuit with 280+ instanced matte-slate city blocks, luminous primary circuit ribbon with 6 live supercars, emerald Yamanote rail lines with animated express trains, electric violet metro arteries, golden elevated expressways, 96 streaming traffic comet streaks, pulsing holographic Start & Finale radar rings, and 3D-projected landmark callout pills. Clicking **`▶ PLAY`** triggers a smooth **1.35s cubic-eased dive-in camera swoop** straight down onto the starting grid.
+- **HDR Post-Processing & Custom `OutputFXAAShader`**: Conditional `HalfFloatType` / `UnsignedByteType` `EffectComposer` pipeline pairing `UnrealBloomPass` with a single-pass **FXAA 3.11 edge anti-aliasing**, **ACES Filmic tone mapping**, **Linear-to-sRGB**, subtle radial vignette, and N2O speed chromatic aberration shader.
+- **Procedural GLSL Sky Dome & Architectural Lighting**: Dynamic per-track GLSL sky dome (Tokyo midnight obsidian + starfield + distant skyline silhouette, Canyon sunset violet-to-amber + glowing solar disc, Alpine Nordic twilight + moon glow), architectural `PMREMGenerator` softbox reflections, and wet-asphalt neon light-pillar reflections on Tokyo streets.
+- **3D Underground Speedshop Garage**: Orbit 360° around **6 sculpted clear-coat supercars** (**Vortex GT-R**, **Diablo V12**, **Titan GT500**, **Phantom RS**, **Cyber Valkyrie**, and **Interceptor X**) inside an obsidian concrete & wet-gloss studio with animated holographic turntable rings. Customize metallic clear-coat paint, radial neon underglow, **4 rim finishes** (**Chrome**, **Solar Gold**, **Stealth Matte**, **Electric Cyan**), and **4 aero wing kits** (**GT Pro Wing**, **Street Ducktail**, **Cyber Twin-Fin**, **Clean Stock**).
 - **Signature Visual Realism**:
-  - Procedural `PMREMGenerator` environment cubemaps per track & garage bay
-  - Dual **tail-light ribbon trails** at high speed & **N2O** boost
-  - Specular **wet road puddles**, falling night rain, and overhanging highway streetlights
-  - Persistent dual **tire skidmarks**, glowing **orange brake rotors**, and exhaust **shift backfires**
+  - Tiered architectural glass skyscrapers, elevated steel Yamanote viaducts with overhead express trains, and enclosed illuminated neon light tunnels
+  - Custom GLSL **Pacific Sunset Ocean** wave shader & coastal suspension bridge on Canyon; faceted alpenglow peaks on Alpine
+  - Volumetric additive headlight cones, dual HDR **tail-light plasma ribbons**, radial soft-sprite drift smoke & sparks, persistent **tire skidmarks**, glowing **orange brake rotors**, and exhaust **shift backfires**
+- **Editorial Frosted-Glass HUD & Telemetry**: Minimalist frosted-glass floating capsules, dark-mode Neon Tactical minimap with directional chevron, open-arc digital RPM/MPH/N2O telemetry cluster, and auto-fading key hints.
 - **Physics, Gearbox & Cockpit View**:
   - **Weight-transfer & counter-steer drift** physics with brake dive & throttle squat
   - **6-speed torque gearbox** switchable between **Auto** and **Manual** (`Q` / `E` paddles) with rev-limiter bounce
