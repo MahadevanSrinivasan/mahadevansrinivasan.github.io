@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Road Fighter (Classic 1985 NES 8-Bit Edition)</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #080808;
+      color: #fcfcfc;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #app-shell {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+    }
+    #topbar {
+      width: min(96vw, calc(86vh * 4 / 3));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 10px;
+      margin-bottom: 6px;
+      background: #141414;
+      border: 2px solid #d82800;
+      font-size: 12px;
+      font-weight: bold;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .brand {
+      color: #fcfcfc;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+    }
+    .nes-tag {
+      background: #d82800;
+      color: #fcfcfc;
+      padding: 2px 6px;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      background: #222222;
+      color: #fcfcfc;
+      border: 2px solid #7c7c7c;
+      padding: 3px 7px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      font-weight: bold;
+      cursor: pointer;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+    .btn:hover {
+      border-color: #fcfcfc;
+      background: #383838;
+    }
+    .btn.active {
+      background: #d82800;
+      border-color: #fcfcfc;
+      color: #fcfcfc;
+    }
+    .btn.lvl-pro {
+      background: #fc9838;
+      border-color: #fcfcfc;
+      color: #000000;
+    }
+    #canvas-wrap {
+      position: relative;
+      width: min(96vw, calc(84vh * 4 / 3));
+      aspect-ratio: 4 / 3;
+      border: 4px solid #383838;
+      background: #000000;
+      overflow: hidden;
+      touch-action: none;
+    }
+    body.shot-mode #topbar,
+    body.shot-mode #touch-overlay {
+      display: none !important;
+    }
+    body.shot-mode #canvas-wrap {
+      width: min(96vw, calc(94vh * 4 / 3));
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-crisp-edges;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      touch-action: none;
+    }
+    #touch-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: none;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 12px 16px;
+      z-index: 6;
+    }
+    #touch-overlay.visible {
+      display: flex;
+    }
+    .pad-cluster {
+      display: flex;
+      gap: 8px;
+      pointer-events: auto;
+      align-items: center;
+    }
+    .tbtn {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: rgba(20, 20, 20, 0.78);
+      border: 2px solid #fcfcfc;
+      color: #fcfcfc;
+      font-weight: bold;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      cursor: pointer;
+    }
+    .tbtn.low-btn {
+      width: 62px;
+      height: 62px;
+      background: rgba(0, 140, 180, 0.85);
+    }
+    .tbtn.high-btn {
+      width: 66px;
+      height: 66px;
+      background: rgba(216, 40, 0, 0.85);
+    }
+    .tbtn.pressed {
+      transform: scale(0.92);
+      filter: brightness(1.3);
+    }
+    @media (max-width: 720px) {
+      #topbar {
+        font-size: 10px;
+        padding: 4px 6px;
+      }
+      .btn {
+        font-size: 10px;
+        padding: 2px 5px;
+      }
+    }
+  </style>
+  <script>
+    if (new URLSearchParams(window.location.search).has('shot')) {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.classList.add('shot-mode');
+      });
+    }
+  </script>
+</head>
+<body>
+  <div id="app-shell">
+    <div id="topbar">
+      <div class="brand">
+        <span class="nes-tag">NES 1985</span>
+        <span>ROAD FIGHTER</span>
+      </div>
+      <div class="controls-bar">
+        <button id="btn-c1" class="btn active" title="Course 1: Grassland">1 GRASS</button>
+        <button id="btn-c2" class="btn" title="Course 2: Ocean Bridge">2 BRIDGE</button>
+        <button id="btn-c3" class="btn" title="Course 3: Seashore">3 BEACH</button>
+        <button id="btn-c4" class="btn" title="Course 4: Mountain Pass">4 MOUNT</button>
+        <button id="btn-lvl" class="btn" title="Toggle Level 1 / Level 2">LVL 1</button>
+        <button id="btn-mute" class="btn" title="Toggle 8-Bit Sound (M)">🔊 SFX</button>
+        <button id="btn-restart" class="btn" title="Restart Course">↻ RESTART</button>
+        <button id="btn-touch" class="btn" title="Toggle Touch Controls">🎮 PAD</button>
+      </div>
+    </div>
+
+    <div id="canvas-wrap">
+      <canvas id="game" width="320" height="240"></canvas>
+      <div id="touch-overlay">
+        <div class="pad-cluster">
+          <div class="tbtn" data-act="left">◀<span style="font-size:9px">LEFT</span></div>
+          <div class="tbtn" data-act="right">▶<span style="font-size:9px">RIGHT</span></div>
+        </div>
+        <div class="pad-cluster">
+          <div class="tbtn low-btn" data-act="low">B<span style="font-size:9px">LOW</span></div>
+          <div class="tbtn high-btn" data-act="high">A<span style="font-size:9px">HIGH</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
